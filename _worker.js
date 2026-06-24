@@ -5,11 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "3.3.0";
-// v3.3.0 Changelog:
-// 🐛 رفع باگ اصلی: دکمه "سرویس‌های من" برای همه کاربران (از جمله ادمین) کار می‌کند
-// 🔧 رفع مشکل routing: callback های user_* اکنون برای ادمین هم از handler کاربری عبور می‌کنند
-// 🔧 رفع state handler: وقتی ادمین در حالت user_awaiting_add_sub است، پیام متنی درست پردازش می‌شود
+const CURRENT_VERSION = "3.4.0";
+// v3.4.0 Changelog:
+// 🐛 رفع باگ اصلی "سرویس‌های من": نام‌های یوزر با underscore باعث خطای Markdown در تلگرام می‌شدند
+// 🛡️ sendOrEdit: اگر parse Markdown شکست، بدون parse_mode دوباره ارسال می‌کند (پیام همیشه می‌رسد)
+// 🔤 تابع esc(): همه محتوای داینامیک (نام یوزر، یوزرنیم) قبل از ارسال escape می‌شوند
+// 🔧 رفع routing: callback های user_* برای ادمین هم از handler کاربری عبور می‌کنند
+// 🔧 رفع state handler: ادمین در حالت user_awaiting_add_sub پیام متنی درست پردازش می‌شود
 //
 // v3.2.0 Changelog:
 // 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
@@ -2347,35 +2349,44 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
 
         // Custom sendOrEdit message helper
         const sendOrEdit = async (chatId, text, replyMarkup = null, messageId = null) => {
+            const plainText = text.replace(/\*\*/g, '').replace(/(?<![\\])[*_`\[\]]/g, '');
             let res;
             if (messageId) {
                 res = await fetch(`${tgApi}/editMessageText`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        message_id: messageId,
-                        text: text,
-                        parse_mode: 'Markdown',
-                        reply_markup: replyMarkup
-                    })
+                    body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: 'Markdown', reply_markup: replyMarkup })
                 });
                 if (res.ok) return res;
                 try {
                     const errBody = await res.json();
                     if (errBody?.description?.includes("message is not modified")) return res;
+                    if (errBody?.description?.includes("parse") || errBody?.description?.includes("entities")) {
+                        const r2 = await fetch(`${tgApi}/editMessageText`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ chat_id: chatId, message_id: messageId, text: plainText, reply_markup: replyMarkup })
+                        });
+                        if (r2.ok) return r2;
+                    }
                 } catch (e) {}
             }
             res = await fetch(`${tgApi}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: text,
-                    parse_mode: 'Markdown',
-                    reply_markup: replyMarkup
-                })
+                body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: replyMarkup })
             });
+            if (res.ok) return res;
+            try {
+                const errBody = await res.json();
+                if (errBody?.description?.includes("parse") || errBody?.description?.includes("entities")) {
+                    return fetch(`${tgApi}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: chatId, text: plainText, reply_markup: replyMarkup })
+                    });
+                }
+            } catch(e) {}
             return res;
         };
 
@@ -2606,6 +2617,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                 if (isUserCallback) {
                     // User callback handler (non-admin users + user_* callbacks for admins)
                     const fa3 = langCode === 'fa';
+                    // Escape Markdown special chars in dynamic content (prevents parse_entities errors)
+                    const esc = (s) => String(s || '').replace(/[_*`[\]]/g, '\\$&');
                     let userAnswerText = "";
                     if (data === "user_free_trial") {
                         if (!sysConfig.freeTrial) {
@@ -2766,8 +2779,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         const joinDate = acc?.joinedAt ? new Date(acc.joinedAt).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : (fa3 ? 'جدید' : 'New');
                         const hasSub = acc?.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
                         let accountText = fa3
-                            ? `👤 **حساب کاربری**\n━━━━━━━━━━━━━━\n👤 نام: **${firstName2}**\n🆔 یوزرنیم: @${username}\n📅 تاریخ عضویت: ${joinDate}\n📊 وضعیت اشتراک: ${hasSub ? '✅ فعال' : '❌ ندارد'}\n━━━━━━━━━━━━━━`
-                            : `👤 **My Account**\n━━━━━━━━━━━━━━\n👤 Name: **${firstName2}**\n🆔 Username: @${username}\n📅 Joined: ${joinDate}\n📊 Subscription: ${hasSub ? '✅ Active' : '❌ None'}\n━━━━━━━━━━━━━━`;
+                            ? `👤 *حساب کاربری*\n━━━━━━━━━━━━━━\n👤 نام: ${esc(firstName2)}\n🆔 یوزرنیم: @${esc(username)}\n📅 تاریخ عضویت: ${joinDate}\n📊 وضعیت اشتراک: ${hasSub ? '✅ فعال' : '❌ ندارد'}\n━━━━━━━━━━━━━━`
+                            : `👤 *My Account*\n━━━━━━━━━━━━━━\n👤 Name: ${esc(firstName2)}\n🆔 Username: @${esc(username)}\n📅 Joined: ${joinDate}\n📊 Subscription: ${hasSub ? '✅ Active' : '❌ None'}\n━━━━━━━━━━━━━━`;
                         const accRows = [];
                         if (hasSub) accRows.push([{ text: fa3 ? '🔗 مشاهده لینک' : '🔗 View Link', callback_data: `user_get_link:${acc.subId}` }]);
                         accRows.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]);
@@ -2794,9 +2807,10 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
                             const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
                             const subLink2 = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+                            const safeName2 = esc(u.name);
                             svcText = fa3
-                                ? `📱 **سرویس‌های من**\n━━━━━━━━━━━━━━━━\n📛 نام: **${u.name}**\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: **${usedGB2}** / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: **${dLeft2 < 0 ? '∞' : dLeft2}** روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
-                                : `📱 **My Services**\n━━━━━━━━━━━━━━━━\n📛 Name: **${u.name}**\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: **${usedGB2}** / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: **${dLeft2 < 0 ? '∞' : dLeft2}**\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
+                                ? `📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
+                                : `📱 *My Services*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
                             svcRows2.push([{ text: fa3 ? '➕ افزودن / تغییر سرویس' : '➕ Add / Change Service', callback_data: 'user_add_sub' }]);
                         } else {
                             svcText = fa3
@@ -4208,9 +4222,10 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         uAccA.subId = addedUserA.id;
                         uAccA.lastActivity = Date.now();
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        const escA = (s) => String(s || '').replace(/[_*`[\]]/g, '\\$&');
                         await sendOrEdit(chatId, faA
-                            ? `✅ **سرویس با موفقیت اضافه شد!**\n━━━━━━━━━━━━━━\n📛 نام: **${addedUserA.name}**\n━━━━━━━━━━━━━━`
-                            : `✅ **Service added successfully!**\n━━━━━━━━━━━━━━\n📛 Name: **${addedUserA.name}**\n━━━━━━━━━━━━━━`,
+                            ? `✅ *سرویس با موفقیت اضافه شد!*\n━━━━━━━━━━━━━━\n📛 نام: ${escA(addedUserA.name)}\n━━━━━━━━━━━━━━`
+                            : `✅ *Service added successfully!*\n━━━━━━━━━━━━━━\n📛 Name: ${escA(addedUserA.name)}\n━━━━━━━━━━━━━━`,
                             { inline_keyboard: [[{ text: faA ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }], [{ text: faA ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
                     } else {
                         await sendOrEdit(chatId, faA
@@ -4318,9 +4333,10 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         uAcc.subId = addedUser.id;
                         uAcc.lastActivity = Date.now();
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        const escU = (s) => String(s || '').replace(/[_*`[\]]/g, '\\$&');
                         await sendOrEdit(chatId, fa
-                            ? `✅ **سرویس با موفقیت اضافه شد!**\n━━━━━━━━━━━━━━\n📛 نام: **${addedUser.name}**\n━━━━━━━━━━━━━━`
-                            : `✅ **Service added successfully!**\n━━━━━━━━━━━━━━\n📛 Name: **${addedUser.name}**\n━━━━━━━━━━━━━━`,
+                            ? `✅ *سرویس با موفقیت اضافه شد!*\n━━━━━━━━━━━━━━\n📛 نام: ${escU(addedUser.name)}\n━━━━━━━━━━━━━━`
+                            : `✅ *Service added successfully!*\n━━━━━━━━━━━━━━\n📛 Name: ${escU(addedUser.name)}\n━━━━━━━━━━━━━━`,
                             { inline_keyboard: [[{ text: fa ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }], [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
                     } else {
                         await sendOrEdit(chatId, fa
