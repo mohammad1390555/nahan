@@ -5,7 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "3.0.0";
+const CURRENT_VERSION = "3.1.0";
+// v3.1.0 Changelog:
+// 🐛 رفع باگ لینک تست رایگان: اکنون فرمت صحیح apiRoute+sub ارائه می‌شود
+// 🐛 رفع باگ لینک تأیید خرید: فرمت صحیح apiRoute+sub
+// 🐛 رفع باگ حجم در ساب‌لینک: limitTotalReq اکنون هنگام ساخت یوزر تنظیم می‌شود
+// 🔗 لینک وضعیت یوزر در ربات: فرمت صحیح apiRoute+sub
+//
 // v3.0.0 Changelog:
 // 📊 وضعیت اشتراک حرفه‌ای: نوار پیشرفت، UUID، پروتکل، محدودیت کانفیگ
 // 🔧 بخش مدیریت سرویس‌ها برای ادمین (افزودن/حذف سرویس‌های سفارشی)
@@ -2610,6 +2616,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                                     id: trialId,
                                     name: `trial_${cb.from?.username || cb.from?.first_name || userTgId2}_${Math.floor(Math.random() * 9000) + 1000}`,
                                     totalTrafficLimit: (sysConfig.freeTrialGB || 1) * 1073741824,
+                                    limitTotalReq: Math.round((sysConfig.freeTrialGB || 1) * 6000),
                                     expiryMs: Date.now() + (sysConfig.freeTrialDays || 3) * 86400000,
                                     isPaused: false, isExpired: false, upLink: 0, downLink: 0
                                 };
@@ -2627,7 +2634,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                                     sysConfig.userAccounts.push({ tgId: userTgId2, tgName: cb.from?.username || '', firstName: cb.from?.first_name || '', subId: trialId, savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
                                 }
                                 await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                const trialLink = `${new URL(request.url).origin}/${trialId}`;
+                                const trialLink = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(trialUser.name)}`;
                                 const trialMsg = fa3
                                     ? `🎉 **تست رایگان شما فعال شد!**\n━━━━━━━━━━━━━━\n⏱ مدت: **${sysConfig.freeTrialDays || 3}** روز\n📦 حجم: **${sysConfig.freeTrialGB || 1}** گیگابایت\n━━━━━━━━━━━━━━\n\n🔗 لینک اشتراک شما:\n\`${trialLink}\`\n\n💡 این لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
                                     : `🎉 **Free trial activated!**\n━━━━━━━━━━━━━━\n⏱ Duration: **${sysConfig.freeTrialDays || 3}** days\n📦 Traffic: **${sysConfig.freeTrialGB || 1}** GB\n━━━━━━━━━━━━━━\n\n🔗 Your subscription link:\n\`${trialLink}\`\n\n💡 Copy this link and add it to your app.`;
@@ -2734,7 +2741,10 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         await sendOrEdit(chatId, welcomeMsg, { inline_keyboard: menuRows }, messageId);
                     } else if (data.startsWith("user_get_link:")) {
                         const uid = data.replace("user_get_link:", "");
-                        const linkUrl = `${new URL(request.url).origin}/${uid}`;
+                        const linkUser = (sysConfig.users || []).find(u => u.id === uid);
+                        const linkUrl = linkUser
+                            ? `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(linkUser.name)}`
+                            : `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(uid)}`;
                         await sendOrEdit(chatId, fa3
                             ? `🔗 **لینک اشتراک شما:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
                             : `🔗 **Your Subscription Link:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 Copy and add to your app.`,
@@ -3609,6 +3619,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             id: newUserId,
                             name: `${baseName}_${randomSuffix}`,
                             totalTrafficLimit: (purchase.gb || 10) * 1073741824,
+                            limitTotalReq: Math.round((purchase.gb || 10) * 6000),
                             expiryMs: Date.now() + (purchase.days || 30) * 86400000,
                             isPaused: false, isExpired: false, upLink: 0, downLink: 0
                         };
@@ -3625,7 +3636,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         }
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
                         answerText = t("admin_approved_ok") || "✅ Approved";
-                        const subLink = `${new URL(request.url).origin}/${newUserId}`;
+                        const subLink = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(newUser.name)}`;
                         const fa3 = langCode === 'fa';
                         await sendOrEdit(chatId, fa3
                             ? `✅ **خرید تأیید شد**\n━━━━━━━━━━━━━━\n👤 کاربر: **${newUser.name}**\n📦 پکیج: ${purchase.pkgName || '—'}\n⏱ مدت: ${purchase.days || 30} روز\n📦 حجم: ${purchase.gb || 10} GB\n🔑 لینک: \`${subLink}\`\n━━━━━━━━━━━━━━`
@@ -4263,7 +4274,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         const dLeft = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
                         const statusEmoji = u.isExpired ? '❌' : u.isPaused ? '⏸️' : '✅';
                         const statusText = u.isExpired ? (fa ? 'منقضی' : 'Expired') : u.isPaused ? (fa ? 'متوقف' : 'Paused') : (fa ? 'فعال' : 'Active');
-                        const subLink = `${new URL(request.url).origin}/${u.id}`;
+                        const subLink = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
                         // Save link to user account
                         if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
                         let userAcc = sysConfig.userAccounts.find(a => a.tgId === userTgId);
