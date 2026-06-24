@@ -2666,12 +2666,47 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         const pkgId2 = data.replace("user_buy_package:", "");
                         const pkg2 = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId2);
                         if (pkg2) {
-                            tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgId2 };
+                            const now2 = Date.now();
+                            const hasActiveCodes = (sysConfig.promoCodes || []).some(c => c.isActive && (!c.validUntil || now2 <= c.validUntil) && (c.maxUses === 0 || c.usedCount < c.maxUses));
+                            const pkgSummary = fa3
+                                ? `✅ **پکیج انتخابی:**\n━━━━━━━━━━━━━━\n📦 نام: **${pkg2.name}**\n💰 قیمت: **${pkg2.price || '—'}**\n⏱ مدت: **${pkg2.days}** روز\n📦 حجم: **${pkg2.gb}** GB\n━━━━━━━━━━━━━━`
+                                : `✅ **Selected Package:**\n━━━━━━━━━━━━━━\n📦 Name: **${pkg2.name}**\n💰 Price: **${pkg2.price || '—'}**\n⏱ Duration: **${pkg2.days}** days\n📦 Traffic: **${pkg2.gb}** GB\n━━━━━━━━━━━━━━`;
+                            if (hasActiveCodes) {
+                                const promoMsg = pkgSummary + (fa3 ? '\n\n🏷️ آیا کد تخفیف دارید؟' : '\n\n🏷️ Do you have a promo code?');
+                                const promoKb = { inline_keyboard: [
+                                    [{ text: fa3 ? '🏷️ وارد کردن کد تخفیف' : '🏷️ Apply Promo Code', callback_data: `user_apply_promo:${pkgId2}` }],
+                                    [{ text: fa3 ? '💳 ادامه بدون کد تخفیف' : '💳 Continue Without Code', callback_data: `user_skip_promo:${pkgId2}` }],
+                                    [{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_buy' }]
+                                ]};
+                                await sendOrEdit(chatId, promoMsg, promoKb, messageId);
+                            } else {
+                                tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgId2 };
+                                ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                                const payMsg = pkgSummary + (fa3
+                                    ? `\n\n💳 **اطلاعات پرداخت:**\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
+                                    : `\n\n💳 **Payment Info:**\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`);
+                                await sendOrEdit(chatId, payMsg, { inline_keyboard: [[{ text: fa3 ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] }, messageId);
+                            }
+                        }
+                    } else if (data.startsWith("user_apply_promo:")) {
+                        const pkgId3 = data.replace("user_apply_promo:", "");
+                        const pkg3ap = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId3);
+                        tgState[chatId] = { step: 'promo_code', pkgId: pkgId3 };
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                        await sendOrEdit(chatId, fa3
+                            ? `🏷️ **کد تخفیف**\n━━━━━━━━━━━━━━\n📦 پکیج: **${pkg3ap?.name || pkgId3}**\n\nکد تخفیف خود را وارد کنید:`
+                            : `🏷️ **Promo Code**\n━━━━━━━━━━━━━━\n📦 Package: **${pkg3ap?.name || pkgId3}**\n\nEnter your promo code:`,
+                            { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_buy_package:${pkgId3}` }]] }, messageId);
+                    } else if (data.startsWith("user_skip_promo:")) {
+                        const pkgId3 = data.replace("user_skip_promo:", "");
+                        const pkg3sp = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId3);
+                        if (pkg3sp) {
+                            tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgId3 };
                             ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                            const payMsg = fa3
-                                ? `✅ **پکیج انتخابی:**\n━━━━━━━━━━━━━━\n📦 نام: **${pkg2.name}**\n💰 قیمت: **${pkg2.price || '—'}**\n⏱ مدت: **${pkg2.days}** روز\n📦 حجم: **${pkg2.gb}** GB\n━━━━━━━━━━━━━━\n\n💳 **اطلاعات پرداخت:**\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
-                                : `✅ **Selected Package:**\n━━━━━━━━━━━━━━\n📦 Name: **${pkg2.name}**\n💰 Price: **${pkg2.price || '—'}**\n⏱ Duration: **${pkg2.days}** days\n📦 Traffic: **${pkg2.gb}** GB\n━━━━━━━━━━━━━━\n\n💳 **Payment Info:**\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`;
-                            await sendOrEdit(chatId, payMsg, { inline_keyboard: [[{ text: fa3 ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] }, messageId);
+                            const payMsg3 = fa3
+                                ? `💳 **اطلاعات پرداخت:**\n━━━━━━━━━━━━━━\n📦 پکیج: **${pkg3sp.name}**\n💰 قیمت: **${pkg3sp.price || '—'}**\n━━━━━━━━━━━━━━\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
+                                : `💳 **Payment Info:**\n━━━━━━━━━━━━━━\n📦 Package: **${pkg3sp.name}**\n💰 Price: **${pkg3sp.price || '—'}**\n━━━━━━━━━━━━━━\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`;
+                            await sendOrEdit(chatId, payMsg3, { inline_keyboard: [[{ text: fa3 ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] }, messageId);
                         }
                     } else if (data === "user_status_guide") {
                         tgState[chatId] = { step: 'user_awaiting_link' };
@@ -4161,6 +4196,40 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
 
                 // Check if user is in a state (waiting for sub link input)
                 const userState = tgState[chatId];
+
+                // Handle promo code text input step
+                if (userState && userState.step === 'promo_code') {
+                    const code = text.trim().toUpperCase();
+                    const pkgIdPc = userState.pkgId;
+                    const pkgPc = (sysConfig.purchaseOptions || []).find(p => p.id === pkgIdPc) || { name: pkgIdPc, price: '—', days: 30, gb: 10 };
+                    const allCodes = sysConfig.promoCodes || [];
+                    const promoEntry = allCodes.find(c => c.code.toUpperCase() === code);
+                    const nowPc = Date.now();
+                    let promoError = null;
+                    if (!promoEntry) promoError = fa ? '❌ کد تخفیف یافت نشد.' : '❌ Promo code not found.';
+                    else if (!promoEntry.isActive) promoError = fa ? '❌ این کد تخفیف غیرفعال است.' : '❌ This promo code is inactive.';
+                    else if (promoEntry.validUntil && nowPc > promoEntry.validUntil) promoError = fa ? '❌ این کد تخفیف منقضی شده است.' : '❌ This promo code has expired.';
+                    else if (promoEntry.maxUses > 0 && promoEntry.usedCount >= promoEntry.maxUses) promoError = fa ? '❌ ظرفیت این کد تمام شده است.' : '❌ This code has reached its usage limit.';
+                    else if ((promoEntry.usedBy || []).includes(String(userTgId))) promoError = fa ? '❌ شما قبلاً از این کد استفاده کرده‌اید.' : '❌ You already used this code.';
+                    else if (promoEntry.applicablePlans && promoEntry.applicablePlans.length > 0 && !promoEntry.applicablePlans.includes(pkgIdPc)) promoError = fa ? '❌ این کد برای پکیج انتخابی معتبر نیست.' : '❌ This code is not valid for the selected package.';
+
+                    if (promoError) {
+                        await sendOrEdit(chatId, promoError + '\n\n' + (fa ? 'کد دیگری وارد کنید یا بازگشت بزنید:' : 'Try another code or go back:'),
+                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_buy_package:${pkgIdPc}` }]] });
+                    } else {
+                        const dLabel = promoEntry.discountType === 'percentage'
+                            ? `${promoEntry.discountValue}%`
+                            : `${promoEntry.discountValue}`;
+                        tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgIdPc, promoCode: code, discountLabel: dLabel };
+                        ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
+                        const promoOkMsg = fa
+                            ? `✅ **کد تخفیف اعمال شد!**\n━━━━━━━━━━━━━━\n🏷️ کد: \`${code}\`\n💸 تخفیف: **${dLabel}**\n📦 پکیج: **${pkgPc.name}**\n💰 قیمت اصلی: **${pkgPc.price || '—'}**\n━━━━━━━━━━━━━━\n\n💳 **اطلاعات پرداخت:**\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
+                            : `✅ **Promo code applied!**\n━━━━━━━━━━━━━━\n🏷️ Code: \`${code}\`\n💸 Discount: **${dLabel}**\n📦 Package: **${pkgPc.name}**\n💰 Original Price: **${pkgPc.price || '—'}**\n━━━━━━━━━━━━━━\n\n💳 **Payment Info:**\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`;
+                        await sendOrEdit(chatId, promoOkMsg, { inline_keyboard: [[{ text: fa ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] });
+                    }
+                    return new Response('OK', { status: 200 });
+                }
+
                 if (userState && userState.step === 'user_awaiting_link') {
                     tgState[chatId] = null;
                     ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
@@ -4241,6 +4310,15 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                 if (photoFileId) {
                     if (!sysConfig.pendingPurchases) sysConfig.pendingPurchases = [];
                     const purchaseId = crypto.randomUUID().slice(0, 8);
+                    // Mark promo code as used (before saving)
+                    if (userState.promoCode) {
+                        const usedPromo = (sysConfig.promoCodes || []).find(c => c.code.toUpperCase() === userState.promoCode.toUpperCase());
+                        if (usedPromo) {
+                            usedPromo.usedCount = (usedPromo.usedCount || 0) + 1;
+                            if (!usedPromo.usedBy) usedPromo.usedBy = [];
+                            if (!usedPromo.usedBy.includes(String(userTgId))) usedPromo.usedBy.push(String(userTgId));
+                        }
+                    }
                     sysConfig.pendingPurchases.push({
                         id: purchaseId,
                         tgId: userTgId,
@@ -4252,7 +4330,9 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         gb: pkg.gb,
                         photoFileId: photoFileId,
                         ts: Date.now(),
-                        status: 'pending'
+                        status: 'pending',
+                        promoCode: userState.promoCode || null,
+                        discountLabel: userState.discountLabel || null
                     });
                     await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
                     tgState[chatId] = null;
@@ -4264,7 +4344,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     // Notify admin
                     const adminId = sysConfig.tgAdminId || sysConfig.tgChatId;
                     if (adminId) {
-                        const notifText = `📨 **درخواست خرید جدید**\n━━━━━━━━━━━━━━\n👤 کاربر: @${userTgName}\n📦 پکیج: ${pkg.name}\n🕒 زمان: ${new Date().toLocaleString('fa-IR')}\n━━━━━━━━━━━━━━`;
+                        const promoLine = userState.promoCode ? `\n🏷️ کد تخفیف: \`${userState.promoCode}\` (${userState.discountLabel || ''})` : '';
+                        const notifText = `📨 **درخواست خرید جدید**\n━━━━━━━━━━━━━━\n👤 کاربر: @${userTgName}\n📦 پکیج: ${pkg.name}${promoLine}\n🕒 زمان: ${new Date().toLocaleString('fa-IR')}\n━━━━━━━━━━━━━━`;
                         const notifKb = { inline_keyboard: [
                             [{ text: `✅ تأیید`, callback_data: `admin_approve_purchase:${purchaseId}` }, { text: `❌ رد`, callback_data: `admin_reject_purchase:${purchaseId}` }]
                         ]};
@@ -6179,6 +6260,10 @@ function getDashboardUI(hasDB) {
                       <svg class="w-6 h-6 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                       <span class="font-semibold" data-i18n="tab_users">Users</span>
                   </button>
+                  <button onclick="switchTab('shop')" id="tab-shop" class="nav-item flex items-center w-full px-4 py-3 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 group">
+                      <svg class="w-6 h-6 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-4H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                      <span class="font-semibold">Shop</span>
+                  </button>
               </nav>
               <div class="p-4 border-t border-slate-100 dark:border-darkborder/50">
                   <button onclick="logout()" class="flex items-center justify-center w-full px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
@@ -7189,6 +7274,142 @@ function getDashboardUI(hasDB) {
                           </div>
                       </div>
 
+                      <!-- SHOP MANAGEMENT VIEW -->
+                      <div id="view-shop" class="hidden space-y-6">
+
+                          <!-- Stats Row -->
+                          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pending</div>
+                                  <div id="shop-stat-pending" class="text-2xl font-black text-amber-500">0</div>
+                              </div>
+                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plans</div>
+                                  <div id="shop-stat-plans" class="text-2xl font-black text-primary">0</div>
+                              </div>
+                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Purchase</div>
+                                  <div id="shop-stat-purchase" class="text-2xl font-black text-emerald-500">OFF</div>
+                              </div>
+                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Free Trial</div>
+                                  <div id="shop-stat-trial" class="text-2xl font-black text-violet-500">OFF</div>
+                              </div>
+                          </div>
+
+                          <!-- Shop Settings Card -->
+                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-5">⚙️ Shop Settings</h3>
+                              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                  <!-- Toggle: Purchase Enabled -->
+                                  <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50">
+                                      <div>
+                                          <div class="font-bold text-sm text-slate-700 dark:text-slate-200">🛒 Purchase Enabled</div>
+                                          <div class="text-[11px] text-slate-400 mt-0.5">Allow users to buy subscriptions via bot</div>
+                                      </div>
+                                      <label class="relative inline-flex items-center cursor-pointer ms-3 shrink-0">
+                                          <input type="checkbox" id="shop-purchase-enabled" class="sr-only peer" onchange="window.nahanConfig.purchaseEnabled=this.checked; updateShopStats();">
+                                          <div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                      </label>
+                                  </div>
+                                  <!-- Toggle: Free Trial -->
+                                  <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50">
+                                      <div>
+                                          <div class="font-bold text-sm text-slate-700 dark:text-slate-200">🎁 Free Trial</div>
+                                          <div class="text-[11px] text-slate-400 mt-0.5">Allow users to get a one-time trial</div>
+                                      </div>
+                                      <label class="relative inline-flex items-center cursor-pointer ms-3 shrink-0">
+                                          <input type="checkbox" id="shop-free-trial" class="sr-only peer" onchange="window.nahanConfig.freeTrial=this.checked; updateShopStats();">
+                                          <div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                      </label>
+                                  </div>
+                                  <!-- Trial Days -->
+                                  <div>
+                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">⏳ Trial Duration (Days)</label>
+                                      <input type="number" id="shop-trial-days" min="1" max="30" placeholder="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" onchange="window.nahanConfig.freeTrialDays=parseInt(this.value)||3;">
+                                  </div>
+                                  <!-- Trial GB -->
+                                  <div>
+                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">📊 Trial Data Limit (GB)</label>
+                                      <input type="number" id="shop-trial-gb" min="1" max="100" placeholder="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" onchange="window.nahanConfig.freeTrialGB=parseInt(this.value)||3;">
+                                  </div>
+                                  <!-- Card Number -->
+                                  <div>
+                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">💳 Card Number</label>
+                                      <input type="text" id="shop-card-number" placeholder="6037-xxxx-xxxx-xxxx" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono" onchange="window.nahanConfig.adminCardNumber=this.value;">
+                                  </div>
+                                  <!-- Card Owner -->
+                                  <div>
+                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">👤 Card Owner Name</label>
+                                      <input type="text" id="shop-card-owner" placeholder="Full name on card" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" onchange="window.nahanConfig.adminCardOwner=this.value;">
+                                  </div>
+                                  <!-- Welcome Message -->
+                                  <div class="md:col-span-2">
+                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">👋 Bot Welcome Message</label>
+                                      <textarea id="shop-welcome-msg" rows="2" placeholder="Welcome! How can we help you today?" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm resize-none" onchange="window.nahanConfig.botWelcomeMsg=this.value;"></textarea>
+                                  </div>
+                                  <!-- Support Message -->
+                                  <div class="md:col-span-2">
+                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">💬 Support Message</label>
+                                      <textarea id="shop-support-msg" rows="2" placeholder="Contact @support for help." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm resize-none" onchange="window.nahanConfig.botSupportMsg=this.value;"></textarea>
+                                  </div>
+                              </div>
+                              <div class="mt-5 flex justify-end">
+                                  <button onclick="saveShopConfig()" class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-sm transition-colors shadow-sm">
+                                      💾 Save Settings
+                                  </button>
+                              </div>
+                          </div>
+
+                          <!-- Purchase Plans Card -->
+                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="flex items-center justify-between mb-5">
+                                  <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider">📦 Purchase Plans</h3>
+                                  <button onclick="addShopPlan()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs transition-colors shadow-sm">
+                                      + Add Plan
+                                  </button>
+                              </div>
+                              <div id="shop-plans-list" class="space-y-3">
+                                  <p class="text-sm text-slate-400 text-center py-4">No purchase plans configured.</p>
+                              </div>
+                          </div>
+
+                          <!-- Pending Purchases Card -->
+                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="flex items-center justify-between mb-5">
+                                  <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider">⏳ Pending Purchases</h3>
+                                  <button onclick="renderPendingPurchases()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors">
+                                      🔄 Refresh
+                                  </button>
+                              </div>
+                              <div id="shop-pending-list" class="space-y-3">
+                                  <p class="text-sm text-slate-400 text-center py-4">No pending purchase requests.</p>
+                              </div>
+                          </div>
+
+                      <!-- Promo Codes Card -->
+                      <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
+                          <div class="flex items-center justify-between mb-5">
+                              <div class="flex items-center gap-3">
+                                  <div class="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center shrink-0">
+                                      <span class="text-lg">🏷️</span>
+                                  </div>
+                                  <div>
+                                      <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Promo Codes</h3>
+                                      <p class="text-[11px] text-slate-400">Discount codes for your users</p>
+                                  </div>
+                              </div>
+                              <button onclick="addPromoCode()" class="px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-bold text-xs transition-colors shadow-sm">
+                                  ＋ New Code
+                              </button>
+                          </div>
+                          <div id="shop-promo-list" class="space-y-3">
+                              <p class="text-sm text-slate-400 text-center py-4">No promo codes yet. Add one to offer discounts.</p>
+                          </div>
+                      </div>
+
+                      </div>
+
                       <!-- LOGS VIEW -->
                       <div id="view-logs" class="hidden space-y-6">
                           <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder relative overflow-hidden">
@@ -7242,6 +7463,10 @@ function getDashboardUI(hasDB) {
               <button onclick="switchTab('users')" id="mob-tab-users" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_users">Users</span>
+              </button>
+              <button onclick="switchTab('shop')" id="mob-tab-shop" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+                  <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-4H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                  <span class="text-[10px] font-bold">Shop</span>
               </button>
           </nav>
       </div>
@@ -7965,7 +8190,7 @@ function getDashboardUI(hasDB) {
           }
   
           function switchTab(tab) {
-            ['overview','info','network','settings','advanced','logs','users'].forEach(t => {
+            ['overview','info','network','settings','advanced','logs','users','shop'].forEach(t => {
                   const view = document.getElementById('view-'+t);
                   const deskBtn = document.getElementById('tab-'+t);
                   const mobBtn = document.getElementById('mob-tab-'+t);
@@ -7981,6 +8206,7 @@ function getDashboardUI(hasDB) {
             if(tab === 'overview') loadDashboard();
             if(tab === 'logs') loadLogs();
             if(tab === 'network') doLogin(true); // refresh metrics
+            if(tab === 'shop') renderShopView();
         }
 
         async function loadLogs() {
@@ -8388,6 +8614,7 @@ function getDashboardUI(hasDB) {
                       window.nahanUsage = data.sysUsage || {};
                       window.nahanProfiles = data.profiles || [];
                       renderUsersTable();
+                      renderShopView();
                       try { checkUpdate(); } catch(ue) { console.error(ue); }
                       if (!silent) switchTab('overview');
 
@@ -8524,7 +8751,20 @@ function getDashboardUI(hasDB) {
                       nameStrategy: el('cfg-name-strategy').value,
                       allowSyncWorker: el('cfg-allow-sync').checked,
                       namePrefix: el('cfg-name-prefix').value,
-                      fakeConfigs: getFakeConfigsFromUI()
+                      fakeConfigs: getFakeConfigsFromUI(),
+                      purchaseEnabled: el('shop-purchase-enabled') ? el('shop-purchase-enabled').checked : (window.nahanConfig.purchaseEnabled || false),
+                      freeTrial: el('shop-free-trial') ? el('shop-free-trial').checked : (window.nahanConfig.freeTrial || false),
+                      freeTrialDays: el('shop-trial-days') ? (parseInt(el('shop-trial-days').value) || 3) : (window.nahanConfig.freeTrialDays || 3),
+                      freeTrialGB: el('shop-trial-gb') ? (parseInt(el('shop-trial-gb').value) || 3) : (window.nahanConfig.freeTrialGB || 3),
+                      adminCardNumber: el('shop-card-number') ? el('shop-card-number').value : (window.nahanConfig.adminCardNumber || ''),
+                      adminCardOwner: el('shop-card-owner') ? el('shop-card-owner').value : (window.nahanConfig.adminCardOwner || ''),
+                      botWelcomeMsg: el('shop-welcome-msg') ? el('shop-welcome-msg').value : (window.nahanConfig.botWelcomeMsg || ''),
+                      botSupportMsg: el('shop-support-msg') ? el('shop-support-msg').value : (window.nahanConfig.botSupportMsg || ''),
+                      purchaseOptions: window.nahanConfig.purchaseOptions || [],
+                      pendingPurchases: window.nahanConfig.pendingPurchases || [],
+                      promoCodes: window.nahanConfig.promoCodes || [],
+                      usedTrials: window.nahanConfig.usedTrials || [],
+                      userAccounts: window.nahanConfig.userAccounts || []
                   }
               };
                         //update user port after change global
@@ -9181,6 +9421,317 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
               
               document.getElementById('modal-edit-user').classList.add('hidden');
               renderUsersTable();
+              doSaveDirectly();
+          }
+
+          function renderShopView() {
+              const conf = window.nahanConfig;
+              if (!conf) return;
+              const el = id => document.getElementById(id);
+              if (el('shop-purchase-enabled')) el('shop-purchase-enabled').checked = conf.purchaseEnabled || false;
+              if (el('shop-free-trial')) el('shop-free-trial').checked = conf.freeTrial || false;
+              if (el('shop-trial-days')) el('shop-trial-days').value = conf.freeTrialDays || 3;
+              if (el('shop-trial-gb')) el('shop-trial-gb').value = conf.freeTrialGB || 3;
+              if (el('shop-card-number')) el('shop-card-number').value = conf.adminCardNumber || '';
+              if (el('shop-card-owner')) el('shop-card-owner').value = conf.adminCardOwner || '';
+              if (el('shop-welcome-msg')) el('shop-welcome-msg').value = conf.botWelcomeMsg || '';
+              if (el('shop-support-msg')) el('shop-support-msg').value = conf.botSupportMsg || '';
+              renderShopPlans();
+              renderPendingPurchases();
+              renderPromoCodes();
+              updateShopStats();
+          }
+
+          function updateShopStats() {
+              const conf = window.nahanConfig || {};
+              const pending = (conf.pendingPurchases || []).length;
+              const plans = (conf.purchaseOptions || []).length;
+              const purchaseOn = conf.purchaseEnabled || false;
+              const trialOn = conf.freeTrial || false;
+              const el = id => document.getElementById(id);
+              if (el('shop-stat-pending')) el('shop-stat-pending').textContent = pending;
+              if (el('shop-stat-plans')) el('shop-stat-plans').textContent = plans;
+              if (el('shop-stat-purchase')) {
+                  el('shop-stat-purchase').textContent = purchaseOn ? 'ON' : 'OFF';
+                  el('shop-stat-purchase').className = 'text-2xl font-black ' + (purchaseOn ? 'text-emerald-500' : 'text-slate-400');
+              }
+              if (el('shop-stat-trial')) {
+                  el('shop-stat-trial').textContent = trialOn ? 'ON' : 'OFF';
+                  el('shop-stat-trial').className = 'text-2xl font-black ' + (trialOn ? 'text-violet-500' : 'text-slate-400');
+              }
+          }
+
+          function renderShopPlans() {
+              const plans = (window.nahanConfig && window.nahanConfig.purchaseOptions) ? window.nahanConfig.purchaseOptions : [];
+              const list = document.getElementById('shop-plans-list');
+              if (!list) return;
+              if (plans.length === 0) {
+                  list.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No purchase plans configured. Add a plan to get started.</p>';
+                  const statEl = document.getElementById('shop-stat-plans');
+                  if (statEl) statEl.textContent = '0';
+                  return;
+              }
+              list.innerHTML = plans.map((p, idx) => \`
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50">
+                      <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div>
+                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Name</label>
+                              <input type="text" value="\${p.name || ''}" onchange="window.nahanConfig.purchaseOptions[\${idx}].name=this.value;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs font-semibold">
+                          </div>
+                          <div>
+                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Price</label>
+                              <input type="text" value="\${p.price || ''}" placeholder="e.g. 50,000 T" onchange="window.nahanConfig.purchaseOptions[\${idx}].price=this.value;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs">
+                          </div>
+                          <div>
+                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Days</label>
+                              <input type="number" value="\${p.days || 30}" min="1" onchange="window.nahanConfig.purchaseOptions[\${idx}].days=parseInt(this.value)||30;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs">
+                          </div>
+                          <div>
+                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">GB</label>
+                              <input type="number" value="\${p.gb || 10}" min="1" onchange="window.nahanConfig.purchaseOptions[\${idx}].gb=parseInt(this.value)||10;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs">
+                          </div>
+                      </div>
+                      <button onclick="removeShopPlan(\${idx})" class="shrink-0 p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 rounded-xl transition-colors" title="Remove Plan">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      </button>
+                  </div>
+              \`).join('');
+              const statEl = document.getElementById('shop-stat-plans');
+              if (statEl) statEl.textContent = plans.length;
+          }
+
+          function addShopPlan() {
+              if (!window.nahanConfig) return;
+              if (!window.nahanConfig.purchaseOptions) window.nahanConfig.purchaseOptions = [];
+              const newId = 'plan_' + Date.now();
+              window.nahanConfig.purchaseOptions.push({ id: newId, name: 'New Plan', price: '', days: 30, gb: 10 });
+              renderShopPlans();
+              updateShopStats();
+          }
+
+          function removeShopPlan(idx) {
+              if (!window.nahanConfig || !window.nahanConfig.purchaseOptions) return;
+              window.nahanConfig.purchaseOptions.splice(idx, 1);
+              renderShopPlans();
+              updateShopStats();
+          }
+
+          function renderPendingPurchases() {
+              const purchases = (window.nahanConfig && window.nahanConfig.pendingPurchases) ? window.nahanConfig.pendingPurchases : [];
+              const list = document.getElementById('shop-pending-list');
+              if (!list) return;
+              if (purchases.length === 0) {
+                  list.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">✅ No pending purchase requests.</p>';
+                  const statEl = document.getElementById('shop-stat-pending');
+                  if (statEl) statEl.textContent = '0';
+                  return;
+              }
+              list.innerHTML = purchases.map((p, idx) => {
+                  const timeStr = p.ts ? new Date(p.ts).toLocaleString('en-US', {hour12: false}) : '-';
+                  const planName = p.planName || p.packageId || 'Unknown';
+                  const username = p.username ? '@' + p.username : (p.firstName || ('User ' + p.chatId));
+                  const hasReceipt = p.receiptFileId ? true : false;
+                  return \`
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-200 dark:border-amber-800/30">
+                      <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2 mb-1">
+                              <span class="font-bold text-sm text-slate-800 dark:text-slate-100">\${username}</span>
+                              \${hasReceipt ? '<span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">Receipt Uploaded</span>' : '<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold">Awaiting Receipt</span>'}
+                          </div>
+                          <div class="text-xs text-slate-500">📦 \${planName}</div>
+                          <div class="text-[10px] text-slate-400 mt-0.5">🕒 \${timeStr} · ID: \${p.chatId}</div>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                          <button onclick="approvePurchase(\${idx})" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm">
+                              ✅ Approve
+                          </button>
+                          <button onclick="rejectPurchase(\${idx})" class="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm">
+                              ❌ Reject
+                          </button>
+                      </div>
+                  </div>
+                  \`;
+              }).join('');
+              const statEl = document.getElementById('shop-stat-pending');
+              if (statEl) statEl.textContent = purchases.length;
+          }
+
+          function approvePurchase(idx) {
+              const conf = window.nahanConfig;
+              if (!conf || !conf.pendingPurchases) return;
+              const purchase = conf.pendingPurchases[idx];
+              if (!purchase) return;
+              const confirmMsg = lang === 'fa'
+                  ? \`آیا از تأیید خرید \${purchase.username ? '@'+purchase.username : purchase.chatId} مطمئنید؟\`
+                  : \`Approve purchase for \${purchase.username ? '@'+purchase.username : purchase.chatId}?\`;
+              if (!confirm(confirmMsg)) return;
+
+              const plan = (conf.purchaseOptions || []).find(p => p.id === purchase.packageId) || {};
+              const gb = purchase.gb || plan.gb || 10;
+              const days = purchase.days || plan.days || 30;
+              const expiryMs = Date.now() + days * 24 * 3600 * 1000;
+              const limitTotalReq = Math.round(gb * 6000);
+
+              if (!conf.users) conf.users = [];
+              const existingUser = conf.users.find(u => u.tgChatId == purchase.chatId);
+              if (existingUser) {
+                  existingUser.isPaused = false;
+                  existingUser.expiryMs = expiryMs;
+                  existingUser.limitTotalReq = limitTotalReq;
+                  existingUser.disabledReason = null;
+                  existingUser.disabledAt = null;
+              } else {
+                  const newId = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+                  conf.users.push({
+                      id: newId,
+                      name: purchase.firstName || purchase.username || ('User ' + purchase.chatId),
+                      tgChatId: purchase.chatId,
+                      limitTotalReq,
+                      expiryMs,
+                      createdAt: Date.now(),
+                      subId: newId
+                  });
+              }
+
+              conf.pendingPurchases.splice(idx, 1);
+              renderPendingPurchases();
+              renderUsersTable();
+              updateShopStats();
+              doSaveDirectly();
+          }
+
+          function rejectPurchase(idx) {
+              const conf = window.nahanConfig;
+              if (!conf || !conf.pendingPurchases) return;
+              const purchase = conf.pendingPurchases[idx];
+              if (!purchase) return;
+              const confirmMsg = lang === 'fa'
+                  ? \`رد کردن درخواست خرید \${purchase.username ? '@'+purchase.username : purchase.chatId}؟\`
+                  : \`Reject purchase request from \${purchase.username ? '@'+purchase.username : purchase.chatId}?\`;
+              if (!confirm(confirmMsg)) return;
+              conf.pendingPurchases.splice(idx, 1);
+              renderPendingPurchases();
+              updateShopStats();
+              doSaveDirectly();
+          }
+
+          function renderPromoCodes() {
+              const codes = (window.nahanConfig && window.nahanConfig.promoCodes) ? window.nahanConfig.promoCodes : [];
+              const list = document.getElementById('shop-promo-list');
+              if (!list) return;
+              if (codes.length === 0) {
+                  list.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No promo codes yet. Add one to offer discounts.</p>';
+                  return;
+              }
+              const nowMs = Date.now();
+              list.innerHTML = codes.map((c, idx) => {
+                  const isExpired = c.validUntil && nowMs > c.validUntil;
+                  const isFull = c.maxUses > 0 && c.usedCount >= c.maxUses;
+                  const statusBadge = !c.isActive
+                      ? '<span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded font-bold">OFF</span>'
+                      : isExpired
+                      ? '<span class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold">EXPIRED</span>'
+                      : isFull
+                      ? '<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded font-bold">FULL</span>'
+                      : '<span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>';
+                  const discountText = c.discountType === 'percentage' ? \`\${c.discountValue}%\` : \`\${c.discountValue} off\`;
+                  const expiryText = c.validUntil ? new Date(c.validUntil).toLocaleDateString('en-US') : 'No expiry';
+                  const usesText = c.maxUses > 0 ? \`\${c.usedCount}/\${c.maxUses}\` : \`\${c.usedCount}/∞\`;
+                  return \`
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50 \${!c.isActive || isExpired || isFull ? 'opacity-60' : ''}">
+                      <div class="flex-1 min-w-0">
+                          <div class="flex items-center flex-wrap gap-2 mb-1">
+                              <code class="font-black text-sm text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-lg">\${c.code}</code>
+                              \${statusBadge}
+                              <span class="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">\${c.discountType === 'percentage' ? '%' : '$'} \${discountText}</span>
+                          </div>
+                          <div class="flex flex-wrap gap-3 text-[11px] text-slate-400 mt-1">
+                              <span>📊 Uses: <strong class="text-slate-600 dark:text-slate-300">\${usesText}</strong></span>
+                              <span>📅 Expires: <strong class="text-slate-600 dark:text-slate-300">\${expiryText}</strong></span>
+                              \${c.note ? \`<span>📝 \${c.note}</span>\` : ''}
+                          </div>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                          <button onclick="togglePromoCode(\${idx})" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-colors \${c.isActive ? 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300' : 'bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'}">
+                              \${c.isActive ? '⏸ Disable' : '▶ Enable'}
+                          </button>
+                          <button onclick="removePromoCode(\${idx})" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 rounded-xl transition-colors" title="Delete">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                          </button>
+                      </div>
+                  </div>
+                  \`;
+              }).join('');
+          }
+
+          function addPromoCode() {
+              const code = prompt('Promo code (e.g. WELCOME20):');
+              if (!code || !code.trim()) return;
+              const codeClean = code.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+              if (!codeClean) return alert('Invalid code. Use letters, numbers, _ or -');
+              const conf = window.nahanConfig;
+              if (!conf) return;
+              if (!conf.promoCodes) conf.promoCodes = [];
+              if (conf.promoCodes.find(c => c.code === codeClean)) return alert('This code already exists.');
+
+              const discType = prompt('Discount type: enter "%" for percentage or "f" for fixed amount:', '%') === 'f' ? 'fixed' : 'percentage';
+              const discVal = parseFloat(prompt(\`Discount value (\${discType === 'percentage' ? 'e.g. 10 for 10%' : 'e.g. 5000 for fixed amount'}):\`) || '0');
+              if (!discVal || discVal <= 0) return alert('Invalid discount value.');
+              const maxUses = parseInt(prompt('Max uses (0 = unlimited):', '0') || '0');
+              const daysValid = parseInt(prompt('Valid for how many days? (0 = no expiry):', '30') || '0');
+              const noteText = prompt('Note/description (optional):') || '';
+
+              const validUntil = daysValid > 0 ? Date.now() + daysValid * 86400000 : null;
+              conf.promoCodes.push({
+                  id: 'promo_' + Date.now(),
+                  code: codeClean,
+                  discountType: discType,
+                  discountValue: discVal,
+                  maxUses: maxUses,
+                  usedCount: 0,
+                  usedBy: [],
+                  validUntil: validUntil,
+                  applicablePlans: [],
+                  isActive: true,
+                  createdAt: Date.now(),
+                  note: noteText
+              });
+              renderPromoCodes();
+              doSaveDirectly();
+          }
+
+          function togglePromoCode(idx) {
+              const conf = window.nahanConfig;
+              if (!conf || !conf.promoCodes || !conf.promoCodes[idx]) return;
+              conf.promoCodes[idx].isActive = !conf.promoCodes[idx].isActive;
+              renderPromoCodes();
+              doSaveDirectly();
+          }
+
+          function removePromoCode(idx) {
+              const conf = window.nahanConfig;
+              if (!conf || !conf.promoCodes) return;
+              const c = conf.promoCodes[idx];
+              if (!c) return;
+              if (!confirm(\`Delete promo code "\${c.code}"? This cannot be undone.\`)) return;
+              conf.promoCodes.splice(idx, 1);
+              renderPromoCodes();
+              doSaveDirectly();
+          }
+
+          function saveShopConfig() {
+              const el = id => document.getElementById(id);
+              const conf = window.nahanConfig;
+              if (!conf) return;
+              if (el('shop-purchase-enabled')) conf.purchaseEnabled = el('shop-purchase-enabled').checked;
+              if (el('shop-free-trial')) conf.freeTrial = el('shop-free-trial').checked;
+              if (el('shop-trial-days')) conf.freeTrialDays = parseInt(el('shop-trial-days').value) || 3;
+              if (el('shop-trial-gb')) conf.freeTrialGB = parseInt(el('shop-trial-gb').value) || 3;
+              if (el('shop-card-number')) conf.adminCardNumber = el('shop-card-number').value;
+              if (el('shop-card-owner')) conf.adminCardOwner = el('shop-card-owner').value;
+              if (el('shop-welcome-msg')) conf.botWelcomeMsg = el('shop-welcome-msg').value;
+              if (el('shop-support-msg')) conf.botSupportMsg = el('shop-support-msg').value;
+              updateShopStats();
               doSaveDirectly();
           }
 
