@@ -5,7 +5,12 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "3.2.0";
+const CURRENT_VERSION = "3.3.0";
+// v3.3.0 Changelog:
+// 🐛 رفع باگ اصلی: دکمه "سرویس‌های من" برای همه کاربران (از جمله ادمین) کار می‌کند
+// 🔧 رفع مشکل routing: callback های user_* اکنون برای ادمین هم از handler کاربری عبور می‌کنند
+// 🔧 رفع state handler: وقتی ادمین در حالت user_awaiting_add_sub است، پیام متنی درست پردازش می‌شود
+//
 // v3.2.0 Changelog:
 // 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
 // 🗑️ حذف "سرویس‌ها و تعرفه‌ها" و "لینک‌های ذخیره شده" از منو
@@ -2598,8 +2603,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     return new Response("OK", { status: 200 });
                 }
 
-                if (!isAuthorized) {
-                    // Non-admin user callback handler
+                if (isUserCallback) {
+                    // User callback handler (non-admin users + user_* callbacks for admins)
                     const fa3 = langCode === 'fa';
                     let userAnswerText = "";
                     if (data === "user_free_trial") {
@@ -4172,6 +4177,50 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     }
                 }
                 
+                // Handle user_* states even for admin users (admin testing as user)
+                const adminAsUserState = tgState[chatId];
+                if (adminAsUserState && adminAsUserState.step === 'user_awaiting_add_sub') {
+                    tgState[chatId] = null;
+                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
+                    const faA = langCode === 'fa';
+                    let addId = text.trim();
+                    try {
+                        if (addId.startsWith('http')) {
+                            const addUrl = new URL(addId);
+                            const subParam = addUrl.searchParams.get('sub');
+                            addId = subParam ? decodeURIComponent(subParam) : addUrl.pathname.split('/').filter(Boolean).pop() || '';
+                        }
+                    } catch(e) {}
+                    addId = addId.replace(/^https?:\/\//, '').split('?')[0].split('/').pop() || addId;
+                    const addedUserA = addId && addId.length >= 3 ? (sysConfig.users || []).find(u =>
+                        u.id === addId ||
+                        u.id.replace(/-/g,'').toLowerCase() === addId.replace(/-/g,'').toLowerCase() ||
+                        u.name.toLowerCase() === addId.toLowerCase()
+                    ) : null;
+                    const adminTgId = String(chatId);
+                    if (addedUserA) {
+                        if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
+                        let uAccA = sysConfig.userAccounts.find(a => a.tgId === adminTgId);
+                        if (!uAccA) {
+                            uAccA = { tgId: adminTgId, tgName: '', firstName: 'Admin', subId: '', savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() };
+                            sysConfig.userAccounts.push(uAccA);
+                        }
+                        uAccA.subId = addedUserA.id;
+                        uAccA.lastActivity = Date.now();
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        await sendOrEdit(chatId, faA
+                            ? `✅ **سرویس با موفقیت اضافه شد!**\n━━━━━━━━━━━━━━\n📛 نام: **${addedUserA.name}**\n━━━━━━━━━━━━━━`
+                            : `✅ **Service added successfully!**\n━━━━━━━━━━━━━━\n📛 Name: **${addedUserA.name}**\n━━━━━━━━━━━━━━`,
+                            { inline_keyboard: [[{ text: faA ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }], [{ text: faA ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
+                    } else {
+                        await sendOrEdit(chatId, faA
+                            ? "❌ **سرویس یافت نشد**\n━━━━━━━━━━━━━━\nلینک یا شناسه وارد‌شده معتبر نیست.\n\nدوباره ارسال کنید:"
+                            : "❌ **Service not found**\n━━━━━━━━━━━━━━\nThe subscription link or ID is not valid.\n\nTry again:",
+                            { inline_keyboard: [[{ text: faA ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] });
+                    }
+                    return new Response('OK', { status: 200 });
+                }
+
                 // Default message / fallback menu
                 const menu = getMainMenu(activePanel, isAuthorized);
                 await sendOrEdit(chatId, menu.text, menu.kb);
