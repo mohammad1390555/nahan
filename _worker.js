@@ -5,7 +5,21 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "3.4.0";
+const CURRENT_VERSION = "3.6.0";
+// v3.6.0 Changelog:
+// 👨‍👩‍👧 حالت خانوادگی (Family Mode) برای هر کاربر: DNS فیلتر محتوای بزرگسال + بلاک تبلیغات
+// 👤 نمایش نام تلگرام/یوزرنیم کاربران در جدول پنل وب
+// 🛡️ Ad-block در config (Clash/Singbox): برای کاربران family mode تبلیغات بلاک می‌شه
+// 🔄 پشتیبانی از DNS 1.1.1.3 (Cloudflare for Families) در Clash و Sing-box
+//
+// v3.5.0 Changelog:
+// 🎨 ربات تلگرام: ساب لینک‌ها به صورت دکمه‌های تعاملی نمایش داده می‌شوند
+// 📋 صفحه جزئیات سرویس: اطلاعات کامل (مصرف، انقضا، لینک) با دکمه برگشت
+// 🔄 دکمه‌های تمدید اشتراک و خرید حجم اضافه برای هر سرویس
+// 🐛 رفع باگ حجم کل در صفحه اشتراک: نمایش ∞ به جای 9999 GB برای بدون محدودیت
+// 🐛 رفع باگ حجم کل در ساب‌لینک: fallback صحیح از totalTrafficLimit
+// ✨ بهبود UI پنل وب: نمایش صحیح حجم مصرف و محدودیت
+//
 // v3.4.0 Changelog:
 // 🐛 رفع باگ اصلی "سرویس‌های من": نام‌های یوزر با underscore باعث خطای Markdown در تلگرام می‌شدند
 // 🛡️ sendOrEdit: اگر parse Markdown شکست، بدون parse_mode دوباره ارسال می‌کند (پیام همیشه می‌رسد)
@@ -580,10 +594,10 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     let limitDaily = user.limitDailyReq || 0;
 
     let totalGb = (totalReqs / 6000).toFixed(2);
-    let limitTotalGb = limitTotal ? (limitTotal / 6000).toFixed(2) : '9999';
+    let limitTotalGb = limitTotal ? (limitTotal / 6000).toFixed(2) : '∞';
 
     let dailyGb = (dailyReqs / 6000).toFixed(2);
-    let limitDailyGb = limitDaily ? (limitDaily / 6000).toFixed(2) : '9999';
+    let limitDailyGb = limitDaily ? (limitDaily / 6000).toFixed(2) : '∞';
 
     let totalPercent = limitTotal ? Math.min(100, (totalReqs / limitTotal) * 100).toFixed(1) : 0;
     let dailyPercent = limitDaily ? Math.min(100, (dailyReqs / limitDaily) * 100).toFixed(1) : 0;
@@ -2800,28 +2814,107 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             const usedGB2 = (totalReqs2 / 6000).toFixed(2);
                             const limitGB2 = limitTotal2 ? (limitTotal2 / 6000).toFixed(2) : '∞';
                             const pct2 = limitTotal2 ? Math.min(100, Math.round(totalReqs2 / limitTotal2 * 100)) : 0;
-                            const bar2 = limitTotal2 ? ('█'.repeat(Math.round(pct2 / 10)) + '░'.repeat(10 - Math.round(pct2 / 10))) : '──────────';
                             const isExp2 = u.expiryMs && Date.now() > u.expiryMs;
                             const dLeft2 = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
-                            const expiryDate2 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
                             const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
                             const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
-                            const subLink2 = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
                             const safeName2 = esc(u.name);
                             svcText = fa3
-                                ? `📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
-                                : `📱 *My Services*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
+                                ? `📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n\n✅ یک سرویس فعال دارید.\n\n💡 برای مشاهده جزئیات روی دکمه سرویس بزنید:`
+                                : `📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n✅ You have an active service.\n\n💡 Tap the service button to view details:`;
+                            // Show the service as a button
+                            svcRows2.push([{ text: `${stEmoji2} ${safeName2} — ${usedGB2}/${limitGB2} GB | ${dLeft2 < 0 ? '∞' : dLeft2}${fa3 ? ' روز' : 'd'}`, callback_data: `user_service_detail:${u.id}` }]);
                             svcRows2.push([{ text: fa3 ? '➕ افزودن / تغییر سرویس' : '➕ Add / Change Service', callback_data: 'user_add_sub' }]);
                         } else {
                             svcText = fa3
-                                ? `📱 **سرویس‌های من**\n━━━━━━━━━━━━━━━━\n\n📭 هنوز سرویسی ندارید.\n\n💡 ساب لینک خود را اضافه کنید یا یک پکیج خریداری کنید.`
-                                : `📱 **My Services**\n━━━━━━━━━━━━━━━━\n\n📭 No active service.\n\n💡 Add your subscription link or purchase a package.`;
+                                ? `📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n\n📭 هنوز سرویسی ندارید.\n\n💡 ساب لینک خود را اضافه کنید یا یک پکیج خریداری کنید.`
+                                : `📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n📭 No active service.\n\n💡 Add your subscription link or purchase a package.`;
                             svcRows2.push([{ text: fa3 ? '➕ افزودن ساب لینک' : '➕ Add Subscription Link', callback_data: 'user_add_sub' }]);
                             if (sysConfig.purchaseEnabled) svcRows2.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
                             if (sysConfig.freeTrial) svcRows2.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                         }
                         svcRows2.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]);
                         await sendOrEdit(chatId, svcText, { inline_keyboard: svcRows2 }, messageId);
+                    } else if (data.startsWith("user_service_detail:")) {
+                        const svcUid = data.replace("user_service_detail:", "");
+                        const svcUser = (sysConfig.users || []).find(u => u.id === svcUid);
+                        if (svcUser) {
+                            const u = svcUser;
+                            const idClean3 = u.id.replace(/-/g,'').toLowerCase();
+                            const sysU3 = sysUsageCache?.users?.[idClean3] || { reqs: 0, dReqs: 0, lastDay: '' };
+                            const totalReqs3 = sysU3.reqs || 0;
+                            const todayDate3 = new Date().toISOString().split('T')[0];
+                            const dailyReqs3 = sysU3.lastDay === todayDate3 ? (sysU3.dReqs || 0) : 0;
+                            const limitTotal3 = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
+                            const usedGB3 = (totalReqs3 / 6000).toFixed(2);
+                            const limitGB3 = limitTotal3 ? (limitTotal3 / 6000).toFixed(2) : '∞';
+                            const dailyGB3 = (dailyReqs3 / 6000).toFixed(2);
+                            const pct3 = limitTotal3 ? Math.min(100, Math.round(totalReqs3 / limitTotal3 * 100)) : 0;
+                            const bar3 = limitTotal3 ? ('█'.repeat(Math.round(pct3 / 10)) + '░'.repeat(10 - Math.round(pct3 / 10))) : '──────────';
+                            const isExp3 = u.expiryMs && Date.now() > u.expiryMs;
+                            const dLeft3 = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
+                            const expiryDate3 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
+                            const stEmoji3 = u.isPaused ? '⏸️' : isExp3 ? '❌' : '✅';
+                            const stText3 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp3 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
+                            const subLink3 = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+                            const safeName3 = esc(u.name);
+                            const detailText3 = fa3
+                                ? `📋 *جزئیات سرویس*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName3}\n🚦 وضعیت: ${stEmoji3} ${stText3}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB3}* / ${limitGB3} GB\n${bar3} ${pct3}%\n📅 امروز: ${dailyGB3} GB\n⏱ روز مانده: *${dLeft3 < 0 ? '∞' : dLeft3}* روز\n📆 انقضا: ${expiryDate3}\n━━━━━━━━━━━━━━━━\n🔗 ساب لینک:\n\`${subLink3}\`\n━━━━━━━━━━━━━━━━`
+                                : `📋 *Service Details*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName3}\n🚦 Status: ${stEmoji3} ${stText3}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB3}* / ${limitGB3} GB\n${bar3} ${pct3}%\n📅 Today: ${dailyGB3} GB\n⏱ Days Left: *${dLeft3 < 0 ? '∞' : dLeft3}*\n📆 Expiry: ${expiryDate3}\n━━━━━━━━━━━━━━━━\n🔗 Sub Link:\n\`${subLink3}\`\n━━━━━━━━━━━━━━━━`;
+                            const detailRows3 = [];
+                            if (sysConfig.purchaseEnabled) {
+                                detailRows3.push([
+                                    { text: fa3 ? '🔄 تمدید اشتراک' : '🔄 Renew', callback_data: `user_renew_service:${u.id}` },
+                                    { text: fa3 ? '➕ خرید حجم اضافه' : '➕ Add Volume', callback_data: `user_add_volume:${u.id}` }
+                                ]);
+                            }
+                            detailRows3.push([{ text: fa3 ? '◀️ بازگشت به سرویس‌های من' : '◀️ Back to My Services', callback_data: 'user_my_services' }]);
+                            await sendOrEdit(chatId, detailText3, { inline_keyboard: detailRows3 }, messageId);
+                        } else {
+                            await sendOrEdit(chatId, fa3 ? '❌ سرویس یافت نشد.' : '❌ Service not found.', { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
+                        }
+                    } else if (data.startsWith("user_renew_service:")) {
+                        const renewUid = data.replace("user_renew_service:", "");
+                        const renewUser = (sysConfig.users || []).find(u => u.id === renewUid);
+                        const safeName4 = renewUser ? esc(renewUser.name) : '';
+                        const renewRows = [];
+                        if (sysConfig.purchaseEnabled && (sysConfig.purchaseOptions || []).length > 0) {
+                            const renewText4 = fa3
+                                ? `🔄 *تمدید اشتراک*\n━━━━━━━━━━━━━━━━\n📛 سرویس: ${safeName4}\n\n💡 پکیج مورد نظر برای تمدید را انتخاب کنید:`
+                                : `🔄 *Renew Subscription*\n━━━━━━━━━━━━━━━━\n📛 Service: ${safeName4}\n\n💡 Select a package to renew:`;
+                            sysConfig.purchaseOptions.forEach(pkg => {
+                                renewRows.push([{ text: `${pkg.name} — ${pkg.price || '—'} | ${pkg.days || 30}${fa3 ? ' روز' : 'd'} | ${pkg.gb || 10}GB`, callback_data: `user_buy_package:${pkg.id}` }]);
+                            });
+                            renewRows.push([{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_service_detail:${renewUid}` }]);
+                            await sendOrEdit(chatId, renewText4, { inline_keyboard: renewRows }, messageId);
+                        } else {
+                            const supportMsg4 = sysConfig.botSupportMsg || (fa3 ? 'برای تمدید با پشتیبانی تماس بگیرید.' : 'Contact support to renew.');
+                            await sendOrEdit(chatId, fa3
+                                ? `🔄 *تمدید اشتراک*\n━━━━━━━━━━━━━━━━\n📛 سرویس: ${safeName4}\n\n💬 ${supportMsg4}`
+                                : `🔄 *Renew Subscription*\n━━━━━━━━━━━━━━━━\n📛 Service: ${safeName4}\n\n💬 ${supportMsg4}`,
+                                { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_service_detail:${renewUid}` }]] }, messageId);
+                        }
+                    } else if (data.startsWith("user_add_volume:")) {
+                        const volUid = data.replace("user_add_volume:", "");
+                        const volUser = (sysConfig.users || []).find(u => u.id === volUid);
+                        const safeName5 = volUser ? esc(volUser.name) : '';
+                        const volRows = [];
+                        if (sysConfig.purchaseEnabled && (sysConfig.purchaseOptions || []).length > 0) {
+                            const volText5 = fa3
+                                ? `➕ *خرید حجم اضافه*\n━━━━━━━━━━━━━━━━\n📛 سرویس: ${safeName5}\n\n💡 پکیج مورد نظر را انتخاب کنید:`
+                                : `➕ *Add Volume*\n━━━━━━━━━━━━━━━━\n📛 Service: ${safeName5}\n\n💡 Select a package:`;
+                            sysConfig.purchaseOptions.forEach(pkg => {
+                                volRows.push([{ text: `${pkg.name} — ${pkg.price || '—'} | ${pkg.gb || 10}GB`, callback_data: `user_buy_package:${pkg.id}` }]);
+                            });
+                            volRows.push([{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_service_detail:${volUid}` }]);
+                            await sendOrEdit(chatId, volText5, { inline_keyboard: volRows }, messageId);
+                        } else {
+                            const supportMsg5 = sysConfig.botSupportMsg || (fa3 ? 'برای افزایش حجم با پشتیبانی تماس بگیرید.' : 'Contact support to add volume.');
+                            await sendOrEdit(chatId, fa3
+                                ? `➕ *خرید حجم اضافه*\n━━━━━━━━━━━━━━━━\n📛 سرویس: ${safeName5}\n\n💬 ${supportMsg5}`
+                                : `➕ *Add Volume*\n━━━━━━━━━━━━━━━━\n📛 Service: ${safeName5}\n\n💬 ${supportMsg5}`,
+                                { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_service_detail:${volUid}` }]] }, messageId);
+                        }
                     } else if (data === "user_add_sub") {
                         tgState[chatId] = { step: 'user_awaiting_add_sub' };
                         ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
@@ -4770,7 +4863,7 @@ function getAllProfiles(targetSub = null) {
                 if (usr.lastDay === new Date().toISOString().split('T')[0] && usr.dReqs >= u.limitDailyReq) skip = true;
             }
             if(!skip) {
-                list.push({ id: u.id, name: u.name, proxyIp: u.proxyIp, cleanIp: u.cleanIp || null, userMode: u.userMode || null, userPorts: u.userPorts || null, maxConfigs: u.maxConfigs || null, proxyIpGeo: u.proxyIpGeo || null, userNodes: u.userNodes || null, nat64: u.nat64 || null });
+                list.push({ id: u.id, name: u.name, proxyIp: u.proxyIp, cleanIp: u.cleanIp || null, userMode: u.userMode || null, userPorts: u.userPorts || null, maxConfigs: u.maxConfigs || null, proxyIpGeo: u.proxyIpGeo || null, userNodes: u.userNodes || null, nat64: u.nat64 || null, familyMode: u.familyMode || false });
                 registerConfigEntry(u.id, u.id, u.proxyIp || '');
             }
         });
@@ -5226,6 +5319,33 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
     let bestPingProxies = proxyNames.map(n => `      - ${n}`).join('\n');
     let allProxies = proxyNames.map(n => `      - ${n}`).join('\n');
 
+    // Family mode: check if the target user has familyMode enabled
+    let isFamilyMode = profiles.some(p => p.familyMode);
+    let dnsNameserver = isFamilyMode
+        ? `    - "https://1.1.1.3/dns-query#✅ Selector"\n    - "https://1.0.0.3/dns-query#✅ Selector"`
+        : `    - "https://8.8.8.8/dns-query#✅ Selector"`;
+    let dnsDirectNs = isFamilyMode ? "1.1.1.3#DIRECT" : "8.8.8.8#DIRECT";
+    let familyRuleProviders = isFamilyMode ? `
+rule-providers:
+  category-ads-all:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://github.com/MetaCubeX/meta-rules-dat/raw/meta/geo/geosite/category-ads-all.mrs"
+    interval: 86400
+    path: ./ruleset/category-ads-all.mrs
+  category-porn:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://github.com/MetaCubeX/meta-rules-dat/raw/meta/geo/geosite/category-porn.mrs"
+    interval: 86400
+    path: ./ruleset/category-porn.mrs
+` : ``;
+    let familyRules = isFamilyMode
+        ? `  - RULE-SET,category-ads-all,REJECT\n  - RULE-SET,category-porn,REJECT\n`
+        : ``;
+
     return `mixed-port: 7890
 ipv6: true
 allow-lan: false
@@ -5257,13 +5377,13 @@ dns:
   listen: 127.0.0.1:1053
   ipv6: true
   hosts:
-    "rule-set:category-ads-all": "rcode://refused"
+    "rule-set:category-ads-all": "rcode://refused"${isFamilyMode ? `\n    "rule-set:category-porn": "rcode://refused"` : ''}
   nameserver:
-    - "https://8.8.8.8/dns-query#✅ Selector"
+${dnsNameserver}
   proxy-server-nameserver:
-    - "8.8.8.8#DIRECT"
+    - "${dnsDirectNs}"
   direct-nameserver:
-    - "8.8.8.8#DIRECT"
+    - "${dnsDirectNs}"
   direct-nameserver-follow-policy: true
   enhanced-mode: redir-host
 
@@ -5308,12 +5428,12 @@ ${allProxies}
 ${bestPingProxies}
 
 rules:
-  - DOMAIN-SUFFIX,ir,DIRECT
+${familyRules}  - DOMAIN-SUFFIX,ir,DIRECT
   - DOMAIN-KEYWORD,gov.ir,DIRECT
   - DOMAIN-SUFFIX,fa,DIRECT
   - GEOIP,IR,DIRECT
   - MATCH,✅ Selector
-`;
+${familyRuleProviders}`;
 }
 
 // Obfuscated string keys to prevent Cloudflare scanners block on vpn/proxy keywords
@@ -5332,6 +5452,7 @@ function getIpTypeLabel(ip) {
 async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure = false) {
     let ports = sysConfig.socketPorts ? sysConfig.socketPorts.split(',').map(s=>s.trim()).filter(Boolean) : ["443"];
     let profiles = getAllProfiles(targetSub);
+    let isFamilyModeJ = profiles.some(p => p.familyMode);
     let allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
     await preloadIpFlags(profiles, allHostNames);
     let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
@@ -5557,20 +5678,17 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
             "listen": "127.0.0.1:1053",
             "ipv6": true,
             "hosts": {
-                "rule-set:category-ads-all": "rcode://refused"
+                "rule-set:category-ads-all": "rcode://refused",
+                ...(isFamilyModeJ ? { "rule-set:category-porn": "rcode://refused" } : {})
             },
-            "nameserver": [
-                "https://8.8.8.8/dns-query#✅ Selector"
-            ],
-            "proxy-server-nameserver": [
-                "8.8.8.8#DIRECT"
-            ],
-            "direct-nameserver": [
-                "8.8.8.8#DIRECT"
-            ],
+            "nameserver": isFamilyModeJ
+                ? ["https://1.1.1.3/dns-query#✅ Selector", "https://1.0.0.3/dns-query#✅ Selector"]
+                : ["https://8.8.8.8/dns-query#✅ Selector"],
+            "proxy-server-nameserver": [isFamilyModeJ ? "1.1.1.3#DIRECT" : "8.8.8.8#DIRECT"],
+            "direct-nameserver": [isFamilyModeJ ? "1.1.1.3#DIRECT" : "8.8.8.8#DIRECT"],
             "direct-nameserver-follow-policy": true,
             "nameserver-policy": {
-                "rule-set:ir": "8.8.8.8#DIRECT"
+                "rule-set:ir": isFamilyModeJ ? "1.1.1.3#DIRECT" : "8.8.8.8#DIRECT"
             },
             "enhanced-mode": "redir-host"
         },
@@ -5622,6 +5740,16 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                 "interval": 86400,
                 "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/category-ads-all.txt"
             },
+            ...(isFamilyModeJ ? {
+                "category-porn": {
+                    "type": "http",
+                    "format": "mrs",
+                    "behavior": "domain",
+                    "path": "./ruleset/category-porn.mrs",
+                    "interval": 86400,
+                    "url": "https://github.com/MetaCubeX/meta-rules-dat/raw/meta/geo/geosite/category-porn.mrs"
+                }
+            } : {}),
             "ir": {
                 "type": "http",
                 "format": "text",
@@ -5643,6 +5771,7 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
             "GEOIP,lan,DIRECT,no-resolve",
             "NETWORK,udp,REJECT",
             "RULE-SET,category-ads-all,REJECT",
+            ...(isFamilyModeJ ? ["RULE-SET,category-porn,REJECT"] : []),
             "RULE-SET,ir,DIRECT",
             "RULE-SET,ir-cidr,DIRECT",
             "MATCH,✅ Selector"
@@ -5659,6 +5788,7 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
 async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure = false) {
     let ports = sysConfig.socketPorts ? sysConfig.socketPorts.split(',').map(s=>s.trim()).filter(Boolean) : ["443"];
     let profiles = getAllProfiles(targetSub);
+    let isFamilyModeS = profiles.some(p => p.familyMode);
     let allHostNames = [...new Set(profiles.flatMap(p => getProfileHostNames(hostName, p)))];
     await preloadIpFlags(profiles, allHostNames);
     let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
@@ -5850,12 +5980,12 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
         "dns": {
             "servers": [
                 {
-                    "address": "https://8.8.8.8/dns-query",
+                    "address": isFamilyModeS ? "https://1.1.1.3/dns-query" : "https://8.8.8.8/dns-query",
                     "detour": "✅ Selector",
                     "tag": "dns-remote"
                 },
                 {
-                    "address": "8.8.8.8",
+                    "address": isFamilyModeS ? "1.1.1.3" : "8.8.8.8",
                     "detour": "direct",
                     "tag": "dns-direct"
                 }
@@ -5876,9 +6006,9 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                     "action": "reject"
                 },
                 {
-                    "rule_set": [
-                        "geosite-category-ads-all"
-                    ],
+                    "rule_set": isFamilyModeS
+                        ? ["geosite-category-ads-all", "geosite-category-porn"]
+                        : ["geosite-category-ads-all"],
                     "action": "reject"
                 },
                 {
@@ -5977,9 +6107,9 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                     "action": "reject"
                 },
                 {
-                    "rule_set": [
-                        "geosite-category-ads-all"
-                    ],
+                    "rule_set": isFamilyModeS
+                        ? ["geosite-category-ads-all", "geosite-category-porn"]
+                        : ["geosite-category-ads-all"],
                     "action": "reject"
                 },
                 {
@@ -6005,6 +6135,13 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                     "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-category-ads-all.srs",
                     "download_detour": "direct"
                 },
+                ...(isFamilyModeS ? [{
+                    "type": "remote",
+                    "tag": "geosite-category-porn",
+                    "format": "binary",
+                    "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-category-porn.srs",
+                    "download_detour": "direct"
+                }] : []),
                 {
                     "type": "remote",
                     "tag": "geosite-ir",
@@ -9038,6 +9175,9 @@ function getDashboardUI(hasDB) {
                   tbl.innerHTML = \`<div class="col-span-full px-4 py-8 text-center text-slate-400 text-sm" data-i18n="no_users">\${i18n[lang].no_users}</div>\`;
                   return;
               }
+              // Build TG account lookup map by subId
+              const userAccounts = window.nahanConfig?.userAccounts || [];
+
               let tblHtml = '';
               users.forEach((u, i) => {
                   let sysU = usage[u.id.replace(/-/g,'').toLowerCase()] || {reqs: 0, dReqs: 0, lastDay: ''};
@@ -9073,9 +9213,22 @@ function getDashboardUI(hasDB) {
                   let resetTitle = lang === 'fa' ? 'بازنشانی مصرف ترافیک' : 'Reset Traffic Metrics';
                   let deleteTitle = lang === 'fa' ? 'حذف کاربر' : 'Delete User';
 
+                  // TG account linked to this user
+                  const linkedAcc = userAccounts.find(a => a.subId === u.id);
+                  const tgDisplay = linkedAcc
+                      ? (linkedAcc.tgName ? \`@\${linkedAcc.tgName}\` : linkedAcc.firstName || '')
+                      : '';
+
+                  // Family mode toggle
+                  let familyTitle = u.familyMode
+                      ? (lang === 'fa' ? 'غیرفعال کردن حالت خانوادگی' : 'Disable Family Mode')
+                      : (lang === 'fa' ? 'فعال کردن حالت خانوادگی' : 'Enable Family Mode');
+
                   let linkHtml = \`<button onclick="copyData('sync-\${u.id}')" class="text-primary hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 p-2 rounded-lg" title="\${linkTitle}">🔗</button>\`;
                   
                   let pauseBtnHtml = \`<button onclick="togglePauseUser('\${u.id}')" class="\${u.isPaused ? 'text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-800/50' : 'text-amber-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-800/50'} p-2 rounded-lg" title="\${pauseTitle}">\\s*\${u.isPaused ? '▶️' : '⏸️'}</button>\`;
+
+                  let familyBtnHtml = \`<button onclick="toggleFamilyMode('\${u.id}')" class="\${u.familyMode ? 'text-pink-500 hover:text-pink-700 bg-pink-50 hover:bg-pink-100 dark:bg-pink-900/30 dark:hover:bg-pink-800/50' : 'text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/30 dark:hover:bg-slate-700/50'} p-2 rounded-lg" title="\${familyTitle}">👨‍👩‍👧</button>\`;
 
                   let editBtnHtml = \`<button onclick="editUser('\${u.id}')" class="text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 p-2 rounded-lg" title="\${editTitle}">✏️</button>\`;
 
@@ -9111,10 +9264,12 @@ function getDashboardUI(hasDB) {
                               <span class="w-2 h-2 rounded-full shrink-0 \${u.isPaused ? (isAutoDisabled ? 'bg-red-500' : 'bg-amber-500') : (isExp ? 'bg-red-400' : 'bg-emerald-500')}"></span>
                               <span class="font-bold text-sm text-slate-800 dark:text-slate-100 truncate">\${u.name}</span>
                               \${u.proxyIpGeo ? \`<span class="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 font-semibold">\${u.proxyIpGeo.flag}</span>\` : ''}
+                              \${tgDisplay ? \`<span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-300 font-medium truncate max-w-[80px]" title="\${tgDisplay}">\${tgDisplay}</span>\` : ''}
                           </div>
                           <input type="hidden" id="sync-\${u.id}" value="\${rawSync}">
                           <div class="flex items-center gap-1 shrink-0">
                               \${linkHtml}
+                              \${familyBtnHtml}
                               \${pauseBtnHtml}
                               \${editBtnHtml}
                               \${resetBtnHtml}
@@ -9123,6 +9278,7 @@ function getDashboardUI(hasDB) {
                       </div>
                       <div class="flex flex-wrap gap-1 mb-2">
                           \${u.isPaused && u.disabledReason ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300">Auto-Disabled</span>\` : ''}
+                          \${u.familyMode ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-300">👨‍👩‍👧 Family</span>\` : ''}
                           \${u.userMode ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">\${u.userMode === 'alpha' ? 'VLESS' : u.userMode === 'beta' ? 'Trojan' : 'Both'}</span>\` : ''}
                           \${u.userPorts ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300">\${u.userPorts}</span>\` : ''}
                           \${u.maxConfigs ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300">\${u.maxConfigs} cfgs</span>\` : ''}
@@ -9193,6 +9349,17 @@ function getDashboardUI(hasDB) {
                           usr.disabledReason = null;
                           usr.disabledAt = null;
                       }
+                      renderUsersTable();
+                      doSaveDirectly();
+                  }
+              }
+          }
+
+          function toggleFamilyMode(uuid) {
+              if(window.nahanConfig && window.nahanConfig.users) {
+                  let usr = window.nahanConfig.users.find(u => u.id === uuid);
+                  if (usr) {
+                      usr.familyMode = !usr.familyMode;
                       renderUsersTable();
                       doSaveDirectly();
                   }
