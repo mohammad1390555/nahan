@@ -5,7 +5,18 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "2.9.0";
+const CURRENT_VERSION = "3.0.0";
+// v3.0.0 Changelog:
+// 📊 وضعیت اشتراک حرفه‌ای: نوار پیشرفت، UUID، پروتکل، محدودیت کانفیگ
+// 🔧 بخش مدیریت سرویس‌ها برای ادمین (افزودن/حذف سرویس‌های سفارشی)
+// 📋 بخش "سرویس‌ها و تعرفه‌ها" در منوی کاربران عادی
+// ⚡ تنظیم Rate قابل کاستومایز در ستینگ پیشرفته
+// 🎨 بهبود صفحه ساب لینک: انیمیشن، گلو، بکگراند نرم‌تر
+// 📈 نمایش حجم مصرفی با دایره SVG بزرگ‌تر و انیمیشن بهتر
+// 🛒 بهبود تجربه خرید: پیام‌های زیباتر، نوار پیشرفت مصرف
+// 💬 تمام پیام‌ها به فرمت حرفه‌ای مدیریتی (━━ جداکننده، ایموجی ساختاری)
+// 🔄 ورژن‌بندی خودکار و لاگ تغییرات
+//
 // v2.9.0 Changelog:
 // 🐛 رفع باگ "شما مدیر نیستید" برای کاربران عادی
 // 👥 منوی اصلی کاربران عادی: خرید سرویس، تست رایگان، وضعیت اشتراک
@@ -692,7 +703,23 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             font-family: 'Inter', 'Vazirmatn', sans-serif;
             background: var(--bg-primary) !important;
             color: var(--text-primary);
-            transition: background 0.3s, color 0.3s;
+            transition: background 0.4s ease, color 0.3s;
+        }
+        /* Soft gradient mesh background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 60% 80%, rgba(14,165,233,0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .dark body::before {
+            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 60% 80%, rgba(14,165,233,0.05) 0%, transparent 50%);
         }
         [lang="fa"] body { font-family: 'Vazirmatn', sans-serif; }
         .card-main {
@@ -728,20 +755,27 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         .text-muted { color: var(--text-muted); }
         .border-card-main { border-color: var(--border-card) !important; }
         .progress-bar-bg { background: var(--progress-bg); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes slideInScale { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        .stagger-1 { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+        .stagger-2 { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+        .stagger-3 { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
+        .stagger-4 { animation: slideInScale 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both; }
         .modal-overlay { background: var(--modal-bg); }
         .modal-card { background: var(--modal-card); border: 1px solid var(--border-card); }
-        /* Animated background orbs */
-        .bg-orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.12; pointer-events: none; z-index: 0; animation: orbDrift 14s ease-in-out infinite alternate; }
-        .dark .bg-orb { opacity: 0.18; }
-        .bg-orb-1 { width: 520px; height: 520px; background: radial-gradient(circle, #7c3aed, transparent); top: -150px; left: -100px; animation-delay: 0s; }
-        .bg-orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, #1d4ed8, transparent); top: 40%; right: -80px; animation-delay: -5s; }
-        .bg-orb-3 { width: 350px; height: 350px; background: radial-gradient(circle, #0e7490, transparent); bottom: -80px; left: 30%; animation-delay: -9s; }
-        @keyframes orbDrift { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(28px,-18px) scale(1.06); } 100% { transform: translate(-18px,28px) scale(0.94); } }
-        /* SVG usage ring */
-        .ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 251.327; stroke-dashoffset: 251.327; transform-origin: 50% 50%; transition: stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); }
-        .ring-track { fill: none; stroke-width: 8; }
+        /* Animated background orbs - smooth float */
+        .bg-orb { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.10; pointer-events: none; z-index: 0; animation: orbFloat 18s ease-in-out infinite alternate; }
+        .dark .bg-orb { opacity: 0.15; filter: blur(140px); }
+        .bg-orb-1 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(124,58,237,0.6), transparent 70%); top: -180px; left: -120px; animation-delay: 0s; animation-duration: 20s; }
+        .bg-orb-2 { width: 420px; height: 420px; background: radial-gradient(circle, rgba(59,130,246,0.5), transparent 70%); top: 35%; right: -100px; animation-delay: -6s; animation-duration: 16s; }
+        .bg-orb-3 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(14,165,233,0.4), transparent 70%); bottom: -100px; left: 25%; animation-delay: -10s; animation-duration: 22s; }
+        @keyframes orbFloat { 0% { transform: translate(0,0) scale(1) rotate(0deg); } 33% { transform: translate(20px,-25px) scale(1.04) rotate(2deg); } 66% { transform: translate(-15px,20px) scale(0.96) rotate(-1deg); } 100% { transform: translate(10px,-10px) scale(1.02) rotate(1deg); } }
+        /* SVG usage ring - enhanced */
+        .ring-fill { fill: none; stroke-width: 9; stroke-linecap: round; stroke-dasharray: 251.327; stroke-dashoffset: 251.327; transform-origin: 50% 50%; transition: stroke-dashoffset 2s cubic-bezier(0.34, 1.56, 0.64, 1); transform: rotate(-90deg); filter: drop-shadow(0 0 6px currentColor); }
+        .ring-track { fill: none; stroke-width: 9; opacity: 0.3; }
+        .ring-bg-glow { fill: none; stroke-width: 18; stroke-linecap: round; stroke-dasharray: 251.327; transform-origin: 50% 50%; transform: rotate(-90deg); opacity: 0.15; filter: blur(4px); transition: stroke-dashoffset 2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         /* Format tabs */
         .fmt-tab { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border-inner); background: transparent; color: var(--text-secondary); transition: all 0.2s; white-space: nowrap; }
         .fmt-tab.active, .fmt-tab:hover { background: var(--accent); color: white; border-color: var(--accent); }
@@ -753,12 +787,15 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         /* Theme color dots */
         .theme-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; flex-shrink: 0; display: inline-block; }
         .theme-dot.active, .theme-dot:hover { border-color: rgba(255,255,255,0.9); transform: scale(1.25); box-shadow: 0 0 8px currentColor; }
-        /* Animated ring glow */
-        @keyframes ringPulse { 0%,100% { filter: drop-shadow(0 0 5px var(--accent)); } 50% { filter: drop-shadow(0 0 16px var(--accent)); } }
-        .ring-svg-wrap { animation: ringPulse 3s ease-in-out infinite; }
-        /* Pulsing center pct */
-        @keyframes pulsePct { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.82; transform: scale(0.97); } }
-        .pulse-pct { animation: pulsePct 2.2s ease-in-out infinite; }
+        /* Animated ring glow - smoother */
+        @keyframes ringPulse { 0%,100% { filter: drop-shadow(0 0 4px var(--accent)); } 50% { filter: drop-shadow(0 0 20px var(--accent)); } }
+        .ring-svg-wrap { animation: ringPulse 4s ease-in-out infinite; }
+        /* Pulsing center pct - subtle breathe */
+        @keyframes pulsePct { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.88; transform: scale(0.98); } }
+        .pulse-pct { animation: pulsePct 3s ease-in-out infinite; }
+        /* Ring counter animation */
+        @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .count-anim { animation: countUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
         /* Link card gradient border on hover */
         .link-card-anim:hover { box-shadow: 0 0 0 1.5px var(--accent), 0 8px 32px rgba(99,102,241,0.15); }
         /* Plan badge */
@@ -795,7 +832,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     <div class="w-full max-w-2xl card-main rounded-3xl p-6 md:p-8 space-y-6 relative overflow-hidden mt-12" id="main-card">
 
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-card-main" style="border-color: var(--border-inner);">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-card-main stagger-1" style="border-color: var(--border-inner);">
             <div class="flex items-center gap-4">
                 <div class="p-4 rounded-2xl" style="background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border);">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -811,19 +848,20 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         </div>
 
         <!-- Usage Ring + Stats -->
-        <div class="flex flex-col items-center gap-5">
+        <div class="flex flex-col items-center gap-5 stagger-2">
             <!-- SVG Donut Ring -->
-            <div style="position: relative; width: 230px; height: 230px; flex-shrink: 0;">
-                <div class="ring-svg-wrap" style="width:230px;height:230px;">
-                    <svg viewBox="0 0 100 100" width="230" height="230">
-                        <circle class="ring-track" cx="50" cy="50" r="40" stroke="var(--border-inner)" stroke-opacity="0.5"/>
+            <div style="position: relative; width: 240px; height: 240px; flex-shrink: 0;">
+                <div class="ring-svg-wrap" style="width:240px;height:240px;">
+                    <svg viewBox="0 0 100 100" width="240" height="240">
+                        <circle class="ring-track" cx="50" cy="50" r="40" stroke="var(--border-inner)" stroke-opacity="0.3"/>
+                        <circle class="ring-bg-glow" id="usage-ring-glow" cx="50" cy="50" r="40" stroke="${ringColor}" stroke-dashoffset="251.327"/>
                         <circle class="ring-fill" id="usage-ring" cx="50" cy="50" r="40" stroke="${ringColor}"/>
                     </svg>
                 </div>
-                <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 3px;">
-                    <span class="pulse-pct" style="font-size: 34px; font-weight: 900; line-height: 1; color: var(--text-primary);">${limitTotal ? totalPercent + '%' : '∞'}</span>
-                    <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted);" data-i18n="used">مصرف</span>
-                    <span style="font-size: 13px; font-weight: 800; color: ${ringColor}; margin-top: 2px;">${totalGb} / ${limitTotalGb} GB</span>
+                <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px;">
+                    <span class="pulse-pct count-anim" style="font-size: 36px; font-weight: 900; line-height: 1; color: var(--text-primary);">${limitTotal ? totalPercent + '%' : '∞'}</span>
+                    <span class="count-anim" style="font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);" data-i18n="used">مصرف</span>
+                    <span class="count-anim" style="font-size: 13px; font-weight: 800; color: ${ringColor}; margin-top: 3px;">${totalGb} / ${limitTotalGb} GB</span>
                 </div>
             </div>
             <!-- Stats Grid -->
@@ -844,7 +882,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         </div>
 
         <!-- Subscription Links -->
-        <div>
+        <div class="stagger-3">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-bold flex items-center gap-2" style="color: var(--text-primary);">
                     <span class="w-2 h-2 rounded-full" style="background: var(--accent);"></span>
@@ -928,8 +966,9 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             });
             // Update ring color if usage is not critical
             const ring = document.getElementById('usage-ring');
+            const ringGlow = document.getElementById('usage-ring-glow');
             const pct = parseFloat('${totalPercent}');
-            if (ring && pct <= 70) ring.style.stroke = theme.accent;
+            if (ring && pct <= 70) { ring.style.stroke = theme.accent; if (ringGlow) ringGlow.style.stroke = theme.accent; }
             try { localStorage.setItem('sub-accent', key); } catch(e) {}
         }
 
@@ -1160,8 +1199,10 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         function animateRing() {
             setTimeout(() => {
                 const ring = document.getElementById('usage-ring');
+                const ringGlow = document.getElementById('usage-ring-glow');
                 if (ring) ring.style.strokeDashoffset = '${usageOffset}';
-            }, 350);
+                if (ringGlow) ringGlow.style.strokeDashoffset = '${usageOffset}';
+            }, 400);
         }
 
         (function init() {
@@ -2651,6 +2692,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         menuRows.push([{ text: fa3 ? '📊 وضعیت اشتراک من' : '📊 My Subscription', callback_data: 'user_status_guide' }]);
                         if (sysConfig.freeTrial) menuRows.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                         if (sysConfig.purchaseEnabled) menuRows.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
+                        menuRows.push([{ text: fa3 ? '📋 سرویس‌ها و تعرفه‌ها' : '📋 Services & Plans', callback_data: 'user_services' }]);
                         menuRows.push([{ text: fa3 ? '💾 لینک‌های ذخیره شده' : '💾 Saved Links', callback_data: 'user_saved_links' }]);
                         menuRows.push([{ text: fa3 ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
                         if (sysConfig.botSupportMsg) menuRows.push([{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
@@ -2690,6 +2732,36 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         if (hasSub) accRows.push([{ text: fa3 ? '🔗 مشاهده لینک' : '🔗 View Link', callback_data: `user_get_link:${acc.subId}` }]);
                         accRows.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]);
                         await sendOrEdit(chatId, accountText, { inline_keyboard: accRows }, messageId);
+                    } else if (data === "user_services") {
+                        const plans = sysConfig.purchaseOptions || [];
+                        const customServices = sysConfig.customServices || [];
+                        let svcText = fa3
+                            ? `📋 **سرویس‌ها و تعرفه‌ها**\n━━━━━━━━━━━━━━━━\n`
+                            : `📋 **Services & Plans**\n━━━━━━━━━━━━━━━━\n`;
+                        if (plans.length > 0) {
+                            svcText += fa3 ? `\n🛒 **پکیج‌های خرید:**\n` : `\n🛒 **Purchase Packages:**\n`;
+                            plans.forEach((p, i) => {
+                                svcText += `\n${i+1}. 📦 **${p.name}**\n   💰 ${p.price || '—'} | ⏱ ${p.days} ${fa3 ? 'روز' : 'days'} | 📊 ${p.gb} GB\n`;
+                            });
+                        }
+                        if (customServices.length > 0) {
+                            svcText += fa3 ? `\n🔧 **سرویس‌های دیگر:**\n` : `\n🔧 **Other Services:**\n`;
+                            customServices.forEach((s, i) => {
+                                svcText += `\n${i+1}. ${s.emoji || '▫️'} **${s.name}**\n   ${s.description || ''}\n`;
+                            });
+                        }
+                        if (plans.length === 0 && customServices.length === 0) {
+                            svcText += fa3 ? '\n📭 در حال حاضر سرویسی تعریف نشده است.' : '\n📭 No services available at the moment.';
+                        }
+                        if (sysConfig.freeTrial) {
+                            svcText += fa3 ? `\n\n🎁 **تست رایگان:** ${sysConfig.freeTrialDays || 3} روز | ${sysConfig.freeTrialGB || 3} GB` : `\n\n🎁 **Free Trial:** ${sysConfig.freeTrialDays || 3} days | ${sysConfig.freeTrialGB || 3} GB`;
+                        }
+                        svcText += `\n━━━━━━━━━━━━━━━━`;
+                        const svcRows = [];
+                        if (sysConfig.purchaseEnabled) svcRows.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Now', callback_data: 'user_buy' }]);
+                        if (sysConfig.freeTrial) svcRows.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Get Free Trial', callback_data: 'user_free_trial' }]);
+                        svcRows.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]);
+                        await sendOrEdit(chatId, svcText, { inline_keyboard: svcRows }, messageId);
                     } else if (data === "user_support") {
                         const supportMsg = sysConfig.botSupportMsg || (fa3 ? '💬 برای پشتیبانی با ادمین تماس بگیرید.' : '💬 Contact admin for support.');
                         await sendOrEdit(chatId, fa3
@@ -3171,18 +3243,21 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     const strategyTxt = sysConfig.nameStrategy || 'default';
                     const prefixTxt = sysConfig.namePrefix || 'Core';
                     const maintenanceTxt = sysConfig.maintenanceHost ? sysConfig.maintenanceHost.substring(0, 30) + '...' : '—';
+                    const rateTxt = sysConfig.dataRate || 'نامحدود';
                     let text = `🔧 **${t("tg_adv_settings")}**\n━━━━━━━━━━━━━━━━\n`;
                     text += `🧹 ${t("tg_clean_ips")}: \`${cleanTxt}\`\n`;
                     text += `🖥️ ${t("tg_nodes")}: \`${nodesTxt}\`\n`;
                     text += `📝 ${t("tg_strategy")}: \`${strategyTxt}\`\n`;
                     text += `🏷️ ${t("tg_prefix")}: \`${prefixTxt}\`\n`;
                     text += `🎭 ${t("tg_maintenance")}: \`${maintenanceTxt}\`\n`;
+                    text += `⚡ Rate: \`${rateTxt}\`\n`;
                     text += `━━━━━━━━━━━━━━━━`;
                     const kb = { inline_keyboard: [
                         [{ text: `🧹 ${t("tg_clean_ips")}`, callback_data: "tg_edit_clean_ips" }],
                         [{ text: `🖥️ ${t("tg_nodes")}`, callback_data: "tg_edit_nodes" }],
                         [{ text: `📝 ${t("tg_strategy")}`, callback_data: "tg_edit_strategy" }, { text: `🏷️ ${t("tg_prefix")}`, callback_data: "tg_edit_prefix" }],
                         [{ text: `🎭 ${t("tg_maintenance")}`, callback_data: "tg_edit_maintenance" }],
+                        [{ text: `⚡ تنظیم Rate`, callback_data: "tg_edit_rate" }],
                         [{ text: `🤖 ${t("tg_tg_settings")}`, callback_data: "tg_edit_tg_settings" }],
                         [{ text: `☁️ ${t("tg_cf_settings")}`, callback_data: "tg_edit_cf_settings" }],
                         [{ text: `🛍️ ${t("shop_settings") || "Shop & Bot Settings"}`, callback_data: "shop_settings_menu" }],
@@ -3201,6 +3276,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     shopText += `💳 ${t("shop_card_num")||"Card"}: \`${sysConfig.adminCardNumber || '—'}\`\n`;
                     shopText += `👤 ${t("shop_card_owner")||"Owner"}: ${sysConfig.adminCardOwner || '—'}\n`;
                     shopText += `📋 ${t("shop_plans")||"Plans"}: **${plans.length}** plan(s)\n`;
+                    shopText += `🔧 Services: **${(sysConfig.customServices || []).length}** service(s)\n`;
                     shopText += `💬 Welcome: ${sysConfig.botWelcomeMsg ? '✅ Custom' : '📄 Default'}\n`;
                     shopText += `💬 Support: ${sysConfig.botSupportMsg ? '✅ Custom' : '📄 Default'}\n`;
                     shopText += `🎨 Theme: \`${sysConfig.botThemeColor || '#6366f1'}\`\n`;
@@ -3210,6 +3286,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         [{ text: `⏱ ${t("shop_trial_days")||"Trial Days"}`, callback_data: "shop_edit_trial_days" }, { text: `📦 ${t("shop_trial_gb")||"Trial GB"}`, callback_data: "shop_edit_trial_gb" }],
                         [{ text: `💳 ${t("shop_card_num")||"Card Number"}`, callback_data: "shop_edit_card" }, { text: `👤 ${t("shop_card_owner")||"Card Owner"}`, callback_data: "shop_edit_card_owner" }],
                         [{ text: `📋 ${t("shop_plans")||"Manage Plans"}`, callback_data: "shop_plans_menu" }],
+                        [{ text: `🔧 مدیریت سرویس‌ها`, callback_data: "shop_services_menu" }],
                         [{ text: `💬 ${t("shop_bot_welcome")||"Bot Welcome Msg"}`, callback_data: "shop_edit_welcome" }],
                         [{ text: `💬 پیام پشتیبانی`, callback_data: "shop_edit_support" }, { text: `🎨 رنگ تم`, callback_data: "shop_edit_theme" }],
                         [{ text: `◀️ ${t("btn_back")}`, callback_data: "tg_advanced_menu" }]
@@ -3295,6 +3372,39 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         await sendOrEdit(chatId, `🗑 **${delName}** ${t("shop_plan_deleted")||"deleted."}`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_plans_menu" }]] }, messageId);
                     } else {
                         answerText = "❌ Not found";
+                    }
+                } else if (data === "shop_services_menu") {
+                    const svcs = sysConfig.customServices || [];
+                    let svcText = `🔧 **مدیریت سرویس‌ها**\n━━━━━━━━━━━━━━━━\n`;
+                    if (svcs.length === 0) {
+                        svcText += `📭 هنوز سرویسی تعریف نشده.\n`;
+                    } else {
+                        svcs.forEach((s, i) => {
+                            svcText += `${i+1}. ${s.emoji || '▫️'} **${s.name}**\n   ${s.description || '—'}\n`;
+                        });
+                    }
+                    svcText += `━━━━━━━━━━━━━━━━\n💡 سرویس‌ها به کاربران در بخش "سرویس‌ها و تعرفه‌ها" نمایش داده می‌شوند.`;
+                    const delSvcRows = svcs.map((s, i) => [{ text: `🗑 حذف: ${s.name}`, callback_data: `shop_del_svc:${i}` }]);
+                    const svcKb = { inline_keyboard: [
+                        [{ text: `➕ افزودن سرویس`, callback_data: "shop_add_svc" }],
+                        ...delSvcRows,
+                        [{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]
+                    ] };
+                    await sendOrEdit(chatId, svcText, svcKb, messageId);
+                } else if (data === "shop_add_svc") {
+                    tgState[chatId] = { step: "shop_svc_name" };
+                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                    await sendOrEdit(chatId, `➕ **افزودن سرویس — مرحله 1/3**\n\nنام سرویس را ارسال کنید:`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_services_menu" }]] }, messageId);
+                } else if (data.startsWith("shop_del_svc:")) {
+                    const delIdx = parseInt(data.replace("shop_del_svc:", ""));
+                    const svcs2 = sysConfig.customServices || [];
+                    if (delIdx >= 0 && delIdx < svcs2.length) {
+                        const delName = svcs2[delIdx].name;
+                        svcs2.splice(delIdx, 1);
+                        sysConfig.customServices = svcs2;
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        answerText = "🗑 حذف شد";
+                        await sendOrEdit(chatId, `🗑 **${delName}** حذف شد.`, { inline_keyboard: [[{ text: `◀️ بازگشت`, callback_data: "shop_services_menu" }]] }, messageId);
                     }
                 } else if (data === "tg_logs_menu") {
                     let logs = [];
@@ -3414,6 +3524,10 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     tgState[chatId] = { step: "tg_edit_prefix" };
                     ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
                     await sendOrEdit(chatId, `🏷️ **${t("tg_prefix")}**\n${t("tg_current_val")}: \`${sysConfig.namePrefix}\`\n\n${t("tg_new_val")}`, { inline_keyboard: [[{ text: "❌ " + t("btn_cancel"), callback_data: "tg_advanced_menu" }]] }, messageId);
+                } else if (data === "tg_edit_rate") {
+                    tgState[chatId] = { step: "tg_edit_rate" };
+                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                    await sendOrEdit(chatId, `⚡ **تنظیم Rate**\n━━━━━━━━━━━━━━━━\n${t("tg_current_val")}: \`${sysConfig.dataRate || 'نامحدود'}\`\n\n💡 مقدار Rate را ارسال کنید.\nمثال: \`100Mbps\` یا \`نامحدود\`\n\nاین مقدار در اطلاعات مشترکین نمایش داده می‌شود.`, { inline_keyboard: [[{ text: "❌ " + t("btn_cancel"), callback_data: "tg_advanced_menu" }]] }, messageId);
                 } else if (data === "tg_edit_pass") {
                     tgState[chatId] = { step: "tg_edit_pass" };
                     ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
@@ -3801,6 +3915,14 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         await sendOrEdit(chatId, `✅ ${t("tg_maintenance")}: \`${text}\``, { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "tg_advanced_menu" }]] });
                         return new Response("OK", { status: 200 });
                     }
+                    if (state.step === "tg_edit_rate") {
+                        sysConfig.dataRate = text || 'نامحدود';
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        tgState[chatId] = null;
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                        await sendOrEdit(chatId, `✅ Rate: \`${sysConfig.dataRate}\``, { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "tg_advanced_menu" }]] });
+                        return new Response("OK", { status: 200 });
+                    }
                     if (state.step === "tg_edit_clean_ips") {
                         sysConfig.cleanIps = text || '';
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
@@ -3926,6 +4048,27 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         await sendOrEdit(chatId, `${t("shop_plan_added")||"✅ Plan added!"}\n\n📦 **${newPlan.name}**\n💰 ${newPlan.price} | ⏱ ${newPlan.days} days | 📦 ${newPlan.gb} GB`, { inline_keyboard: [[{ text: `📋 ${t("shop_plans")||"Plans"}`, callback_data: "shop_plans_menu" }]] });
                         return new Response("OK", { status: 200 });
                     }
+                    if (state.step === "shop_svc_name") {
+                        tgState[chatId] = { step: "shop_svc_emoji", svcName: text };
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                        await sendOrEdit(chatId, `➕ **افزودن سرویس — مرحله 2/3**\n📦 نام: **${text}**\n\nیک ایموجی برای سرویس ارسال کنید (مثلاً 🌐):`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_services_menu" }]] });
+                        return new Response("OK", { status: 200 });
+                    }
+                    if (state.step === "shop_svc_emoji") {
+                        tgState[chatId] = { step: "shop_svc_desc", svcName: state.svcName, svcEmoji: text };
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                        await sendOrEdit(chatId, `➕ **افزودن سرویس — مرحله 3/3**\n${text} نام: **${state.svcName}**\n\nتوضیحات سرویس را ارسال کنید:`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_services_menu" }]] });
+                        return new Response("OK", { status: 200 });
+                    }
+                    if (state.step === "shop_svc_desc") {
+                        if (!sysConfig.customServices) sysConfig.customServices = [];
+                        sysConfig.customServices.push({ name: state.svcName, emoji: state.svcEmoji, description: text });
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        tgState[chatId] = null;
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                        await sendOrEdit(chatId, `✅ سرویس اضافه شد!\n\n${state.svcEmoji} **${state.svcName}**\n${text}`, { inline_keyboard: [[{ text: `🔧 سرویس‌ها`, callback_data: "shop_services_menu" }]] });
+                        return new Response("OK", { status: 200 });
+                    }
                     if (state.step === "tg_edit_tg_token") {
                         if (text !== "/skip") sysConfig.tgToken = text;
                         tgState[chatId] = { step: "tg_edit_tg_chat" };
@@ -4001,6 +4144,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     rows.push([{ text: fa ? '📊 وضعیت اشتراک من' : '📊 My Subscription', callback_data: 'user_status_guide' }]);
                     if (sysConfig.freeTrial) rows.push([{ text: fa ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                     if (sysConfig.purchaseEnabled) rows.push([{ text: fa ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
+                    rows.push([{ text: fa ? '📋 سرویس‌ها و تعرفه‌ها' : '📋 Services & Plans', callback_data: 'user_services' }]);
                     rows.push([{ text: fa ? '💾 لینک‌های ذخیره شده' : '💾 Saved Links', callback_data: 'user_saved_links' }]);
                     rows.push([{ text: fa ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
                     if (sysConfig.botSupportMsg) rows.push([{ text: fa ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
@@ -4064,9 +4208,11 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             userAcc.lastActivity = Date.now();
                             await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
                         }
+                        const pctUsed = u.totalTrafficLimit ? Math.round(usedBytes / u.totalTrafficLimit * 100) : 0;
+                        const progressBar = u.totalTrafficLimit ? ('█'.repeat(Math.round(pctUsed/10)) + '░'.repeat(10 - Math.round(pctUsed/10))) : '∞';
                         const detailText = fa
-                            ? `📊 **وضعیت اشتراک**\n━━━━━━━━━━━━━━\n👤 نام: **${u.name}**\n${statusEmoji} وضعیت: ${statusText}\n📦 مصرف: **${usedGB}** / ${limitGB} GB\n📅 انقضا: ${expiryDate}\n⏱ روز مانده: **${dLeft < 0 ? '∞' : dLeft}**\n━━━━━━━━━━━━━━\n\n💾 لینک در حساب شما ذخیره شد.`
-                            : `📊 **Subscription Status**\n━━━━━━━━━━━━━━\n👤 Name: **${u.name}**\n${statusEmoji} Status: ${statusText}\n📦 Usage: **${usedGB}** / ${limitGB} GB\n📅 Expiry: ${expiryDate}\n⏱ Days Left: **${dLeft < 0 ? '∞' : dLeft}**\n━━━━━━━━━━━━━━\n\n💾 Link saved to your account.`;
+                            ? `📊 **وضعیت اشتراک**\n━━━━━━━━━━━━━━━━\n📛 نام: **${u.name}**\n🆔 UUID: \`${u.id}\`\n🚦 وضعیت: ${statusEmoji} ${statusText}\n━━━━━━━━━━━━━━━━\n📊 مصرف: **${usedGB}** / ${limitGB} GB\n${progressBar} ${pctUsed}%\n⏱ روز مانده: **${dLeft < 0 ? '∞' : dLeft}** روز\n📅 انقضا: ${expiryDate}\n📡 پروتکل: ${u.protocol || 'نامحدود'}\n📱 محدودیت کانفیگ: ${u.configLimit || 'نامحدود'}\n━━━━━━━━━━━━━━━━\n🔗 لینک اشتراک:\n\`${subLink}\`\n━━━━━━━━━━━━━━━━\n💾 لینک در حساب شما ذخیره شد.`
+                            : `📊 **Subscription Status**\n━━━━━━━━━━━━━━━━\n📛 Name: **${u.name}**\n🆔 UUID: \`${u.id}\`\n🚦 Status: ${statusEmoji} ${statusText}\n━━━━━━━━━━━━━━━━\n📊 Usage: **${usedGB}** / ${limitGB} GB\n${progressBar} ${pctUsed}%\n⏱ Days Left: **${dLeft < 0 ? '∞' : dLeft}** days\n📅 Expiry: ${expiryDate}\n📡 Protocol: ${u.protocol || 'Unlimited'}\n📱 Config Limit: ${u.configLimit || 'Unlimited'}\n━━━━━━━━━━━━━━━━\n🔗 Subscription Link:\n\`${subLink}\`\n━━━━━━━━━━━━━━━━\n💾 Link saved to your account.`;
                         const detailKb = { inline_keyboard: [
                             [{ text: fa ? '🔗 لینک اشتراک' : '🔗 Subscription Link', callback_data: `user_get_link:${u.id}` }],
                             [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]
