@@ -5,7 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "3.1.0";
+const CURRENT_VERSION = "3.2.0";
+// v3.2.0 Changelog:
+// 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
+// 🗑️ حذف "سرویس‌ها و تعرفه‌ها" و "لینک‌های ذخیره شده" از منو
+// 🐛 رفع کامل باگ حجم: fallback از totalTrafficLimit برای یوزرهای قدیمی
+// ✅ اشتراک‌های خریداری‌شده و تست رایگان خودکار در "سرویس‌های من" نمایش داده می‌شوند
+//
 // v3.1.0 Changelog:
 // 🐛 رفع باگ لینک تست رایگان: اکنون فرمت صحیح apiRoute+sub ارائه می‌شود
 // 🐛 رفع باگ لینک تأیید خرید: فرمت صحیح apiRoute+sub
@@ -563,7 +569,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     let todayDate = new Date().toISOString().split('T')[0];
     let dailyReqs = sysU.lastDay === todayDate ? (sysU.dReqs || 0) : 0;
 
-    let limitTotal = user.limitTotalReq || 0;
+    let limitTotal = user.limitTotalReq || (user.totalTrafficLimit ? Math.round(user.totalTrafficLimit / (1073741824 / 6000)) : 0);
     let limitDaily = user.limitDailyReq || 0;
 
     let totalGb = (totalReqs / 6000).toFixed(2);
@@ -2731,11 +2737,9 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                                 ? `👋 سلام **${firstName2}** عزیز!\n\n🔐 به سرویس **نهان** خوش آمدید.\n━━━━━━━━━━━━━━\n\n💡 از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`
                                 : `👋 Hello **${firstName2}**!\n\n🔐 Welcome to **Nahan** service.\n━━━━━━━━━━━━━━\n\n💡 Select an option from the menu below:`;
                         const menuRows = [];
-                        menuRows.push([{ text: fa3 ? '📊 وضعیت اشتراک من' : '📊 My Subscription', callback_data: 'user_status_guide' }]);
+                        menuRows.push([{ text: fa3 ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }]);
                         if (sysConfig.freeTrial) menuRows.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                         if (sysConfig.purchaseEnabled) menuRows.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
-                        menuRows.push([{ text: fa3 ? '📋 سرویس‌ها و تعرفه‌ها' : '📋 Services & Plans', callback_data: 'user_services' }]);
-                        menuRows.push([{ text: fa3 ? '💾 لینک‌های ذخیره شده' : '💾 Saved Links', callback_data: 'user_saved_links' }]);
                         menuRows.push([{ text: fa3 ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
                         if (sysConfig.botSupportMsg) menuRows.push([{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
                         await sendOrEdit(chatId, welcomeMsg, { inline_keyboard: menuRows }, messageId);
@@ -2749,20 +2753,6 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             ? `🔗 **لینک اشتراک شما:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
                             : `🔗 **Your Subscription Link:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 Copy and add to your app.`,
                             { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                    } else if (data === "user_saved_links") {
-                        const userTgId2 = String(cb.from?.id || chatId);
-                        const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2);
-                        const savedLinks = acc?.savedLinks || [];
-                        if (savedLinks.length === 0) {
-                            await sendOrEdit(chatId, fa3
-                                ? "💾 **لینک‌های ذخیره شده**\n━━━━━━━━━━━━━━\n\n📭 هنوز لینکی ذخیره نکرده‌اید.\n\n💡 لینک اشتراک خود را به ربات ارسال کنید تا ذخیره شود."
-                                : "💾 **Saved Links**\n━━━━━━━━━━━━━━\n\n📭 No saved links yet.\n\n💡 Send your subscription link to save it.",
-                                { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                        } else {
-                            let linksText = fa3 ? "💾 **لینک‌های ذخیره شده**\n━━━━━━━━━━━━━━\n" : "💾 **Saved Links**\n━━━━━━━━━━━━━━\n";
-                            savedLinks.forEach((l, i) => { linksText += `\n${i+1}. \`${l}\``; });
-                            await sendOrEdit(chatId, linksText, { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                        }
                     } else if (data === "user_my_account") {
                         const userTgId2 = String(cb.from?.id || chatId);
                         const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2);
@@ -2777,36 +2767,49 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         if (hasSub) accRows.push([{ text: fa3 ? '🔗 مشاهده لینک' : '🔗 View Link', callback_data: `user_get_link:${acc.subId}` }]);
                         accRows.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]);
                         await sendOrEdit(chatId, accountText, { inline_keyboard: accRows }, messageId);
-                    } else if (data === "user_services") {
-                        const plans = sysConfig.purchaseOptions || [];
-                        const customServices = sysConfig.customServices || [];
-                        let svcText = fa3
-                            ? `📋 **سرویس‌ها و تعرفه‌ها**\n━━━━━━━━━━━━━━━━\n`
-                            : `📋 **Services & Plans**\n━━━━━━━━━━━━━━━━\n`;
-                        if (plans.length > 0) {
-                            svcText += fa3 ? `\n🛒 **پکیج‌های خرید:**\n` : `\n🛒 **Purchase Packages:**\n`;
-                            plans.forEach((p, i) => {
-                                svcText += `\n${i+1}. 📦 **${p.name}**\n   💰 ${p.price || '—'} | ⏱ ${p.days} ${fa3 ? 'روز' : 'days'} | 📊 ${p.gb} GB\n`;
-                            });
+                    } else if (data === "user_my_services") {
+                        const userTgId2 = String(cb.from?.id || chatId);
+                        const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2);
+                        const linkedUser = acc?.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
+                        const svcRows2 = [];
+                        let svcText;
+                        if (linkedUser) {
+                            const u = linkedUser;
+                            const idClean2 = u.id.replace(/-/g,'').toLowerCase();
+                            const sysU2 = sysUsageCache?.users?.[idClean2] || { reqs: 0 };
+                            const totalReqs2 = sysU2.reqs || 0;
+                            const limitTotal2 = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
+                            const usedGB2 = (totalReqs2 / 6000).toFixed(2);
+                            const limitGB2 = limitTotal2 ? (limitTotal2 / 6000).toFixed(2) : '∞';
+                            const pct2 = limitTotal2 ? Math.min(100, Math.round(totalReqs2 / limitTotal2 * 100)) : 0;
+                            const bar2 = limitTotal2 ? ('█'.repeat(Math.round(pct2 / 10)) + '░'.repeat(10 - Math.round(pct2 / 10))) : '──────────';
+                            const isExp2 = u.expiryMs && Date.now() > u.expiryMs;
+                            const dLeft2 = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
+                            const expiryDate2 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
+                            const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
+                            const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
+                            const subLink2 = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+                            svcText = fa3
+                                ? `📱 **سرویس‌های من**\n━━━━━━━━━━━━━━━━\n📛 نام: **${u.name}**\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: **${usedGB2}** / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: **${dLeft2 < 0 ? '∞' : dLeft2}** روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
+                                : `📱 **My Services**\n━━━━━━━━━━━━━━━━\n📛 Name: **${u.name}**\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: **${usedGB2}** / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: **${dLeft2 < 0 ? '∞' : dLeft2}**\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
+                            svcRows2.push([{ text: fa3 ? '➕ افزودن / تغییر سرویس' : '➕ Add / Change Service', callback_data: 'user_add_sub' }]);
+                        } else {
+                            svcText = fa3
+                                ? `📱 **سرویس‌های من**\n━━━━━━━━━━━━━━━━\n\n📭 هنوز سرویسی ندارید.\n\n💡 ساب لینک خود را اضافه کنید یا یک پکیج خریداری کنید.`
+                                : `📱 **My Services**\n━━━━━━━━━━━━━━━━\n\n📭 No active service.\n\n💡 Add your subscription link or purchase a package.`;
+                            svcRows2.push([{ text: fa3 ? '➕ افزودن ساب لینک' : '➕ Add Subscription Link', callback_data: 'user_add_sub' }]);
+                            if (sysConfig.purchaseEnabled) svcRows2.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
+                            if (sysConfig.freeTrial) svcRows2.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                         }
-                        if (customServices.length > 0) {
-                            svcText += fa3 ? `\n🔧 **سرویس‌های دیگر:**\n` : `\n🔧 **Other Services:**\n`;
-                            customServices.forEach((s, i) => {
-                                svcText += `\n${i+1}. ${s.emoji || '▫️'} **${s.name}**\n   ${s.description || ''}\n`;
-                            });
-                        }
-                        if (plans.length === 0 && customServices.length === 0) {
-                            svcText += fa3 ? '\n📭 در حال حاضر سرویسی تعریف نشده است.' : '\n📭 No services available at the moment.';
-                        }
-                        if (sysConfig.freeTrial) {
-                            svcText += fa3 ? `\n\n🎁 **تست رایگان:** ${sysConfig.freeTrialDays || 3} روز | ${sysConfig.freeTrialGB || 3} GB` : `\n\n🎁 **Free Trial:** ${sysConfig.freeTrialDays || 3} days | ${sysConfig.freeTrialGB || 3} GB`;
-                        }
-                        svcText += `\n━━━━━━━━━━━━━━━━`;
-                        const svcRows = [];
-                        if (sysConfig.purchaseEnabled) svcRows.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Now', callback_data: 'user_buy' }]);
-                        if (sysConfig.freeTrial) svcRows.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Get Free Trial', callback_data: 'user_free_trial' }]);
-                        svcRows.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]);
-                        await sendOrEdit(chatId, svcText, { inline_keyboard: svcRows }, messageId);
+                        svcRows2.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]);
+                        await sendOrEdit(chatId, svcText, { inline_keyboard: svcRows2 }, messageId);
+                    } else if (data === "user_add_sub") {
+                        tgState[chatId] = { step: 'user_awaiting_add_sub' };
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
+                        await sendOrEdit(chatId, fa3
+                            ? "📎 **افزودن ساب لینک**\n━━━━━━━━━━━━━━\nلینک اشتراک خود را ارسال کنید:"
+                            : "📎 **Add Subscription Link**\n━━━━━━━━━━━━━━\nSend your subscription link:",
+                            { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
                     } else if (data === "user_support") {
                         const supportMsg = sysConfig.botSupportMsg || (fa3 ? '💬 برای پشتیبانی با ادمین تماس بگیرید.' : '💬 Contact admin for support.');
                         await sendOrEdit(chatId, fa3
@@ -4187,11 +4190,9 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             ? `👋 سلام **${firstName}** عزیز!\n\n🔐 به سرویس **نهان** خوش آمدید.\n━━━━━━━━━━━━━━\n\n💡 از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`
                             : `👋 Hello **${firstName}**!\n\n🔐 Welcome to **Nahan** service.\n━━━━━━━━━━━━━━\n\n💡 Select an option from the menu below:`;
                     const rows = [];
-                    rows.push([{ text: fa ? '📊 وضعیت اشتراک من' : '📊 My Subscription', callback_data: 'user_status_guide' }]);
+                    rows.push([{ text: fa ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }]);
                     if (sysConfig.freeTrial) rows.push([{ text: fa ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                     if (sysConfig.purchaseEnabled) rows.push([{ text: fa ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
-                    rows.push([{ text: fa ? '📋 سرویس‌ها و تعرفه‌ها' : '📋 Services & Plans', callback_data: 'user_services' }]);
-                    rows.push([{ text: fa ? '💾 لینک‌های ذخیره شده' : '💾 Saved Links', callback_data: 'user_saved_links' }]);
                     rows.push([{ text: fa ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
                     if (sysConfig.botSupportMsg) rows.push([{ text: fa ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
                     return { msg, kb: { inline_keyboard: rows } };
@@ -4237,6 +4238,46 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             ? `✅ **کد تخفیف اعمال شد!**\n━━━━━━━━━━━━━━\n🏷️ کد: \`${code}\`\n💸 تخفیف: **${dLabel}**\n📦 پکیج: **${pkgPc.name}**\n💰 قیمت اصلی: **${pkgPc.price || '—'}**\n━━━━━━━━━━━━━━\n\n💳 **اطلاعات پرداخت:**\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
                             : `✅ **Promo code applied!**\n━━━━━━━━━━━━━━\n🏷️ Code: \`${code}\`\n💸 Discount: **${dLabel}**\n📦 Package: **${pkgPc.name}**\n💰 Original Price: **${pkgPc.price || '—'}**\n━━━━━━━━━━━━━━\n\n💳 **Payment Info:**\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`;
                         await sendOrEdit(chatId, promoOkMsg, { inline_keyboard: [[{ text: fa ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] });
+                    }
+                    return new Response('OK', { status: 200 });
+                }
+
+                if (userState && userState.step === 'user_awaiting_add_sub') {
+                    tgState[chatId] = null;
+                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
+                    let addId = text.trim();
+                    try {
+                        if (addId.startsWith('http')) {
+                            const addUrl = new URL(addId);
+                            const subParam = addUrl.searchParams.get('sub');
+                            addId = subParam ? decodeURIComponent(subParam) : addUrl.pathname.split('/').filter(Boolean).pop() || '';
+                        }
+                    } catch(e) {}
+                    addId = addId.replace(/^https?:\/\//, '').split('?')[0].split('/').pop() || addId;
+                    const addedUser = addId && addId.length >= 3 ? (sysConfig.users || []).find(u =>
+                        u.id === addId ||
+                        u.id.replace(/-/g,'').toLowerCase() === addId.replace(/-/g,'').toLowerCase() ||
+                        u.name.toLowerCase() === addId.toLowerCase()
+                    ) : null;
+                    if (addedUser) {
+                        if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
+                        let uAcc = sysConfig.userAccounts.find(a => a.tgId === userTgId);
+                        if (!uAcc) {
+                            uAcc = { tgId: userTgId, tgName: userTgName, firstName: firstName, subId: '', savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() };
+                            sysConfig.userAccounts.push(uAcc);
+                        }
+                        uAcc.subId = addedUser.id;
+                        uAcc.lastActivity = Date.now();
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        await sendOrEdit(chatId, fa
+                            ? `✅ **سرویس با موفقیت اضافه شد!**\n━━━━━━━━━━━━━━\n📛 نام: **${addedUser.name}**\n━━━━━━━━━━━━━━`
+                            : `✅ **Service added successfully!**\n━━━━━━━━━━━━━━\n📛 Name: **${addedUser.name}**\n━━━━━━━━━━━━━━`,
+                            { inline_keyboard: [[{ text: fa ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }], [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
+                    } else {
+                        await sendOrEdit(chatId, fa
+                            ? "❌ **سرویس یافت نشد**\n━━━━━━━━━━━━━━\nلینک یا شناسه وارد‌شده معتبر نیست.\n\nدوباره ارسال کنید:"
+                            : "❌ **Service not found**\n━━━━━━━━━━━━━━\nThe subscription link or ID is not valid.\n\nTry again:",
+                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] });
                     }
                     return new Response('OK', { status: 200 });
                 }
