@@ -560,6 +560,59 @@ export default {
             return new Response(null, { status: 404 });
         }
     },
+
+    // ───────────────────────────────────────────────────────────────
+    // Cloudflare Cron Trigger — Automatic Daily Report
+    // Configure in wrangler.toml:  crons = ["0 6 * * *"]
+    // ───────────────────────────────────────────────────────────────
+    async scheduled(event, env, ctx) {
+        try {
+            await loadSysConfig(env);
+            const tgToken = sysConfig.tgToken || env.TG_TOKEN;
+            const adminChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
+            if (!tgToken || !adminChatId) return;
+
+            const users = sysConfig.users || [];
+            const activeUsers = users.filter(u => !u.isPaused && (!u.expiryMs || Date.now() <= u.expiryMs)).length;
+            const pausedUsers = users.filter(u => u.isPaused && !u.disabledReason).length;
+            const disabledUsers = users.filter(u => u.isPaused && u.disabledReason).length;
+            const expiringUsers = users.filter(u =>
+                u.expiryMs && !u.isPaused &&
+                u.expiryMs > Date.now() &&
+                u.expiryMs - Date.now() < 3 * 86400000
+            ).length;
+
+            let usageStr = '';
+            if (env.IOT_DB) {
+                try {
+                    const stored = await d1Get(env, "sys_usage");
+                    const cache = stored ? JSON.parse(stored) : {};
+                    const totalReqs = Object.values(cache.users || {}).reduce((sum, u) => sum + (u.reqs || 0), 0);
+                    const totalGB = (totalReqs / 6000).toFixed(2);
+                    usageStr = `\n📊 **مصرف کل**: ${totalGB} GB`;
+                } catch (e) {}
+            }
+
+            const pendingCount = (sysConfig.pendingPurchases || []).length;
+            const pendingStr = pendingCount > 0 ? `\n🛒 **خرید معلق**: ${pendingCount} مورد ⚠️` : '';
+
+            const dateFa = new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
+            const report =
+                `📈 **گزارش روزانه نهان**\n` +
+                `━━━━━━━━━━━━━━\n` +
+                `📅 تاریخ: ${dateFa}\n` +
+                `👥 **کاربران**: ${users.length} نفر\n` +
+                `   ✅ فعال: ${activeUsers}\n` +
+                `   ⏸️ متوقف: ${pausedUsers}\n` +
+                `   🚫 مسدود: ${disabledUsers}\n` +
+                `   ⚠️ در حال انقضا (۳ روز): ${expiringUsers}` +
+                usageStr +
+                pendingStr +
+                `\n━━━━━━━━━━━━━━\n🤖 ربات نهان`;
+
+            await sendAdminNotification(env, tgToken, adminChatId, report, 'daily_report');
+        } catch (e) {}
+    },
 };
 
 async function serveMaintenancePage(request, url) {
@@ -1432,6 +1485,31 @@ async function logActivity(env, type, detail) {
     } catch (e) {}
 }
 
+// ───────────────────────────────────────────────────────────────
+// Advanced Push Notification System
+// Sends an alert to the admin's Telegram chat and logs it to D1.
+// ───────────────────────────────────────────────────────────────
+async function sendAdminNotification(env, tgToken, adminChatId, message, notificationType = 'info') {
+    await logActivity(env, notificationType || 'admin_alert', message.replace(/[*_`[\]]/g, '').slice(0, 200));
+    if (!tgToken || !adminChatId) return;
+    try {
+        const _tgApi = `https://api.telegram.org/bot${tgToken}`;
+        const plainText = message.replace(/\*\*/g, '').replace(/(?<![\\])[*_`[\]]/g, '');
+        const res = await fetch(`${_tgApi}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: adminChatId, text: message, parse_mode: 'Markdown' })
+        });
+        if (!res.ok) {
+            await fetch(`${_tgApi}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: adminChatId, text: plainText })
+            }).catch(() => {});
+        }
+    } catch (e) {}
+}
+
 async function handleLogs(request, env) {
     try {
         if (request.method === "POST") {
@@ -2243,7 +2321,139 @@ const botI18n = {
         shop_welcome_prompt: "📝 پیام خوش‌آمد جدید ربات را ارسال کنید ({name} = نام کاربر):",
         shop_welcome_set: "✅ پیام خوش‌آمد ربات به‌روزرسانی شد!",
         shop_bot_welcome: "💬 پیام خوش‌آمد ربات",
-    }
+    },
+
+    // ─── Arabic (ar) ─────────────────────────────────────────────
+    ar: {
+        welcome: "🤖 مرحبًا بك في بوابة نهان",
+        current_panel: "اللوحة الحالية",
+        status: "الحالة",
+        active: "نشط",
+        paused: "موقوف",
+        users: "المستخدمون",
+        search: "بحث",
+        dashboard: "لوحة التحكم",
+        statistics: "الإحصائيات",
+        btn_sub_link: "رابط الاشتراك",
+        disabled_users: "المستخدمون المعطّلون",
+        tg_settings: "الإعدادات",
+        tg_advanced: "متقدّم",
+        tg_logs: "السجلات",
+        tg_broadcast: "إرسال جماعي 📢",
+        btn_main_menu: "القائمة الرئيسية",
+        btn_back: "رجوع",
+        btn_next: "التالي",
+        btn_cancel: "إلغاء",
+        btn_add: "إضافة",
+        btn_pause: "إيقاف مؤقت",
+        btn_resume: "استئناف",
+        dash: "لوحة التحكم",
+        panel_info: "معلومات النظام",
+        panic: "وضع الطوارئ",
+        count_active: "نشط",
+        count_paused: "موقوف",
+        count_disabled: "معطّل",
+        name: "الاسم",
+        expiry: "انتهاء الصلاحية",
+        days: "الأيام المتبقية",
+        total: "الإجمالي",
+        daily: "اليومي",
+        unlimited: "غير محدود",
+        access_denied: "❌ وصول مرفوض.",
+        no_users: "لا يوجد مستخدمون.",
+        lbl_status: "الحالة",
+        lbl_page: "صفحة",
+        lbl_none: "لا شيء",
+        lbl_subscription: "رابط الاشتراك",
+        msg_added: "تمت الإضافة بنجاح",
+        msg_enter_limits: "أدخل الحدود (إجمالي يومي أيام) أو اضغط تخطي:",
+        msg_panel_error: "❌ خطأ في الاتصال باللوحة.",
+        admin_pending_purchases: "📋 طلبات الشراء",
+        admin_pending_empty: "✅ لا توجد طلبات معلّقة.",
+        admin_pending_title: "📋 طلبات الشراء المعلّقة",
+        admin_approved_ok: "✅ تمت الموافقة على الطلب.",
+        admin_rejected_ok: "🗑 تم رفض الطلب.",
+        dash_expired: "منتهي الصلاحية",
+        tg_u_mode: "الوضع",
+        tg_u_ports: "المنافذ",
+        tg_u_clean_ips: "عناوين IP النظيفة",
+        tg_u_proxy_ips: "عناوين IP البروكسي",
+        tg_u_nodes: "العقد",
+        tg_u_nat64: "NAT64",
+        device_limit: "حد الأجهزة",
+        notes: "ملاحظات",
+        sub_info: "معلومات الاشتراك",
+        tg_tg_settings: "إعدادات بوت تيليغرام",
+        tg_cf_settings: "إعدادات Cloudflare",
+        tg_current_val: "القيمة الحالية",
+        tg_new_val: "أرسل القيمة الجديدة:",
+    },
+
+    // ─── Turkish (tr) ────────────────────────────────────────────
+    tr: {
+        welcome: "🤖 Nahan Gateway'e Hoş Geldiniz",
+        current_panel: "Aktif Panel",
+        status: "Durum",
+        active: "Aktif",
+        paused: "Duraklatıldı",
+        users: "Kullanıcılar",
+        search: "Ara",
+        dashboard: "Gösterge Paneli",
+        statistics: "İstatistikler",
+        btn_sub_link: "Abonelik Bağlantısı",
+        disabled_users: "Devre Dışı Kullanıcılar",
+        tg_settings: "Ayarlar",
+        tg_advanced: "Gelişmiş",
+        tg_logs: "Günlükler",
+        tg_broadcast: "Toplu Mesaj 📢",
+        btn_main_menu: "Ana Menü",
+        btn_back: "Geri",
+        btn_next: "İleri",
+        btn_cancel: "İptal",
+        btn_add: "Ekle",
+        btn_pause: "Duraklat",
+        btn_resume: "Devam Et",
+        dash: "Panel",
+        panel_info: "Sistem Bilgisi",
+        panic: "Acil Mod",
+        count_active: "aktif",
+        count_paused: "duraklatılmış",
+        count_disabled: "devre dışı",
+        name: "İsim",
+        expiry: "Son Kullanma",
+        days: "Kalan Gün",
+        total: "Toplam",
+        daily: "Günlük",
+        unlimited: "Sınırsız",
+        access_denied: "❌ Erişim reddedildi.",
+        no_users: "Kullanıcı bulunamadı.",
+        lbl_status: "Durum",
+        lbl_page: "Sayfa",
+        lbl_none: "Yok",
+        lbl_subscription: "Abonelik Bağlantısı",
+        msg_added: "Başarıyla eklendi",
+        msg_enter_limits: "Limitleri girin (toplam günlük gün) veya atla:",
+        msg_panel_error: "❌ Panel bağlantı hatası.",
+        admin_pending_purchases: "📋 Bekleyen Alımlar",
+        admin_pending_empty: "✅ Bekleyen istek yok.",
+        admin_pending_title: "📋 Bekleyen Alım İstekleri",
+        admin_approved_ok: "✅ Onaylandı.",
+        admin_rejected_ok: "🗑 Reddedildi.",
+        dash_expired: "Süresi Doldu",
+        tg_u_mode: "Mod",
+        tg_u_ports: "Portlar",
+        tg_u_clean_ips: "Temiz IP'ler",
+        tg_u_proxy_ips: "Proxy IP'leri",
+        tg_u_nodes: "Düğümler",
+        tg_u_nat64: "NAT64",
+        device_limit: "Cihaz Limiti",
+        notes: "Notlar",
+        sub_info: "Abonelik Bilgisi",
+        tg_tg_settings: "Telegram Bot Ayarları",
+        tg_cf_settings: "Cloudflare Ayarları",
+        tg_current_val: "Mevcut Değer",
+        tg_new_val: "Yeni değeri gönderin:",
+    },
 };
 
 function getPanelsList() {
@@ -2450,6 +2660,9 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                 inline_keyboard.push([
                     { text: `⚙️ ${t("tg_settings")}`, callback_data: "tg_settings_menu" },
                     { text: `🔧 ${t("tg_advanced")}`, callback_data: "tg_advanced_menu" }
+                ]);
+                inline_keyboard.push([
+                    { text: `📢 ${t("tg_broadcast") || "ارسال همگانی"}`, callback_data: "broadcast_init" }
                 ]);
                 inline_keyboard.push([
                     { text: `📋 ${t("tg_logs")}`, callback_data: "tg_logs_menu" }
@@ -3778,8 +3991,25 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     } else {
                         answerText = "❌ Not found";
                     }
+                } else if (data === "broadcast_init") {
+                    if (!isAuthorized) {
+                        answerText = t("access_denied");
+                    } else {
+                        tgState[chatId] = { step: "broadcast_awaiting_text" };
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(() => {}));
+                        const totalRecipients = (sysConfig.userAccounts || []).filter(a => a.tgId).length;
+                        const fa3 = langCode === 'fa';
+                        await sendOrEdit(chatId,
+                            fa3
+                                ? `📢 **ارسال پیام همگانی**\n━━━━━━━━━━━━━━\n👥 تعداد گیرندگان: **${totalRecipients}** نفر\n\n✏️ پیام خود را ارسال کنید:\n_پیام به تمام کاربران ثبت‌شده ارسال خواهد شد_`
+                                : `📢 **Broadcast Message**\n━━━━━━━━━━━━━━\n👥 Recipients: **${totalRecipients}** users\n\n✏️ Send your message:\n_It will be delivered to all registered users_`,
+                            { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "main_menu" }]] },
+                            messageId
+                        );
+                        answerText = "✏️";
+                    }
                 }
-                
+
                 ctx?.waitUntil(fetch(`${tgApi}/answerCallbackQuery`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -3820,6 +4050,60 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         tgState[chatId] = null;
                         ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
                         await sendOrEdit(chatId, t("access_denied"));
+                        return new Response("OK", { status: 200 });
+                    }
+
+                    // ── Broadcast: send message to all registered users ──────────
+                    if (state.step === "broadcast_awaiting_text") {
+                        tgState[chatId] = null;
+                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(() => {}));
+                        const fa3 = langCode === 'fa';
+                        const recipients = (sysConfig.userAccounts || []).filter(a => a.tgId);
+                        if (recipients.length === 0) {
+                            await sendOrEdit(chatId,
+                                fa3 ? '❌ هیچ کاربر ثبت‌شده‌ای وجود ندارد.' : '❌ No registered users to send to.',
+                                { inline_keyboard: [[{ text: `🏠 ${t("btn_main_menu")}`, callback_data: "main_menu" }]] }
+                            );
+                            return new Response("OK", { status: 200 });
+                        }
+                        // Send progress message first
+                        await sendOrEdit(chatId,
+                            fa3
+                                ? `📢 **در حال ارسال...**\n━━━━━━━━━━━━━━\n👥 در حال ارسال به ${recipients.length} کاربر...`
+                                : `📢 **Sending...**\n━━━━━━━━━━━━━━\n👥 Broadcasting to ${recipients.length} users...`
+                        );
+                        // Broadcast to all users (fire-and-forget via waitUntil)
+                        ctx?.waitUntil((async () => {
+                            let sent = 0;
+                            let failed = 0;
+                            const broadcastText = `📢 **پیام مدیر سیستم**\n━━━━━━━━━━━━━━\n${text}`;
+                            for (const acc of recipients) {
+                                try {
+                                    const res = await fetch(`${tgApi}/sendMessage`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ chat_id: acc.tgId, text: broadcastText, parse_mode: 'Markdown' })
+                                    });
+                                    if (res.ok) { sent++; } else { failed++; }
+                                } catch (e) { failed++; }
+                                // Rate-limit: 30 messages/sec max for Telegram bots
+                                if (sent % 25 === 0) await new Promise(r => setTimeout(r, 1000));
+                            }
+                            // Report result to admin
+                            await fetch(`${tgApi}/sendMessage`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    chat_id: chatId,
+                                    text: fa3
+                                        ? `✅ **ارسال همگانی تکمیل شد**\n━━━━━━━━━━━━━━\n✅ موفق: ${sent}\n❌ ناموفق: ${failed}`
+                                        : `✅ **Broadcast complete**\n━━━━━━━━━━━━━━\n✅ Sent: ${sent}\n❌ Failed: ${failed}`,
+                                    parse_mode: 'Markdown',
+                                    reply_markup: JSON.stringify({ inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'main_menu' }]] })
+                                })
+                            }).catch(() => {});
+                            await logActivity(env, 'broadcast', `sent=${sent} failed=${failed}`);
+                        })());
                         return new Response("OK", { status: 200 });
                     }
 
@@ -6193,6 +6477,7 @@ function getDashboardUI(hasDB) {
       <title>Nahan Gateway</title>
       <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap" rel="stylesheet">
       <script src="https://cdn.tailwindcss.com"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
       <script>
           tailwind.config = { 
               darkMode: 'class', 
@@ -6661,6 +6946,24 @@ function getDashboardUI(hasDB) {
                                       <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_system">System</span>
                                   </div>
                                   <p id="ov-version" class="text-base md:text-xl font-black text-slate-800 dark:text-white">-</p>
+                              </div>
+                          </div>
+
+                          <!-- ── Traffic & Users Charts Row (Chart.js) ────────── -->
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                              <!-- Users Distribution Doughnut -->
+                              <div class="bg-white dark:bg-darkcard rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-darkborder">
+                                  <h3 class="text-xs md:text-sm uppercase font-bold text-slate-500 tracking-wider mb-3" data-i18n="chart_user_dist">User Distribution</h3>
+                                  <div class="relative h-48 md:h-56">
+                                      <canvas id="chart-users"></canvas>
+                                  </div>
+                              </div>
+                              <!-- Traffic Bar Chart -->
+                              <div class="bg-white dark:bg-darkcard rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-darkborder">
+                                  <h3 class="text-xs md:text-sm uppercase font-bold text-slate-500 tracking-wider mb-3" data-i18n="chart_traffic">Traffic Overview</h3>
+                                  <div class="relative h-48 md:h-56">
+                                      <canvas id="chart-traffic"></canvas>
+                                  </div>
                               </div>
                           </div>
 
@@ -8511,6 +8814,73 @@ function getDashboardUI(hasDB) {
                     document.getElementById('ov-today-reqs').textContent = s.traffic.dailyRequests.toLocaleString();
                     document.getElementById('ov-active-conns').textContent = s.system.activeConnections;
                     document.getElementById('ov-version').textContent = 'v' + s.system.version;
+
+                    // ── Chart.js Traffic & Users Charts ───────────────────────
+                    if (typeof Chart !== 'undefined') {
+                        // Users distribution doughnut chart
+                        const usersCtx = document.getElementById('chart-users');
+                        if (usersCtx) {
+                            if (usersCtx._chartInstance) usersCtx._chartInstance.destroy();
+                            usersCtx._chartInstance = new Chart(usersCtx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: [
+                                        i18n[lang]?.active || 'Active',
+                                        i18n[lang]?.paused || 'Paused',
+                                        i18n[lang]?.count_disabled || 'Disabled',
+                                        i18n[lang]?.dash_expired || 'Expired'
+                                    ],
+                                    datasets: [{
+                                        data: [s.users.active, s.users.paused, s.users.autoDisabled, s.users.expired],
+                                        backgroundColor: ['#22c55e','#f59e0b','#ef4444','#6b7280'],
+                                        borderColor: 'rgba(15,20,32,0.8)',
+                                        borderWidth: 2,
+                                        hoverOffset: 6
+                                    }]
+                                },
+                                options: {
+                                    responsive: true, maintainAspectRatio: false, cutout: '68%',
+                                    plugins: {
+                                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, padding: 12, boxWidth: 10 } },
+                                        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.raw } }
+                                    }
+                                }
+                            });
+                        }
+
+                        // Traffic bar chart (today vs total)
+                        const trafficCtx = document.getElementById('chart-traffic');
+                        if (trafficCtx) {
+                            if (trafficCtx._chartInstance) trafficCtx._chartInstance.destroy();
+                            const totalGB = parseFloat(s.traffic.totalGB) || 0;
+                            const dailyGB = parseFloat(s.traffic.dailyGB) || 0;
+                            trafficCtx._chartInstance = new Chart(trafficCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: [i18n[lang]?.ov_today_traffic || "Today's Traffic", i18n[lang]?.ov_total_traffic || 'Total Traffic'],
+                                    datasets: [{
+                                        label: 'GB',
+                                        data: [dailyGB, totalGB],
+                                        backgroundColor: ['rgba(99,102,241,0.7)', 'rgba(168,85,247,0.7)'],
+                                        borderColor: ['#6366f1','#a855f7'],
+                                        borderWidth: 1.5,
+                                        borderRadius: 6
+                                    }]
+                                },
+                                options: {
+                                    responsive: true, maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: { callbacks: { label: ctx => ' ' + ctx.raw.toFixed(2) + ' GB' } }
+                                    },
+                                    scales: {
+                                        x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(99,102,241,0.08)' } },
+                                        y: { ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => v + ' GB' }, grid: { color: 'rgba(99,102,241,0.08)' } }
+                                    }
+                                }
+                            });
+                        }
+                    }
                 }
 
                 const actList = document.getElementById('ov-activity-list');
