@@ -706,7 +706,8 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${user.name} - Subscriber Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"><\/script>
     <script>
         tailwind.config = {
@@ -1009,6 +1010,57 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 </button>
             </div>
         </div>
+
+        <!-- ── App Download Guide (v2.4) ──────────────────────── -->
+        <div class="stagger-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background: var(--accent);"></span>
+                <h2 class="text-sm font-bold" style="color: var(--text-primary);" data-i18n="downloadApps">دانلود اپلیکیشن</h2>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Android -->
+                <a href="https://play.google.com/store/apps/details?id=com.v2ray.ang" target="_blank" rel="noopener noreferrer" class="card-inner rounded-2xl p-4 flex items-center gap-3 link-card-anim" style="text-decoration:none;">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(52,168,83,0.15);">
+                        <i class="ri-android-fill text-xl" style="color:#34a853;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold" style="color:var(--text-primary);">v2rayNG</p>
+                        <p class="text-[10px]" style="color:var(--text-muted);">Android</p>
+                    </div>
+                </a>
+                <!-- iOS -->
+                <a href="https://apps.apple.com/app/v2box-v2ray-client/id6446814690" target="_blank" rel="noopener noreferrer" class="card-inner rounded-2xl p-4 flex items-center gap-3 link-card-anim" style="text-decoration:none;">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(120,120,120,0.15);">
+                        <i class="ri-apple-fill text-xl" style="color:#a3a3a3;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold" style="color:var(--text-primary);">V2Box</p>
+                        <p class="text-[10px]" style="color:var(--text-muted);">iOS / iPadOS</p>
+                    </div>
+                </a>
+                <!-- Windows -->
+                <a href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener noreferrer" class="card-inner rounded-2xl p-4 flex items-center gap-3 link-card-anim" style="text-decoration:none;">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(0,120,215,0.15);">
+                        <i class="ri-windows-fill text-xl" style="color:#0078d7;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold" style="color:var(--text-primary);">v2rayN</p>
+                        <p class="text-[10px]" style="color:var(--text-muted);">Windows</p>
+                    </div>
+                </a>
+                <!-- Linux -->
+                <a href="https://github.com/MatsuriDayo/nekoray/releases/latest" target="_blank" rel="noopener noreferrer" class="card-inner rounded-2xl p-4 flex items-center gap-3 link-card-anim" style="text-decoration:none;">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(240,80,40,0.15);">
+                        <i class="ri-terminal-box-fill text-xl" style="color:#f05028;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold" style="color:var(--text-primary);">Nekoray</p>
+                        <p class="text-[10px]" style="color:var(--text-muted);">Linux / macOS</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
     </div>
 
     <!-- QR Code Modal -->
@@ -1088,7 +1140,8 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 paused: 'Paused',
                 expired: 'Expired',
                 limitExceeded: 'Limit Exceeded',
-                dailyLimitExceeded: 'Daily Limit Exceeded'
+                dailyLimitExceeded: 'Daily Limit Exceeded',
+                downloadApps: 'Download Apps'
             },
             fa: {
                 totalUsage: 'مصرف کل',
@@ -1119,7 +1172,8 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 paused: 'متوقف',
                 expired: 'منقضی',
                 limitExceeded: 'از حد مجاز رد شده',
-                dailyLimitExceeded: 'از حد روزانه رد شده'
+                dailyLimitExceeded: 'از حد روزانه رد شده',
+                downloadApps: 'دانلود اپلیکیشن‌ها'
             }
         };
 
