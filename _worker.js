@@ -602,7 +602,7 @@ export default {
             const isAgencyRoute = reqPath === routes.agency || reqPath.endsWith('/api/agency');
             const isSearchRoute = reqPath === routes.search || reqPath.endsWith('/api/search');
             const isApiKeysRoute = reqPath === routes.apiKeys || reqPath.endsWith('/api/keys');
-            const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isSubscriptionsRoute || isReferralRoute || isAgencyRoute || isSearchRoute || isApiKeysRoute;
+            const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isSubscriptionsRoute || isReferralRoute || isAgencyRoute || isSearchRoute || isApiKeysRoute || (reqPath.startsWith(routes.sub + "/") && reqPath.length > routes.sub.length + 1);
 
             // v4.0.0: Rate limiting for API routes
             if (isAuthorizedRoute && !isTelemetryStream && reqPath !== routes.data && reqPath !== routes.dash) {
