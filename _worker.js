@@ -2727,6 +2727,9 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                 inline_keyboard.push([
                     { text: `🚫 ${t("disabled_users")}`, callback_data: "subs_disabled:0" }
                 ]);
+                inline_keyboard.push([
+                    { text: `🧪 ${t("trial_users") || "Trial Users"}`, callback_data: "admin_trial_users" }
+                ]);
                 const pendingCount = (sysConfig.pendingPurchases || []).length;
                 if (pendingCount > 0) {
                     inline_keyboard.push([
@@ -2905,6 +2908,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
             if (chatId) {
                 // Route non-admin users to user callback handler
                 const userCallbackPrefixes = ['user_', 'user_free_trial', 'user_buy', 'user_main_menu', 'user_status_guide', 'user_get_link:'];
+const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                 const isUserCallback = !isAuthorized || userCallbackPrefixes.some(p => data && data.startsWith(p));
                 if (!isAuthorized && !userCallbackPrefixes.some(p => data && data.startsWith(p))) {
                     await fetch(`${tgApi}/answerCallbackQuery`, {
@@ -3088,41 +3092,107 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         await sendOrEdit(chatId, accountText, { inline_keyboard: accRows }, messageId);
                     } else if (data === "user_my_services") {
                         const userTgId2 = String(cb.from?.id || chatId);
-                        const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2);
-                        const linkedUser = acc?.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
+                        const userAccs = (sysConfig.userAccounts || []).filter(a => a.tgId === userTgId2);
                         const svcRows2 = [];
                         let svcText;
-                        if (linkedUser) {
-                            const u = linkedUser;
-                            const idClean2 = u.id.replace(/-/g,'').toLowerCase();
-                            const sysU2 = sysUsageCache?.users?.[idClean2] || { reqs: 0 };
-                            const totalReqs2 = sysU2.reqs || 0;
-                            const limitTotal2 = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
-                            const usedGB2 = (totalReqs2 / 6000).toFixed(2);
-                            const limitGB2 = limitTotal2 ? (limitTotal2 / 6000).toFixed(2) : '∞';
-                            const pct2 = limitTotal2 ? Math.min(100, Math.round(totalReqs2 / limitTotal2 * 100)) : 0;
-                            const bar2 = limitTotal2 ? ('█'.repeat(Math.round(pct2 / 10)) + '░'.repeat(10 - Math.round(pct2 / 10))) : '──────────';
-                            const isExp2 = u.expiryMs && Date.now() > u.expiryMs;
-                            const dLeft2 = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
-                            const expiryDate2 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
-                            const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
-                            const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
-                            const subLink2 = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${u.subHash || generateSubHash(u.id)}`;
-                            const safeName2 = esc(u.name);
+                        if (userAccs.length > 0) {
                             svcText = fa3
-                                ? `📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
-                                : `📱 *My Services*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
-                            svcRows2.push([{ text: fa3 ? '➕ افزودن / تغییر سرویس' : '➕ Add / Change Service', callback_data: 'user_add_sub' }]);
+                                ? "📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n\n📋 روی هر سرویس کلیک کنید:\n"
+                                : "📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n📋 Tap a service below:\n";
+                            for (const acc of userAccs) {
+                                const linkedUser = acc.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
+                                if (linkedUser) {
+                                    const u = linkedUser;
+                                    const safeName = esc(u.name);
+                                    const isExp = u.expiryMs && Date.now() > u.expiryMs;
+                                    const stEmoji = u.isPaused ? '⏸️' : isExp ? '❌' : '✅';
+                                    const idClean = u.id.replace(/-/g,'').toLowerCase();
+                                    const sysU = sysUsageCache?.users?.[idClean] || { reqs: 0 };
+                                    const totalReqs = sysU.reqs || 0;
+                                    const limitTotal = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
+                                    const usedGB = (totalReqs / 6000).toFixed(2);
+                                    const limitGB = limitTotal ? (limitTotal / 6000).toFixed(2) : '∞';
+                                    const pct = limitTotal ? Math.min(100, Math.round(totalReqs / limitTotal * 100)) : 0;
+                                    const dLeft = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
+                                    svcText += `\n${stEmoji} *${safeName}* | 📊 ${usedGB}/${limitGB} GB | ⏱ ${dLeft < 0 ? '∞' : dLeft}${fa3 ? ' روز' : 'd'}`;
+                                    const subHash = u.subHash || generateSubHash(u.id);
+                                    svcRows2.push([
+                                        { text: `📋 ${safeName}`, callback_data: `user_get_link:${subHash}` },
+                                        { text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${subHash}` }
+                                    ]);
+                                } else {
+                                    const safeName = esc(acc.tgName || acc.subId || "Unknown");
+                                    svcText += `\n📛 ${safeName} ${fa3 ? "(سرویس یافت نشد)" : "(Service not found)"}`;
+                                }
+                            }
+                            svcRows2.push([{ text: fa3 ? '➕ افزودن سرویس' : '➕ Add Service', callback_data: 'user_add_sub' }]);
                         } else {
                             svcText = fa3
-                                ? `📱 **سرویس‌های من**\n━━━━━━━━━━━━━━━━\n\n📭 هنوز سرویسی ندارید.\n\n💡 ساب لینک خود را اضافه کنید یا یک پکیج خریداری کنید.`
-                                : `📱 **My Services**\n━━━━━━━━━━━━━━━━\n\n📭 No active service.\n\n💡 Add your subscription link or purchase a package.`;
+                                ? "📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n\n📭 هنوز سرویسی ندارید.\n\n💡 ساب لینک خود را اضافه کنید یا یک پکیج خریداری کنید."
+                                : "📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n📭 No active service.\n\n💡 Add your subscription link or purchase a package.";
                             svcRows2.push([{ text: fa3 ? '➕ افزودن ساب لینک' : '➕ Add Subscription Link', callback_data: 'user_add_sub' }]);
                             if (sysConfig.purchaseEnabled) svcRows2.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
                             if (sysConfig.freeTrial) svcRows2.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
                         }
                         svcRows2.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]);
                         await sendOrEdit(chatId, svcText, { inline_keyboard: svcRows2 }, messageId);
+                    } else if (data.startsWith("user_rename_service:")) {
+                        const targetHash = data.split(":")[1];
+                        const adminLang = fa3;
+                        if (!targetHash) {
+                            await sendOrEdit(chatId, adminLang ? "❌ خطا: شناسه سرویس نامعتبر." : "❌ Error: Invalid service ID.", null, messageId);
+                        } else {
+                            const targetUser = (sysConfig.users || []).find(u => (u.subHash || generateSubHash(u.id)) === targetHash);
+                            if (!targetUser) {
+                                await sendOrEdit(chatId, adminLang ? "❌ سرویس یافت نشد." : "❌ Service not found.", null, messageId);
+                            } else {
+                                const userTgId2 = String(cb.from?.id || chatId);
+                                const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2 && a.subId === targetUser.id);
+                                userStates = userStates || {};
+                                userStates[userTgId2] = { state: "awaiting_rename", targetUserId: targetUser.id, targetSubHash: targetHash };
+                                await sendOrEdit(chatId, adminLang
+                                    ? `✏️ *تغییر نام سرویس*\n━━━━━━━━━━━━━━━━\n\nنام فعلی: *${esc(targetUser.name)}*\n\nلطفاً نام جدید سرویس را ارسال کنید:`
+                                    : `✏️ *Rename Service*\n━━━━━━━━━━━━━━━━\n\nCurrent name: *${esc(targetUser.name)}*\n\nPlease send the new service name:`,
+                                    { inline_keyboard: [[{ text: adminLang ? "🔙 انصراف" : "🔙 Cancel", callback_data: "user_my_services" }]] },
+                                messageId);
+                            }
+                        }
+                    } else if (data.startsWith("user_get_link:")) {
+                        const targetHash = data.split(":")[1];
+                        const adminLang = fa3;
+                        if (!targetHash) {
+                            await sendOrEdit(chatId, adminLang ? "❌ خطا: شناسه سرویس نامعتبر." : "❌ Error: Invalid service ID.", null, messageId);
+                        } else {
+                            const u = (sysConfig.users || []).find(usr => (usr.subHash || generateSubHash(usr.id)) === targetHash);
+                            if (!u) {
+                                await sendOrEdit(chatId, adminLang ? "❌ سرویس یافت نشد." : "❌ Service not found.", null, messageId);
+                            } else {
+                                const idClean2 = u.id.replace(/-/g,'').toLowerCase();
+                                const sysU2 = sysUsageCache?.users?.[idClean2] || { reqs: 0 };
+                                const totalReqs2 = sysU2.reqs || 0;
+                                const limitTotal2 = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
+                                const usedGB2 = (totalReqs2 / 6000).toFixed(2);
+                                const limitGB2 = limitTotal2 ? (limitTotal2 / 6000).toFixed(2) : '∞';
+                                const pct2 = limitTotal2 ? Math.min(100, Math.round(totalReqs2 / limitTotal2 * 100)) : 0;
+                                const bar2 = limitTotal2 ? ('█'.repeat(Math.round(pct2 / 10)) + '░'.repeat(10 - Math.round(pct2 / 10))) : '──────────';
+                                const isExp2 = u.expiryMs && Date.now() > u.expiryMs;
+                                const dLeft2 = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
+                                const expiryDate2 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
+                                const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
+                                const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
+                                const subLink2 = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${u.subHash || generateSubHash(u.id)}`;
+                                const safeName2 = esc(u.name);
+                                const svcDetailText = fa3
+                                    ? `📱 *جزئیات سرویس*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
+                                    : `📱 *Service Details*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
+                                const detailRows = [
+                                    [{ text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${targetHash}` }],
+                                    [{ text: fa3 ? '🔙 برگشت به سرویس‌ها' : '🔙 Back to Services', callback_data: 'user_my_services' }],
+                                    [{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]
+                                ];
+                                await sendOrEdit(chatId, svcDetailText, { inline_keyboard: detailRows }, messageId);
+                            }
+                        }
                     } else if (data === "user_add_sub") {
                         tgState[chatId] = { step: 'user_awaiting_add_sub' };
                         ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
@@ -3987,7 +4057,40 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         answerText = "❌ Not found";
                     }
                 }
-                
+
+                // v5.1.0: Admin trial users management
+                if (data === "admin_trial_users") {
+                    const usedTrials = sysConfig.usedTrials || [];
+                    const userAccounts = sysConfig.userAccounts || [];
+                    if (usedTrials.length === 0) {
+                        await sendOrEdit(chatId, t("admin_trial_empty") || "🧪 No trial users yet.", { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
+                    } else {
+                        let trialText = (t("admin_trial_title") || "🧪 Trial Users") + "\n━━━━━━━━━━━━━━\n";
+                        const keyboard = [];
+                        for (const tUser of usedTrials) {
+                            const u = (sysConfig.users || []).find(usr => usr.id === tUser.userId || usr.name === tUser.name);
+                            const uName = u ? u.name : (tUser.name || tUser.userId);
+                            trialText += `👤 ${uName}\n🆔 ${tUser.userId}\n📅 ${new Date(tUser.createdAt || tUser.date || Date.now()).toLocaleDateString()}\n━━━━━━━━━━━━━━\n`;
+                            keyboard.push([{ text: "🗑 " + uName, callback_data: "admin_delete_trial_user:" + tUser.userId }]);
+                        }
+                        keyboard.push([{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]);
+                        await sendOrEdit(chatId, trialText, { inline_keyboard: keyboard }, messageId);
+                    }
+                    answerText = "✅ Done";
+                } else if (data.startsWith("admin_delete_trial_user:")) {
+                    const delUserId = data.replace("admin_delete_trial_user:", "");
+                    const usedTrials = sysConfig.usedTrials || [];
+                    const idx = usedTrials.findIndex(t => t.userId === delUserId);
+                    if (idx !== -1) {
+                        const removed = usedTrials.splice(idx, 1)[0];
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        await sendOrEdit(chatId, t("admin_trial_deleted") || "✅ Trial user removed.", { inline_keyboard: [[{ text: "🧪 " + (t("trial_users") || "Trial Users"), callback_data: "admin_trial_users" }, { text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
+                        ctx?.waitUntil(logActivity(env, "Trial User Deleted", `Trial user ${removed.userId || removed.name} removed by admin`).catch(()=>{}));
+                    } else {
+                        answerText = "❌ Not found";
+                    }
+                }
+
                 ctx?.waitUntil(fetch(`${tgApi}/answerCallbackQuery`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4644,6 +4747,44 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             ? "❌ **سرویس یافت نشد**\n━━━━━━━━━━━━━━\nلینک یا شناسه وارد‌شده معتبر نیست.\n\nدوباره ارسال کنید:"
                             : "❌ **Service not found**\n━━━━━━━━━━━━━━\nThe subscription link or ID is not valid.\n\nTry again:",
                             { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] });
+                    }
+                    return new Response('OK', { status: 200 });
+                }
+
+                // v5.1.0: User rename service handler
+                if (userState && userState.step === 'user_awaiting_rename') {
+                    tgState[chatId] = null;
+                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
+                    const newName = text.trim().substring(0, 64);
+                    if (newName.length < 1) {
+                        await sendOrEdit(chatId, fa
+                            ? "❌ **نام نامعتبر است**\n━━━━━━━━━━━━━━\nنام سرویس باید حداقل ۱ کاراکتر باشد."
+                            : "❌ **Invalid name**\n━━━━━━━━━━━━━━\nService name must be at least 1 character.",
+                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
+                        return new Response('OK', { status: 200 });
+                    }
+                    const targetSubHash = userState.subHash || '';
+                    if (targetSubHash) {
+                        const targetUser = (sysConfig.users || []).find(u => u.subHash === targetSubHash);
+                        if (targetUser) {
+                            targetUser.name = newName;
+                            await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                            ctx?.waitUntil(logActivity(env, 'Service Renamed', `Service ${targetSubHash} renamed to "${newName}"`).catch(()=>{}));
+                            await sendOrEdit(chatId, fa
+                                ? `✅ **نام سرویس تغییر کرد**\n━━━━━━━━━━━━━━\nنام جدید: **${newName}**`
+                                : `✅ **Service renamed**\n━━━━━━━━━━━━━━\nNew name: **${newName}**`,
+                                { inline_keyboard: [[{ text: fa ? '📋 سرویس‌های من' : '📋 My Services', callback_data: 'user_my_services' }]] }, messageId);
+                        } else {
+                            await sendOrEdit(chatId, fa
+                                ? "❌ **سرویس یافت نشد**"
+                                : "❌ **Service not found**",
+                                { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
+                        }
+                    } else {
+                        await sendOrEdit(chatId, fa
+                            ? "❌ **خطا**\n━━━━━━━━━━━━━━\nشناسه سرویس نامعتبر است."
+                            : "❌ **Error**\n━━━━━━━━━━━━━━\nInvalid service identifier.",
+                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
                     }
                     return new Response('OK', { status: 200 });
                 }
