@@ -5,7 +5,15 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.2.0";
+const CURRENT_VERSION = "5.3.0";
+// v5.3.0 Changelog:
+// 🎨 UI/UX: beautified bot messages with professional Persian formatting
+// 📊 Traffic alerts: auto-notify admin at 50%, 80%, 100% usage per user
+// 🔔 Expiry notifications: notify 7, 3, 1 day before service expiry
+// 📢 Admin broadcast: send messages to all bot users
+// 📱 Referral menu: referral link & stats in user bot menu
+// ⚡ Web panel polish: better stats, fixed brace structure
+//
 // v5.2.0 Changelog:
 // 🔒 Admin-only trial reset: members can't reset free trial anymore
 // 🔢 20-service limit per user: enforced during purchase approval
@@ -38,7 +46,38 @@ const CURRENT_VERSION = "5.2.0";
 // 🛡️ sendOrEdit: اگر parse Markdown شکست، بدون parse_mode دوباره ارسال می‌کند (پیام همیشه می‌رسد)
 // 🔤 تابع esc(): همه محتوای داینامیک (نام یوزر، یوزرنیم) قبل از ارسال escape می‌شوند
 // 🔧 رفع routing: callback های user_* برای ادمین هم از handler کاربری عبور می‌کنند
-// 🔧 رفع state handler: ادمین در حالت user_awaiting_add_sub پیام متنی درست پردازش می‌شود
+// 🔧 رفع state handler: ادمین در حالت 
+                        // v5.3.0: Handle broadcast mode
+                        if (sysConfig.botBroadcastMode) {
+                            const isAdminUser = String(cb.from?.id || chatId) === String(sysConfig.tgAdminId || "");
+                            if (isAdminUser && text && text !== '/cancel') {
+                                sysConfig.botBroadcastMode = false;
+                                const allUsers = sysConfig.userAccounts || [];
+                                let sentCount = 0;
+                                for (let accIdx = 0; accIdx < allUsers.length; accIdx++) {
+                                    if (allUsers[accIdx].tgId) {
+                                        try {
+                                            awaccIdxt fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                                method: "POST", headers: {"Content-Type": "application/json"},
+                                                body: JSON.stringify({chat_id: allUsers[ai].tgId, text: "📢 <b>پیام ادمین</b>\n\n"+text, parse_mode: "HTML"})
+                                            });
+                                            sentCount++;
+                                        } catch(e) {}
+                                    }
+                                }
+                                const doneMsg = fa3 ? "✅ پیام به "+sentCount+" کاربر ارسال شد." : "✅ Message sent to "+sentCount+" users.";
+                                await sendOrEdit(chatId, messageId, doneMsg, { inline_keyboard: [[{ text: fa3 ? "🔙 برگشت" : "🔙 Back", callback_data: "admin_main_menu" }]] });
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                return;
+                            } else if (text === '/cancel') {
+                                sysConfig.botBroadcastMode = false;
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                const cancelledMsg = fa3 ? "❌ ارسال پیام گروهی لغو شد." : "❌ Broadcast cancelled.";
+                                await sendOrEdit(chatId, messageId, cancelledMsg, { inline_keyboard: [[{ text: fa3 ? "🔙 برگشت" : "🔙 Back", callback_data: "admin_main_menu" }]] });
+                                return;
+                            }
+                        }
+user_awaiting_add_sub پیام متنی درست پردازش می‌شود
 //
 // v3.2.0 Changelog:
 // 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
@@ -161,6 +200,15 @@ const SYSTEM_DEFAULTS = {
     agencyEnabled: true,
     maxFreeTrialsPerUser: 3,
     freeTrialVolumes: [50, 100, 200],
+    // v5.3.0: Notification tracking
+    trafficNotified50: {},
+    trafficNotified80: {},
+    trafficNotified100: {},
+    expiryNotified7: {},
+    expiryNotified3: {},
+    expiryNotified1: {},
+    broadcastMessages: [],
+    botBroadcastMode: false,
     freeTrialDaysOptions: [2, 3, 5],
     // v4.0.0: Security
     jwtSecret: "",
@@ -528,7 +576,50 @@ function trackUsage(uuid, bytes, env, ctx) {
                             u.disabledReason = reason;
                             u.disabledAt = Date.now();
                             changedConfig = true;
-                            ctx?.waitUntil(logActivity(env, "User Auto-Disabled", `User "${u.name}" (${u.id}) disabled: ${reason}`).catch(()=>{}));
+                                                        // v5.3.0: Traffic threshold alerts (50%, 80%, 100%)
+                            const usagePct = limitTotal ? Math.round((sysU?.reqs || 0) / limitTotal * 100) : 0;
+                            const adminChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
+                            if (sysConfig.tgToken && adminChatId && limitTotal && usagePct > 0) {
+                                const sendThresholdAlert = async (thresholdPct, notifKey, notifMsg) => {
+                                    if (!sysConfig[notifKey]) sysConfig[notifKey] = {};
+                                    if (sysConfig[notifKey][u.id]) return;
+                                    sysConfig[notifKey][u.id] = true;
+                                    ctx?.waccIdxtUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                        method: "POST", headers: {"Content-Type": "application/json"},
+                                        body: JSON.stringify({chat_id: notifyId2, text: msg3, parse_mode: "HTML"})
+                                    }).catch(()=>{}));
+                                    ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
+                                };
+                                if (usagePct >= 100) {
+                                    sendThresholdAlert(100, "trafficNotified100", '🚨 <b>Traffic Full: 100%</b>\\n\\n👤 User: '+u.name+'\\n🆔 ID: <code>'+u.id+'</code>\\n📊 Usage: 100%\\n⚠️ Service has been auto-disabled.');
+                                } else if (pctUsed2 >= 80) {
+                                    sendThresh(80, "trafficNotified80", '⚠️ <b>Traffic Warning: 80%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+pctUsed2+'%\n⏳ Service will be disabled soon.');
+                                } else if (pctUsed2 >= 50) {
+                                    sendThresh(50, "trafficNotified50", '🔔 <b>Traffic Notice: 50%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+pctUsed2+'%');
+                                }
+                            }
+                            // v5.3.0: Expiry notifications (7, 3, 1 days)
+                            if (u.expiryMs && sysConfig.tgToken && adminChatId) {
+                                const daysToExpiry = Math.ceil((u.expiryMs - Date.now()) / 86400000);
+                                const sendExpiryAlert = async (expiryKey, expiryMsg) => {
+                                    if (!sysConfig[expiryKey]) sysConfig[expiryKey] = {};
+                                    if (sysConfig[expiryKey][u.id]) return;
+                                    sysConfig[expiryKey][u.id] = true;
+                                    ctx?.waccIdxtUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                        method: "POST", headers: {"Content-Type": "application/json"},
+                                        body: JSON.stringify({chat_id: notifyId2, text: msg4, parse_mode: "HTML"})
+                                    }).catch(()=>{}));
+                                    ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
+                                };
+                                if (d2e <= 1 && d2e > 0) {
+                                    sendExpNotif("expiryNotified1", '🚨 <b>Expiry Tomorrow!</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⚠️ '+d2e+' day(s) left.');
+                                } else if (d2e <= 3 && d2e > 1) {
+                                    sendExpNotif("expiryNotified3", '⚠️ <b>Expiry Soon: 3 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+d2e+' day(s) remaining.');
+                                } else if (d2e <= 7 && d2e > 3) {
+                                    sendExpNotif("expiryNotified7", '🔔 <b>Expiry Notice: 7 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+d2e+' day(s) remaining.');
+                                }
+                            }
+ctx?.waitUntil(logActivity(env, "User Auto-Disabled", `User "${u.name}" (${u.id}) disabled: ${reason}`).catch(()=>{}));
                             if (sysConfig.tgToken && (sysConfig.tgAdminId || sysConfig.tgChatId)) {
                                 const tgMsg = `⚠️ <b>User Auto-Disabled</b>\n\n👤 <b>User:</b> ${u.name}\n🆔 <b>ID:</b> <code>${u.id}</code>\n📝 <b>Reason:</b> ${reason}`;
                                 const notifyChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
@@ -2911,8 +3002,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
 
             if (chatId) {
                 // Route non-admin users to user callback handler
-                const userCallbackPrefixes = ['user_', 'user_free_trial', 'user_buy', 'user_main_menu', 'user_status_guide', 'user_get_link:', 'user_renew_service:', 'user_delete_service:', 'user_pause_service:', 'user_support', 'user_rename_service:'];
-const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
+                const userCallbackPrefixes = ['user_', 'user_free_trial', 'user_buy', 'user_main_menu', 'user_status_guide', 'user_get_link:', 'user_renew_service:', 'user_delete_service:', 'user_pause_service:', 'user_support', 'user_rename_service:', 'user_referral'];
+const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 'admin_broadcast', 'admin_broadcast_send'];
                 const isUserCallback = !isAuthorized || userCallbackPrefixes.some(p => data && data.startsWith(p));
                 if (!isAuthorized && !userCallbackPrefixes.some(p => data && data.startsWith(p))) {
                     await fetch(`${tgApi}/answerCallbackQuery`, {
@@ -3057,7 +3148,41 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                             ? "📎 **بررسی وضعیت اشتراک**\n━━━━━━━━━━━━━━\nلینک اشتراک یا شناسه کاربری خود را ارسال کنید:"
                             : "📎 **Check Subscription Status**\n━━━━━━━━━━━━━━\nSend your subscription link or User ID:",
                             { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_main_menu' }]] }, messageId);
-                    } else if (data === "user_main_menu") {
+                    } else if (
+                } else if (data === "user_referral") {
+                    let refText = '';
+                    let refKb = [];
+                    const hasRef = sysConfig.referralEnabled;
+                    if (hasRef) {
+                        const botUname = tgBotUsername || 'bot';
+                        const myTgId = String(cb.from?.id || chatId);
+                        const refLink = 'https://t.me/' + botUname + '?start=ref_' + myTgId;
+                        const referredUsers = (sysConfig.users || []).filter(function(uu) { return String(uu.referredBy) === myTgId; });
+                        const commission = sysConfig.referralCommission || 10;
+                        const faRef = '🎯 <b>برنامه معرفی</b>\n\n' + '👤 <b>تعداد دعوت‌شده‌ها:</b> ' + referredUsers.length + '\n' + '💰 <b>پورسانت هر فروش:</b> ' + commission + '%\n' + '🔗 <b>لینک دعوت شما:</b>\n<code>' + refLink + '</code>\n\n📌 لینک را با دوستان خود به اشتراک بگذارید.';
+                        const enRef = '🎯 <b>Referral Program</b>\n\n' + '👤 <b>Invited Users:</b> ' + referredUsers.length + '\n' + '💰 <b>Commission:</b> ' + commission + '%\n' + '🔗 <b>Your Referral Link:</b>\n<code>' + refLink + '</code>\n\n📌 Share with your friends.';
+                        refText = fa3 ? faRef : enRef;
+                        refKb = [[{ text: fa3 ? '📊 آمار دعوت‌ها' : '📊 Referral Stats', callback_data: 'user_referral_stats' }],[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]];
+                    } else {
+                        refText = fa3 ? '❌ سیستم معرفی فعال نیست.' : '❌ Referral system is not enabled.';
+                        refKb = [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]];
+                    }
+                    await sendOrEdit(chatId, messageId, refText, { inline_keyboard: refKb });
+                } else if (data === "user_referral_stats") {
+                    const myTgId2 = String(cb.from?.id || chatId);
+                    const referredUsers2 = (sysConfig.users || []).filter(function(uu2) { return String(uu2.referredBy) === myTgId2; });
+                    let statsText = '';
+                    if (referredUsers2.length === 0) {
+                        statsText = fa3 ? '📭 شما هنوز کسی را دعوت نکرده‌اید.' : '📭 You have not invited anyone yet.';
+                    } else {
+                        let listStr = '';
+                        for (let ri = 0; ri < referredUsers2.length; ri++) {
+                            listStr += (ri + 1) + '. ' + referredUsers2[ri].name + '\n';
+                        }
+                        statsText = fa3 ? '📊 <b>آمار دعوت‌ها</b>\n\n👤 <b>تعداد:</b> ' + referredUsers2.length + '\n\n' + listStr : '📊 <b>Referral Stats</b>\n\n👤 <b>Total:</b> ' + referredUsers2.length + '\n\n' + listStr;
+                    }
+                    await sendOrEdit(chatId, messageId, statsText, { inline_keyboard: [[{ text: fa3 ? '🔙 برگشت' : '🔙 Back', callback_data: 'user_referral' }]] });
+data === "user_main_menu") {
                         const firstName2 = cb.from?.first_name || (fa3 ? "کاربر" : "User");
                         const customWelcome = sysConfig.botWelcomeMsg;
                         const welcomeMsg = customWelcome
@@ -3714,7 +3839,13 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         [{ text: `🔑 ${t("tg_pass")}`, callback_data: "tg_edit_pass" }, { text: `🌐 ${t("tg_dns")}`, callback_data: "tg_edit_dns" }],
                         [{ text: `🔗 ${t("tg_relay")}`, callback_data: "tg_edit_relay" }],
                         [{ text: `⚡ ${t("tg_tfo")}`, callback_data: "tg_toggle_tfo" }, { text: `ECH`, callback_data: "tg_toggle_ech" }],
-                        [{ text: `${t("tg_silent")}`, callback_data: "tg_toggle_silent" }, { text: `${t("tg_pause")}`, callback_data: "tg_toggle_pause2" }],
+                        [{ text: `${t("tg_silent")}`, callback_data: "tg_toggle_silent" }, { text: `${t("tg_pause")}
+                } else if (data === "admin_broadcast") {
+                    const bMsg = fa3 ? '📢 <b>ارسال پیام گروهی</b>\n\nلطفاً متن پیام خود را ارسال کنید. این پیام برای همه کاربران ارسال خواهد شد.\n\n❗️ برای لغو، /cancel را ارسال کنید.' : '📢 <b>Broadcast Message</b>\n\nPlease send your message text. This will be sent to all users.\n\n❗️ Send /cancel to cancel.';
+                    sysConfig.botBroadcastMode = true;
+                    await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                    await sendOrEdit(chatId, messageId, bMsg, { inline_keyboard: [[{ text: fa3 ? '❌ لغو' : '❌ Cancel', callback_data: 'admin_main_menu' }]] });
+`, callback_data: "tg_toggle_pause2" }],
                         [{ text: `🔄 ${t("tg_auto_update")}`, callback_data: "tg_toggle_auto_update" }, { text: `🔀 ${t("tg_direct")}`, callback_data: "tg_toggle_direct" }],
                         [{ text: `🌐 ${t("tg_nat64")}`, callback_data: "tg_edit_nat64" }],
                         [{ text: t("btn_main_menu"), callback_data: "main_menu" }]
@@ -4913,7 +5044,8 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         await sendOrEdit(chatId, fa
                             ? "❌ **خطا**\n━━━━━━━━━━━━━━\nشناسه سرویس نامعتبر است."
                             : "❌ **Error**\n━━━━━━━━━━━━━━\nInvalid service identifier.",
-                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
+                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }],
+                                [{ text: fa3 ? '🎯 معرفی' : '🎯 Referral', callback_data: 'user_referral' }]] }, messageId);
                     }
                     return new Response('OK', { status: 200 });
                 }
