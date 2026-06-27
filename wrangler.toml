@@ -1,0 +1,9 @@
+name = "nahan-6ondep"
+main = "_worker.js"
+compatibility_date = "2024-03-01"
+compatibility_flags = ["allow_eval_during_startup"]
+
+[[d1_databases]]
+binding = "IOT_DB"
+database_name = "nahan_db_h63g"
+database_id = "29b39941-fb11-49f9-9f45-56456a10bb8d"

@@ -55,7 +55,7 @@ const CURRENT_VERSION = "5.3.1";
 // 🔤 تابع esc(): همه محتوای داینامیک (نام یوزر، یوزرنیم) قبل از ارسال escape می‌شوند
 // 🔧 رفع routing: callback های user_* برای ادمین هم از handler کاربری عبور می‌کنند
 // 🔧 رفع state handler: ادمین در حالت 
-user_awaiting_add_sub پیام متنی درست پردازش می‌شود
+// user_awaiting_add_sub: پیام متنی درست پردازش می‌شود
 //
 // v3.2.0 Changelog:
 // 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
@@ -117,7 +117,7 @@ const safeBtoa = (str) => {
 
 const SYSTEM_DEFAULTS = {
     name: "",
-    apiRoute: "sync",
+    apiRoute: "udp/sub",
     subRoute: "sub",
     maintenanceHost: "https://www.ubuntu.com, https://www.docker.com",
     backupRelay: "",
@@ -2298,7 +2298,7 @@ async function handleSyncPanel(request, env, ctx) {
 
 const botI18n = {
     en: {
-        welcome: "🤖 **Welcome to Nahan Gateway Bot**\nSelect your option below to manage your system:",
+        welcome: "🤖 **Welcome to Nahan Gateway**\n━━━━━━━━━━━━━━━━━━━━\nSelect an option below:",
         status: "System Status",
         users: "Subscribers",
         metrics: "Gateway Health",
@@ -2309,7 +2309,7 @@ const botI18n = {
         paused: "🔴 Paused",
         uptime: "Uptime",
         streams: "📡 Active Streams",
-        no_users: "No subscribers found.",
+        no_users: "📭 No users found.",
         sub_info: "👤 Subscriber Details:",
         name: "Name",
         total: "Total Reqs",
@@ -2320,24 +2320,24 @@ const botI18n = {
         unlimited: "Unlimited",
         btn_back: "◀️ Back",
         btn_next: "▶️ Next",
-        btn_del: "Delete",
-        btn_pause: "Pause",
-        btn_resume: "Resume",
-        btn_edit_name: "Change Name",
-        btn_edit_limits: "Limits",
-        btn_add: "+ Add Subscriber",
-        btn_confirm: "Confirm",
-        btn_cancel: "Cancel",
+        btn_del: "🗑️ Remove",
+        btn_pause: "⏸️ Suspend",
+        btn_resume: "▶️ Activate",
+        btn_edit_name: "✏️ Rename",
+        btn_edit_limits: "⚙️ Plan",
+        btn_add: "➕ New User",
+        btn_confirm: "✅ Confirm",
+        btn_cancel: "❌ Cancel",
         msg_enter_name: "Please send a name for the subscriber:",
-        msg_added: "Sub added successfully! 🎉",
-        msg_deleted: "Sub deleted successfully! 🗑️",
+        msg_added: "✅ User added successfully!",
+        msg_deleted: "🗑️ User removed successfully!",
         msg_panic: "🚨 PANIC MODE ACTIVATED 🚨\nRoute randomized & System Paused.",
-        msg_invalid: "Invalid input. Please try again.",
+        msg_invalid: "❌ Invalid input. Please try again.",
         msg_enter_limits: "Enter limits format:\n`[totalReqs] [dailyReqs] [days_limit]`\n(Use 0 for unlimited)\n\nExample:\n`10000 500 30`",
-        msg_confirm_del: "⚠️ Are you sure you want to delete this subscriber?",
+        msg_confirm_del: "⚠️ Remove User?\n━━━━━━━━━━━━━━━━\nThis action cannot be undone.",
         msg_confirm_panic: "⚠️ Are you absolutely sure you want to trigger PANIC mode? This will randomize API routes and pause all connections!",
-        status_updated: "Status updated!",
-        access_denied: "Access Denied. You are not authorized to manage this panel.",
+        status_updated: "✅ Status updated!",
+        access_denied: "🔒 Access Denied\nYou are not authorized to manage this panel.",
         dashboard: "Dashboard",
         search: "Search User",
         statistics: "Statistics",
@@ -2347,36 +2347,36 @@ const botI18n = {
         extend_expiry: "Extend Expiry",
         notes: "Notes",
         device_limit: "Config Limit",
-        msg_enter_search: "🔍 Send a username, UUID, or subscription to search:",
-        msg_enter_notes: "📝 Send notes for this user:",
-        msg_enter_extend_days: "📅 Enter number of days to extend expiration:",
-        msg_traffic_reset: "Traffic has been reset successfully!",
-        msg_expiry_extended: "Expiration extended by {days} days!",
+        msg_enter_search: "🔍 Send a username, UUID, or name to search:",
+        msg_enter_notes: "📝 Send a note for this user:",
+        msg_enter_extend_days: "📅 Enter days to extend expiration:",
+        msg_traffic_reset: "✅ Traffic has been reset for this user!",
+        msg_expiry_extended: "✅ Expiration extended by {days} days!",
         msg_no_disabled: "No disabled users found.",
-        msg_enter_device_limit: "Enter config limit (0 for unlimited):",
-        config_limit_updated: "Config limit updated!",
-        stats_title: "Panel Statistics",
+        msg_enter_device_limit: "⚙️ Enter config limit (0 = unlimited):",
+        config_limit_updated: "✅ Config limit updated!",
+        stats_title: "📊 Panel Statistics",
         count_active: "active",
         count_paused: "paused",
         count_disabled: "auto-disabled",
-        dash_total: "Total Users",
-        dash_active: "Active",
-        dash_paused: "Paused",
-        dash_expired: "Expired",
-        dash_auto_disabled: "Auto-Disabled",
+        dash_total: "👥 Total Users",
+        dash_active: "🟢 Active",
+        dash_paused: "⏸️ Paused",
+        dash_expired: "🔴 Expired",
+        dash_auto_disabled: "⛔ Auto-Disabled",
         btn_main_menu: "Main Menu",
         btn_back_to_list: "Back to List",
-        total_traffic: "Total Traffic",
-        daily_traffic: "Daily Traffic",
+        total_traffic: "📦 Total Traffic",
+        daily_traffic: "📅 Daily Traffic",
         lbl_status: "Status",
         lbl_subscription: "Subscription Connection",
         lbl_user_not_found: "⚠️ User not found",
         lbl_none: "None",
         lbl_page: "Page",
-        select_panel: "🔌 Which panel do you want to manage?",
-        current_panel: "Current Panel",
+        select_panel: "🔌 Select a panel to manage:",
+        current_panel: "📌 Current Panel",
         switch_panel: "🔄 Switch Panel",
-        panel_local: "🏠 This Panel",
+        panel_local: "🏠 Current Panel",
         panel_remote: "🌐",
         msg_panel_selected: "Panel selected! ✅",
         msg_panel_error: "❌ Failed to connect to the selected panel.",
@@ -3126,7 +3126,6 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                             ? "📎 **بررسی وضعیت اشتراک**\n━━━━━━━━━━━━━━\nلینک اشتراک یا شناسه کاربری خود را ارسال کنید:"
                             : "📎 **Check Subscription Status**\n━━━━━━━━━━━━━━\nSend your subscription link or User ID:",
                             { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_main_menu' }]] }, messageId);
-                    } else if (
                 } else if (data === "user_referral") {
                     let refText = '';
                     let refKb = [];
@@ -3160,7 +3159,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         statsText = fa3 ? '📊 <b>آمار دعوت‌ها</b>\n\n👤 <b>تعداد:</b> ' + referredUsers2.length + '\n\n' + listStr : '📊 <b>Referral Stats</b>\n\n👤 <b>Total:</b> ' + referredUsers2.length + '\n\n' + listStr;
                     }
                     await sendOrEdit(chatId, messageId, statsText, { inline_keyboard: [[{ text: fa3 ? '🔙 برگشت' : '🔙 Back', callback_data: 'user_referral' }]] });
-data === "user_main_menu") {
+                    } else if (data === "user_main_menu") {
                         const firstName2 = cb.from?.first_name || (fa3 ? "کاربر" : "User");
                         const customWelcome = sysConfig.botWelcomeMsg;
                         const welcomeMsg = customWelcome
