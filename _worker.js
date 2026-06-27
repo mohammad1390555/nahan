@@ -55,7 +55,7 @@ const CURRENT_VERSION = "5.3.1";
 // 🔤 تابع esc(): همه محتوای داینامیک (نام یوزر، یوزرنیم) قبل از ارسال escape می‌شوند
 // 🔧 رفع routing: callback های user_* برای ادمین هم از handler کاربری عبور می‌کنند
 // 🔧 رفع state handler: ادمین در حالت 
-user_awaiting_add_sub پیام متنی درست پردازش می‌شود
+// user_awaiting_add_sub: پیام متنی درست پردازش می‌شود
 //
 // v3.2.0 Changelog:
 // 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
@@ -3126,7 +3126,6 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                             ? "📎 **بررسی وضعیت اشتراک**\n━━━━━━━━━━━━━━\nلینک اشتراک یا شناسه کاربری خود را ارسال کنید:"
                             : "📎 **Check Subscription Status**\n━━━━━━━━━━━━━━\nSend your subscription link or User ID:",
                             { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_main_menu' }]] }, messageId);
-                    } else if (
                 } else if (data === "user_referral") {
                     let refText = '';
                     let refKb = [];
@@ -3160,7 +3159,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         statsText = fa3 ? '📊 <b>آمار دعوت‌ها</b>\n\n👤 <b>تعداد:</b> ' + referredUsers2.length + '\n\n' + listStr : '📊 <b>Referral Stats</b>\n\n👤 <b>Total:</b> ' + referredUsers2.length + '\n\n' + listStr;
                     }
                     await sendOrEdit(chatId, messageId, statsText, { inline_keyboard: [[{ text: fa3 ? '🔙 برگشت' : '🔙 Back', callback_data: 'user_referral' }]] });
-data === "user_main_menu") {
+                    } else if (data === "user_main_menu") {
                         const firstName2 = cb.from?.first_name || (fa3 ? "کاربر" : "User");
                         const customWelcome = sysConfig.botWelcomeMsg;
                         const welcomeMsg = customWelcome
