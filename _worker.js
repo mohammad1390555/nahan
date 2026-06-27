@@ -3106,6 +3106,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                                 : "❌ Online purchase is currently disabled.\n\n💬 Contact support for manual purchase.",
                                 { inline_keyboard: [
                                     ...(sysConfig.botSupportMsg ? [[{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]] : []),
+                                    [{ text: fa3 ? '🔄 لینک جدید' : '🔄 Regenerate Link', callback_data: `user_regenerate_link:${u.id}` }],
                                     [{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]
                                 ]}, messageId);
                         } else {
@@ -3266,7 +3267,26 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                             }
                             }
                         } else if (data.startsWith("user_get_link:")) {
-                        const uid = data.replace("user_get_link:", "");
+                } else if (data.startsWith("user_regenerate_link:")) {
+                    const uid = data.substring("user_regenerate_link:".length);
+                    const regenUser = (sysConfig.users || []).find(u => u.id === uid);
+                    if (regenUser) {
+                        // Generate new deterministic subHash
+                        const newSubHash = generateSubHash(regenUser.id);
+                        regenUser.subHash = newSubHash;
+                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                        const regenSubLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${newSubHash}`;
+                        const regenMsg = fa3 ? `🔗 لینک جدید شما:
+
+<code>${regenSubLink}</code>
+
+⚠️ لینک قبلی غیرفعال شد.` : `🔗 Your new link:
+
+<code>${regenSubLink}</code>
+
+⚠️ The old link has been deactivated.`;
+                        await sendOrEdit(chatId, messageId, regenMsg, [[{ text: fa3 ? '🔙 بازگشت' : '🔙 Back', callback_data: `user_get_link:${uid}` }]], "HTML");
+                    }                        const uid = data.replace("user_get_link:", "");
                         const linkUser = (sysConfig.users || []).find(u => u.id === uid);
                         const linkUrl = linkUser
                             ? `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${linkUser.subHash || generateSubHash(linkUser.id)}`
