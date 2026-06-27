@@ -117,7 +117,7 @@ const safeBtoa = (str) => {
 
 const SYSTEM_DEFAULTS = {
     name: "",
-    apiRoute: "sync",
+    apiRoute: "udp/sub",
     subRoute: "sub",
     maintenanceHost: "https://www.ubuntu.com, https://www.docker.com",
     backupRelay: "",
