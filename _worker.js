@@ -354,8 +354,7 @@ function lookupConfigEntry(uuidHex) {
 
 // v5.0.0: Secure sub hash generator (40+ chars)
 function generateSubHash(id) {
-    const random = crypto.randomUUID() + crypto.randomUUID() + Date.now().toString(36);
-    const hash = sha224Hex(id + random);
+    const hash = sha224Hex(id);
     return hash.substring(0, 44);
 }
 
@@ -772,7 +771,7 @@ export default {
                     const subHash = reqPath.slice(routes.sub.length + 1);
                     let targetUser = null;
                     if (sysConfig.users && sysConfig.users.length > 0) {
-                        targetUser = sysConfig.users.find(u => u.subHash === subHash);
+                        targetUser = sysConfig.users.find(u => u.subHash === subHash || generateSubHash(u.id) === subHash);
                     }
                     if (targetUser) {
                         const host = request.headers.get("Host") || url.hostname;
