@@ -5,13 +5,17 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.1.0";
+const CURRENT_VERSION = "5.2.0";
+// v5.2.0 Changelog:
+// 🔒 Admin-only trial reset: members can't reset free trial anymore
+// 🔢 20-service limit per user: enforced during purchase approval
+// 🔄 Service renewal: renew any service with user_renew_service
+// ⏸️ Pause/Resume: toggle service status with user_pause_service
+// 🗑️ Soft delete: remove services without data loss
+// 🎧 Support button: quick access to support contact
+// 📋 Enhanced detail view: more action buttons in service details
+//
 // v5.1.0 Changelog:
-// 🧪 Admin trial users management: list + delete trial users from admin panel
-// ✏️ Service rename: users can rename their services
-// 📋 Enhanced My Services: each service shown as interactive button with details
-// 🔧 Fixed /sub/undefined: subHash added to purchase & trial user creation
-// 🔄 Reset Free Trial: button to allow re-taking free trial
 //
 // v4.0.0 Changelog:
 // 🔐 سیستم احراز هویت JWT با HMAC-SHA256
@@ -2907,7 +2911,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
 
             if (chatId) {
                 // Route non-admin users to user callback handler
-                const userCallbackPrefixes = ['user_', 'user_free_trial', 'user_buy', 'user_main_menu', 'user_status_guide', 'user_get_link:'];
+                const userCallbackPrefixes = ['user_', 'user_free_trial', 'user_buy', 'user_main_menu', 'user_status_guide', 'user_get_link:', 'user_renew_service:', 'user_delete_service:', 'user_pause_service:', 'user_support', 'user_rename_service:'];
 const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                 const isUserCallback = !isAuthorized || userCallbackPrefixes.some(p => data && data.startsWith(p));
                 if (!isAuthorized && !userCallbackPrefixes.some(p => data && data.startsWith(p))) {
@@ -3069,6 +3073,17 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         if (sysConfig.botSupportMsg) menuRows.push([{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
                         await sendOrEdit(chatId, welcomeMsg, { inline_keyboard: menuRows }, messageId);
                     } else if (data === "user_reset_trial") {
+                            // Only admin can reset free trials
+                            const isAdminReset = String(cb.from?.id || chatId) === String(sysConfig.tgAdminId || "");
+                            if (!isAdminReset) {
+                                answerText = fa3 ? "⛔ فقط ادمین میتواند تست رایگان را ریست کند" : "⛔ Only admin can reset free trials";
+                                await sendOrEdit(chatId, fa3
+                                    ? "⛔ **دسترسی محدود**\n\nفقط ادمین میتواند تست رایگان را ریست کند."
+                                    : "⛔ **Access Denied**\n\nOnly admin can reset free trials.",
+                                    { inline_keyboard: [[{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]] }, messageId);
+                            } else {
+                            // Admin resetting trial
+
                             // Reset user's trial status so they can take free trial again
                             const usedTrials = sysConfig.usedTrials || [];
                             const userTgId3 = String(cb.from?.id || chatId);
@@ -3092,6 +3107,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                                         [{ text: fa3 ? "🎮 شروع تست رایگان" : "🎮 Start Free Trial", callback_data: "user_free_trial" }],
                                         [{ text: fa3 ? "🏠 منوی اصلی" : "🏠 Menu", callback_data: "user_main_menu" }]
                                     ]}, messageId);
+                            }
                             }
                         } else if (data.startsWith("user_get_link:")) {
                         const uid = data.replace("user_get_link:", "");
@@ -3128,6 +3144,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                                 : "📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n📋 Tap a service below:\n";
                             for (const acc of userAccs) {
                                 const linkedUser = acc.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
+                                if (linkedUser && linkedUser.isDeleted) continue;
                                 if (linkedUser) {
                                     const u = linkedUser;
                                     const safeName = esc(u.name);
@@ -3213,9 +3230,10 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                                     ? `📱 *جزئیات سرویس*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
                                     : `📱 *Service Details*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
                                 const detailRows = [
-                                    [{ text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${targetHash}` }],
-                                    [{ text: fa3 ? '🔙 برگشت به سرویس‌ها' : '🔙 Back to Services', callback_data: 'user_my_services' }],
-                                    [{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]
+                                    [{ text: fa3 ? '🔄 تمدید' : '🔄 Renew', callback_data: `user_renew_service:${targetUser.id}` }, { text: fa3 ? '⏸️ توقف' : '⏸️ Pause', callback_data: `user_pause_service:${targetUser.id}` }],
+                                    [{ text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${targetHash}` }, { text: fa3 ? '🗑️ حذف' : '🗑️ Delete', callback_data: `user_delete_service:${targetUser.id}` }],
+                                    [{ text: fa3 ? '🎧 پشتیبانی' : '🎧 Support', callback_data: 'user_support' }],
+                                    [{ text: fa3 ? '🔙 خدمات من' : '🔙 My Services', callback_data: 'user_my_services' }, { text: fa3 ? '🏠 منو' : '🏠 Menu', callback_data: 'user_main_menu' }]
                                 ];
                                 await sendOrEdit(chatId, svcDetailText, { inline_keyboard: detailRows }, messageId);
                             }
@@ -4028,6 +4046,16 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                     }
                 } else if (data.startsWith("admin_approve_purchase:")) {
                     const purchaseId = data.replace("admin_approve_purchase:", "");
+                        // Check 20-service limit per user
+                            const purchaseTgId = String(purchase.tgId);
+                            const ownedServices = (sysConfig.users || []).filter(u => u.ownerTgId === purchaseTgId && !u.isDeleted);
+                            if (buyerOwnedCount >= 20) {
+                                answerText = fa3 ? "⚠️ محدودیت ۲۰ سرویس" : "⚠️ 20 Service Limit";
+                                await sendOrEdit(chatId, fa3
+                                    ? "⚠️ **محدودیت سرویس**\n\nهر کاربر حداکثر ۲۰ سرویس میتواند داشته باشد.\n\nتعداد سرویس‌های فعلی: " + ownedServices.length
+                                    : "⚠️ **Service Limit**\n\nEach user can have max 20 services.\n\nCurrent services: " + ownedServices.length,
+                                    { inline_keyboard: [[{ text: "🔙 بازگشت", callback_data: "admin_pending_list" }]] }, messageId);
+                            } else {
                     const idx = (sysConfig.pendingPurchases || []).findIndex(p => p.id === purchaseId);
                     if (idx >= 0) {
                         const purchase = sysConfig.pendingPurchases[idx];
@@ -4056,6 +4084,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         } else {
                             sysConfig.userAccounts.push({ tgId: String(purchase.tgId), tgName: purchase.tgName || '', firstName: '', subId: newUserId, subHash: generateSubHash(newUserId), savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
                         }
+                            }
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
                         answerText = t("admin_approved_ok") || "✅ Approved";
                         const subLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${newUser.subHash}`;
@@ -4106,6 +4135,77 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         await sendOrEdit(chatId, trialText, { inline_keyboard: keyboard }, messageId);
                     }
                     answerText = "✅ Done";
+
+                    // ---- NEW SERVICE MANAGEMENT CALLBACKS ----
+                    } else if (data.startsWith("user_renew_service:")) {
+                            // Service renewal - start renewal/purchase flow for this service
+                            const renewServiceId = data.split(":")[1];
+                            const renewUser = (sysConfig.users || []).find(u => u.id === renewServiceId);
+                            if (renewUser) {
+                                await sendOrEdit(chatId, fa3
+                                    ? `🔄 **تمدید سرویس**\
+\
+📋 <b>سرویس:</b> ${esc(renewUser.name)}\n🆔 <b>شناسه:</b> <code>${renewUser.id}</code>\n\nبرای تمدید این سرویس، یکی از پکیج‌های زیر را انتخاب کنید:`
+                                    : `🔄 **Renew Service**\
+\
+📋 <b>Service:</b> ${esc(renewUser.name)}\n🆔 <b>ID:</b> <code>${renewUser.id}</code>\n\nChoose a package to renew:`,
+                                    { inline_keyboard: [
+                                        [{ text: fa3 ? "📦 پکیج‌های موجود" : "📦 View Packages", callback_data: "user_buy" }],
+                                        [{ text: fa3 ? "🔙 بازگشت" : "🔙 Back", callback_data: "user_get_link:" + renewUser.subHash }],
+                                        [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]
+                                    ]}, messageId);
+                            }
+                    } else if (data.startsWith("user_pause_service:")) {
+                            const pauseServiceId = data.split(":")[1];
+                            const pauseUser = (sysConfig.users || []).find(u => u.id === pauseServiceId);
+                            if (pauseUser) {
+                                pauseUser.isPaused = !pauseUser.isPaused;
+                                if (!pauseUser.isPaused) { pauseUser.disabledReason = null; pauseUser.disabledAt = null; }
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                answerText = fa3 ? (pauseUser.isPaused ? "⏸️ سرویس متوقف شد" : "▶️ سرویس فعال شد") : (pauseUser.isPaused ? "⏸️ Service paused" : "▶️ Service resumed");
+                                await sendOrEdit(chatId, fa3
+                                    ? `\${pauseUser.isPaused ? '⏸️' : '✅'} **${pauseUser.isPaused ? 'سرویس متوقف شد' : 'سرویس فعال شد'}**\
+\
+📋 <b>سرویس:</b> ${esc(pauseUser.name)}`
+                                    : `\${pauseUser.isPaused ? '⏸️' : '✅'} **${pauseUser.isPaused ? 'Service Paused' : 'Service Active'}**\
+\
+📋 <b>Service:</b> ${esc(pauseUser.name)}`,
+                                    { inline_keyboard: [
+                                        [{ text: fa3 ? "🔙 جزئیات" : "🔙 Details", callback_data: "user_get_link:" + pauseUser.subHash }],
+                                        [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]
+                                    ]}, messageId);
+                            }
+                    } else if (data.startsWith("user_delete_service:")) {
+                            const delServiceId = data.split(":")[1];
+                            const delUser = (sysConfig.users || []).find(u => u.id === delServiceId);
+                            if (delUser) {
+                                // Soft delete - mark as deleted
+                                delUser.isDeleted = true;
+                                delUser.deletedAt = Date.now();
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                answerText = fa3 ? "🗑️ سرویس حذف شد" : "🗑️ Service deleted";
+                                await sendOrEdit(chatId, fa3
+                                    ? `🗑️ **سرویس حذف شد**\
+\
+📋 <b>سرویس:</b> ${esc(delUser.name)}\n🆔 <b>شناسه:</b> <code>${delUser.id}</code>\n\nاین سرویس غیرفعال و از لیست شما حذف شد.`
+                                    : `🗑️ **Service Deleted**\
+\
+📋 <b>Service:</b> ${esc(delUser.name)}\n🆔 <b>ID:</b> <code>${delUser.id}</code>\n\nThis service has been deactivated and removed.`,
+                                    { inline_keyboard: [[{ text: fa3 ? "🔙 خدمات من" : "🔙 My Services", callback_data: "user_my_services" }], [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]] }, messageId);
+                            }
+                    } else if (data === "user_support") {
+                            // Support contact
+                            const supportText = sysConfig.botSupportUsername 
+                                ? (fa3 ? `\n\n👤 <b>پشتیبانی:</b> @${sysConfig.botSupportUsername}` : `\n\n👤 <b>Support:</b> @${sysConfig.botSupportUsername}`)
+                                : (fa3 ? `\n\n📧 لطفا با ادمین تماس بگیرید.` : `\n\n📧 Please contact the admin.`);
+                            await sendOrEdit(chatId, fa3
+                                ? `🎧 **پشتیبانی**\
+\
+━━━━━━━━━━━━━━━${supportText}`
+                                : `🎧 **Support**\
+\
+━━━━━━━━━━━━━━━${supportText}`,
+                                { inline_keyboard: [[{ text: fa3 ? "🔙 بازگشت" : "🔙 Back", callback_data: "user_my_services" }], [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]] }, messageId);
                 } else if (data.startsWith("admin_delete_trial_user:")) {
                     const delUserId = data.replace("admin_delete_trial_user:", "");
                     const usedTrials = sysConfig.usedTrials || [];
@@ -4870,10 +4970,13 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         const detailText = fa
                             ? `📊 **وضعیت اشتراک**\n━━━━━━━━━━━━━━━━\n📛 نام: **${u.name}**\n🆔 UUID: \`${u.id}\`\n🚦 وضعیت: ${statusEmoji} ${statusText}\n━━━━━━━━━━━━━━━━\n📊 مصرف: **${usedGB}** / ${limitGB} GB\n${progressBar} ${pctUsed}%\n⏱ روز مانده: **${dLeft < 0 ? '∞' : dLeft}** روز\n📅 انقضا: ${expiryDate}\n📡 پروتکل: ${u.protocol || 'نامحدود'}\n📱 محدودیت کانفیگ: ${u.configLimit || 'نامحدود'}\n━━━━━━━━━━━━━━━━\n🔗 لینک اشتراک:\n\`${subLink}\`\n━━━━━━━━━━━━━━━━\n💾 لینک در حساب شما ذخیره شد.`
                             : `📊 **Subscription Status**\n━━━━━━━━━━━━━━━━\n📛 Name: **${u.name}**\n🆔 UUID: \`${u.id}\`\n🚦 Status: ${statusEmoji} ${statusText}\n━━━━━━━━━━━━━━━━\n📊 Usage: **${usedGB}** / ${limitGB} GB\n${progressBar} ${pctUsed}%\n⏱ Days Left: **${dLeft < 0 ? '∞' : dLeft}** days\n📅 Expiry: ${expiryDate}\n📡 Protocol: ${u.protocol || 'Unlimited'}\n📱 Config Limit: ${u.configLimit || 'Unlimited'}\n━━━━━━━━━━━━━━━━\n🔗 Subscription Link:\n\`${subLink}\`\n━━━━━━━━━━━━━━━━\n💾 Link saved to your account.`;
-                        const detailKb = { inline_keyboard: [
-                            [{ text: fa ? '🔗 لینک اشتراک' : '🔗 Subscription Link', callback_data: `user_get_link:${u.id}` }],
-                            [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]
-                        ]};
+            const detailKb = { inline_keyboard: [
+                [{ text: fa ? '🔗 لینک اشتراک' : '🔗 Subscription Link', callback_data: `user_get_link:${u.id}` }],
+                [{ text: fa ? '🔄 تمدید' : '🔄 Renew', callback_data: `user_renew_service:${u.id}` }, { text: fa ? '⏸️ توقف' : '⏸️ Pause', callback_data: `user_pause_service:${u.id}` }],
+                [{ text: fa ? '✏️ تغییر نام' : '✏️ Rename', callback_data: `user_rename_service:${u.id}` }, { text: fa ? '🗑️ حذف' : '🗑️ Delete', callback_data: `user_delete_service:${u.id}` }],
+                [{ text: fa ? '🎧 پشتیبانی' : '🎧 Support', callback_data: 'user_support' }],
+                [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]
+            ]};
                         await sendOrEdit(chatId, detailText, detailKb);
                         return new Response('OK', { status: 200 });
                     }
