@@ -2454,6 +2454,9 @@ const botI18n = {
         user_wallet_balance: "💰 Balance: {amount} T",
         user_wallet_charge: "💳 Charge Wallet",
         user_wallet_history: "📜 Transaction History",
+        user_wallet_title: "💳 Wallet\n━━━━━━━━━━━━━━━━",
+        user_wallet_empty: "📭 No transactions found.",
+        user_wallet_referral: "🔗 Referral code: {code}",
         user_profile_title: "👤 Profile\n━━━━━━━━━━━━━━━━",
         user_profile_name: "Name",
         user_profile_id: "User ID",
@@ -2622,6 +2625,32 @@ const botI18n = {
         shop_welcome_prompt: "📝 پیام خوش‌آمد جدید ربات را ارسال کنید ({name} = نام کاربر):",
         shop_welcome_set: "✅ پیام خوش‌آمد ربات به‌روزرسانی شد!",
         shop_bot_welcome: "💬 پیام خوش‌آمد ربات",
+        // Wallet
+        user_wallet_title: "💳 کیف پول\n━━━━━━━━━━━━━━━━",
+        user_wallet_balance: "💰 موجودی: {amount} تومان",
+        user_wallet_charge: "💳 شارژ کیف پول",
+        user_wallet_history: "📜 تاریخچه تراکنش‌ها",
+        user_wallet_empty: "📭 هیچ تراکنشی یافت نشد.",
+        user_wallet_referral: "🔗 کد معرف: {code}",
+        // Profile
+        user_profile_title: "👤 پروفایل کاربری\n━━━━━━━━━━━━━━━━",
+        user_profile_name: "👤 نام: {name}",
+        user_profile_id: "🆔 شناسه کاربری: {uuid}",
+        user_profile_since: "📅 عضویت از: {date}",
+        // Referral
+        user_referral_title: "🔗 برنامه معرف\n━━━━━━━━━━━━━━━━",
+        user_referral_link: "🔗 لینک معرف شما: {link}",
+        user_referral_commission: "💰 کمیسیون: {percent}%",
+        // Help & Support
+        user_help_title: "🛍 راهنما و پشتیبانی\n━━━━━━━━━━━━━━━━",
+        user_help_faq: "❓ سوالات متداول",
+        user_help_contact: "📞 ارتباط با پشتیبانی",
+        // Services
+        user_services_title: "📋 سرویس های من\n━━━━━━━━━━━━━━━━",
+        user_services_empty: "📭 هیچ سرویس فعالی یافت نشد.",
+        user_service_active: "🟢 فعال",
+        user_service_expired: "🔴 منقضی",
+        user_service_paused: "⏸ معلق",
     }
 };
 
