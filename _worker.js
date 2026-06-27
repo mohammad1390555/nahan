@@ -5,13 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.0.0";
-// v5.0.0 Changelog:
-// 🔐 Secure sub link: from ?sub=name to /sub/<hash> for better security
-// 🔑 Unique 44-char hash per user with SHA-224
-// 🎨 Improved subscription page with animated SVG ring and particles
-// 📱 Updated bot messages with user-specific subHash
-// ⚙️ Added subRoute config option
+const CURRENT_VERSION = "5.1.0";
+// v5.1.0 Changelog:
+// 🧪 Admin trial users management: list + delete trial users from admin panel
+// ✏️ Service rename: users can rename their services
+// 📋 Enhanced My Services: each service shown as interactive button with details
+// 🔧 Fixed /sub/undefined: subHash added to purchase & trial user creation
+// 🔄 Reset Free Trial: button to allow re-taking free trial
 //
 // v4.0.0 Changelog:
 // 🔐 سیستم احراز هویت JWT با HMAC-SHA256
