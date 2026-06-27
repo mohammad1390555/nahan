@@ -4084,7 +4084,6 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         } else {
                             sysConfig.userAccounts.push({ tgId: String(purchase.tgId), tgName: purchase.tgName || '', firstName: '', subId: newUserId, subHash: generateSubHash(newUserId), savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
                         }
-                            }
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
                         answerText = t("admin_approved_ok") || "✅ Approved";
                         const subLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${newUser.subHash}`;
