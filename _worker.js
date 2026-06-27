@@ -2404,7 +2404,7 @@ const botI18n = {
         tg_version: "Version", tg_cf_usage: "CF Usage",
         // User-side bot strings
         user_welcome: "👋 Welcome to **Nahan** subscription bot!\n\nSend your subscription link to check your status, or use the buttons below.",
-        user_send_link: "\u{1f4ce} Check Status\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nSend your subscription link or User ID:",
+        user_send_link: "📎 Check Status\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nSend your subscription link or User ID:",
         user_not_found: "❌ Not Found\n━━━━━━━━━━━━━━━━\nNo subscription found with this ID.\n\n💡 Please check and try again.",
         user_status: "📊 Subscription Status\n━━━━━━━━━━━━━━━━",
         user_trial_disabled: "🎁 Free Trial\n━━━━━━━━━━━━━━━━\n❌ Free trial is currently unavailable.",
