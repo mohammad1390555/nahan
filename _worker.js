@@ -5,7 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.3.1";
+const CURRENT_VERSION = "5.4.0";
+// v5.4.0 Changelog:
+// 🐛 Hotfix: swapped nat64 element IDs between add/edit user modals (commitAddUser was reading edit-user-nat64 instead of add-user-nat64)
+// 🐛 Hotfix: targetUser.id undefined in user_get_link handler (fixed to u.id for Renew/Pause/Delete buttons)
+// 🌐 Persian (fa) translations for wallet/profile/referral/support/services
+// 🌐 3 missing EN translation keys added for parity
+
 // v5.3.1 Changelog:
 // 💥 Hotfix: removed duplicate broadcast handler from changelog area (caused Illegal return statement)
 // 💥 Hotfix: broadcast handler now exists only in proper text handler scope (line ~4951)
@@ -3381,8 +3387,8 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                                     ? `📱 *جزئیات سرویس*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
                                     : `📱 *Service Details*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
                                 const detailRows = [
-                                    [{ text: fa3 ? '🔄 تمدید' : '🔄 Renew', callback_data: `user_renew_service:${targetUser.id}` }, { text: fa3 ? '⏸️ توقف' : '⏸️ Pause', callback_data: `user_pause_service:${targetUser.id}` }],
-                                    [{ text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${targetHash}` }, { text: fa3 ? '🗑️ حذف' : '🗑️ Delete', callback_data: `user_delete_service:${targetUser.id}` }],
+                                    [{ text: fa3 ? '🔄 تمدید' : '🔄 Renew', callback_data: `user_renew_service:${u.id}` }, { text: fa3 ? '⏸️ توقف' : '⏸️ Pause', callback_data: `user_pause_service:${u.id}` }],
+                                    [{ text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${targetHash}` }, { text: fa3 ? '🗑️ حذف' : '🗑️ Delete', callback_data: `user_delete_service:${u.id}` }],
                                     [{ text: fa3 ? '🎧 پشتیبانی' : '🎧 Support', callback_data: 'user_support' }],
                                     [{ text: fa3 ? '🔙 خدمات من' : '🔙 My Services', callback_data: 'user_my_services' }, { text: fa3 ? '🏠 منو' : '🏠 Menu', callback_data: 'user_main_menu' }]
                                 ];
@@ -10334,7 +10340,7 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                if (nodesCheckbox) nodesArray.push(...nodesCheckbox.split(','));
                if (nodesCustom) nodesArray.push(...nodesCustom.split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
                const userNodes = nodesArray.length ? nodesArray.join(',') : null;
-               const nat64 = document.getElementById('edit-user-nat64').value.trim() || null;
+               const nat64 = document.getElementById('add-user-nat64').value.trim() || null;
                
                if(!name) {
                    alert(lang === 'fa' ? 'لطفاً نام را وارد کنید' : 'Please enter a name');
@@ -10490,7 +10496,7 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                if (nodesCheckbox) nodesArray.push(...nodesCheckbox.split(','));
                if (nodesCustom) nodesArray.push(...nodesCustom.split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
                const userNodes = nodesArray.length ? nodesArray.join(',') : null;
-               const nat64 = document.getElementById('add-user-nat64').value.trim() || null;
+               const nat64 = document.getElementById('edit-user-nat64').value.trim() || null;
                
                if(!name) {
                   alert(lang === 'fa' ? 'لطفاً نام را وارد کنید' : 'Please enter a name');
