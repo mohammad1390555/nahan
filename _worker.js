@@ -602,7 +602,7 @@ export default {
             const isAgencyRoute = reqPath === routes.agency || reqPath.endsWith('/api/agency');
             const isSearchRoute = reqPath === routes.search || reqPath.endsWith('/api/search');
             const isApiKeysRoute = reqPath === routes.apiKeys || reqPath.endsWith('/api/keys');
-            const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isSubscriptionsRoute || isReferralRoute || isAgencyRoute || isSearchRoute || isApiKeysRoute;
+            const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isSubscriptionsRoute || isReferralRoute || isAgencyRoute || isSearchRoute || isApiKeysRoute || (reqPath.startsWith(routes.sub + "/") && reqPath.length > routes.sub.length + 1);
 
             // v4.0.0: Rate limiting for API routes
             if (isAuthorizedRoute && !isTelemetryStream && reqPath !== routes.data && reqPath !== routes.dash) {
@@ -2100,8 +2100,8 @@ async function handleAuth(request, hostName, ctx, env) {
                 success: true, config: sysConfig, deviceId: activeDeviceId, network: netInfo, usage: usageData, sysUsage: (sysUsageCache && sysUsageCache.users) ? sysUsageCache.users : {},
                 version: CURRENT_VERSION,
                 profiles: getAllProfiles().map(p => {
-                    let subSuffix = p.name === 'Default' ? '' : '?sub=' + encodeURIComponent(p.name);
-                    let subHashField = p.subHash || generateSubHash(p.id);
+                let subHashField = p.subHash || generateSubHash(p.id);
+                return { name: p.name, id: p.id, subHash: subHashField, sync: `${protocol}://${baseHost}/${encodeURI(sysConfig.subRoute || "sub")}/${subHashField}` };
                     return {
                         name: p.name,
                         id: p.id,
@@ -2945,7 +2945,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                                 const trialUser = {
                                     id: trialId,
                                     name: `trial_${cb.from?.username || cb.from?.first_name || userTgId2}_${Math.floor(Math.random() * 9000) + 1000}`,
-                                    subHash: generateSubHash(trialId),
+                                    subHash: generateSubHash(trialId), ownerTgId: String(cb.from?.id || chatId),
                                     totalTrafficLimit: (sysConfig.freeTrialGB || 1) * 1073741824,
                                     limitTotalReq: Math.round((sysConfig.freeTrialGB || 1) * 6000),
                                     expiryMs: Date.now() + (sysConfig.freeTrialDays || 3) * 86400000,
@@ -4039,6 +4039,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                             id: newUserId,
                             name: `${baseName}_${randomSuffix}`,
                             subHash: generateSubHash(newUserId),
+                            ownerTgId: String(cb.from?.id || chatId),
                             totalTrafficLimit: (purchase.gb || 10) * 1073741824,
                             limitTotalReq: Math.round((purchase.gb || 10) * 6000),
                             expiryMs: Date.now() + (purchase.days || 30) * 86400000,
