@@ -4099,6 +4099,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                     } else {
                         answerText = "❌ Not found";
                     }
+                    }
                 } else if (data.startsWith("admin_reject_purchase:")) {
                     const purchaseId = data.replace("admin_reject_purchase:", "");
                     const idx = (sysConfig.pendingPurchases || []).findIndex(p => p.id === purchaseId);
