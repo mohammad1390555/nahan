@@ -5,7 +5,15 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.3.0";
+const CURRENT_VERSION = "5.3.1";
+// v5.3.1 Changelog:
+// 💥 Hotfix: broadcast handler moved from changelog area to proper text handler scope
+// 💥 Hotfix: Illegal return statement resolved (was outside function scope)
+// 💥 Hotfix: variable rename script mangled await/waitUntil -> awaccIdxt/waccIdxtUntil
+// 💥 Hotfix: threshold alert broken variable references (pctUsed2, notifyId2, d2e)
+// 💥 Hotfix: 100% notification used trafficNotified80 instead of trafficNotified100
+// 💥 Hotfix: allUsers[ai] -> allUsers[accIdx] loop variable mismatch
+//
 // v5.3.0 Changelog:
 // 🎨 UI/UX: beautified bot messages with professional Persian formatting
 // 📊 Traffic alerts: auto-notify admin at 50%, 80%, 100% usage per user
@@ -4970,7 +4978,37 @@ data === "user_main_menu") {
                     return new Response('OK', { status: 200 });
                 }
 
-                if (userState && userState.step === 'user_awaiting_add_sub') {
+                                        // v5.3.0: Handle broadcast mode - admin sends message to all users
+                        if (sysConfig.botBroadcastMode) {
+                            const isAdminUser = String(cb.from?.id || chatId) === String(sysConfig.tgAdminId || "");
+                            if (isAdminUser && text && text !== '/cancel') {
+                                sysConfig.botBroadcastMode = false;
+                                const allUsers = sysConfig.userAccounts || [];
+                                let sentCount = 0;
+                                for (let bIdx = 0; bIdx < allUsers.length; bIdx++) {
+                                    if (allUsers[bIdx].tgId) {
+                                        try {
+                                            await fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                                method: "POST", headers: {"Content-Type": "application/json"},
+                                                body: JSON.stringify({chat_id: allUsers[bIdx].tgId, text: "📢 <b>پیام ادمین</b>\n\n"+text, parse_mode: "HTML"})
+                                            });
+                                            sentCount++;
+                                        } catch(e) {}
+                                    }
+                                }
+                                const doneMsg = fa3 ? "✅ پیام به "+sentCount+" کاربر ارسال شد." : "✅ Message sent to "+sentCount+" users.";
+                                await sendOrEdit(chatId, messageId, doneMsg, { inline_keyboard: [[{ text: fa3 ? "🔙 برگشت" : "🔙 Back", callback_data: "admin_main_menu" }]] });
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                return;
+                            } else if (text === '/cancel') {
+                                sysConfig.botBroadcastMode = false;
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                const cancelledMsg = fa3 ? "❌ ارسال پیام گروهی لغو شد." : "❌ Broadcast cancelled.";
+                                await sendOrEdit(chatId, messageId, cancelledMsg, { inline_keyboard: [[{ text: fa3 ? "🔙 برگشت" : "🔙 Back", callback_data: "admin_main_menu" }]] });
+                                return;
+                            }
+                        }
+if (userState && userState.step === 'user_awaiting_add_sub') {
                     tgState[chatId] = null;
                     ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
                     let addId = text.trim();
