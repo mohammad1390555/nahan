@@ -6,6 +6,14 @@ import { connect } from "cloudflare:sockets";
  */
 
 const CURRENT_VERSION = "5.3.1";
+// v5.3.1 Changelog:
+// 💥 Hotfix: broadcast handler moved from changelog area to proper text handler scope
+// 💥 Hotfix: Illegal return statement resolved (was outside function scope)
+// 💥 Hotfix: variable rename script mangled await/waitUntil -> awaccIdxt/waccIdxtUntil
+// 💥 Hotfix: threshold alert broken variable references (pctUsed2, notifyId2, d2e)
+// 💥 Hotfix: 100% notification used trafficNotified80 instead of trafficNotified100
+// 💥 Hotfix: allUsers[ai] -> allUsers[accIdx] loop variable mismatch
+//
 // v5.3.0 Changelog:
 // 🎨 UI/UX: beautified bot messages with professional Persian formatting
 // 📊 Traffic alerts: auto-notify admin at 50%, 80%, 100% usage per user
