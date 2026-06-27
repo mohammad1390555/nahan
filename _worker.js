@@ -5,13 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.0.0";
-// v5.0.0 Changelog:
-// 🔐 Secure sub link: from ?sub=name to /sub/<hash> for better security
-// 🔑 Unique 44-char hash per user with SHA-224
-// 🎨 Improved subscription page with animated SVG ring and particles
-// 📱 Updated bot messages with user-specific subHash
-// ⚙️ Added subRoute config option
+const CURRENT_VERSION = "5.1.0";
+// v5.1.0 Changelog:
+// 🧪 Admin trial users management: list + delete trial users from admin panel
+// ✏️ Service rename: users can rename their services
+// 📋 Enhanced My Services: each service shown as interactive button with details
+// 🔧 Fixed /sub/undefined: subHash added to purchase & trial user creation
+// 🔄 Reset Free Trial: button to allow re-taking free trial
 //
 // v4.0.0 Changelog:
 // 🔐 سیستم احراز هویت JWT با HMAC-SHA256
@@ -2933,9 +2933,10 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                             const userTgId2 = String(cb.from?.id || chatId);
                             if (usedTrials.includes(userTgId2)) {
                                 await sendOrEdit(chatId, fa3
-                                    ? "⚠️ شما قبلاً از تست رایگان استفاده کرده‌اید.\n\n💡 برای خرید اشتراک از منوی خرید استفاده کنید."
-                                    : "⚠️ You have already used your free trial.\n\n💡 Use the buy menu to purchase a subscription.",
+                                    ? "⚠️ شما قبلاً از تست رایگان استفاده کرده‌اید.\n\n💡 دکمه ریست را بزنید تا دوباره تست بگیرید."
+                                    : "⚠️ You have already used your free trial.\n\n💡 Press reset to take the trial again.",
                                     { inline_keyboard: [
+                                        [{ text: fa3 ? '🔄 ریست تست رایگان' : '🔄 Reset Free Trial', callback_data: 'user_reset_trial' }],
                                         ...(sysConfig.purchaseEnabled ? [[{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy', callback_data: 'user_buy' }]] : []),
                                         [{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]
                                     ]}, messageId);
@@ -2944,6 +2945,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                                 const trialUser = {
                                     id: trialId,
                                     name: `trial_${cb.from?.username || cb.from?.first_name || userTgId2}_${Math.floor(Math.random() * 9000) + 1000}`,
+                                    subHash: generateSubHash(trialId),
                                     totalTrafficLimit: (sysConfig.freeTrialGB || 1) * 1073741824,
                                     limitTotalReq: Math.round((sysConfig.freeTrialGB || 1) * 6000),
                                     expiryMs: Date.now() + (sysConfig.freeTrialDays || 3) * 86400000,
@@ -3066,7 +3068,32 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         menuRows.push([{ text: fa3 ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
                         if (sysConfig.botSupportMsg) menuRows.push([{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
                         await sendOrEdit(chatId, welcomeMsg, { inline_keyboard: menuRows }, messageId);
-                    } else if (data.startsWith("user_get_link:")) {
+                    } else if (data === "user_reset_trial") {
+                            // Reset user's trial status so they can take free trial again
+                            const usedTrials = sysConfig.usedTrials || [];
+                            const userTgId3 = String(cb.from?.id || chatId);
+                            const resetIdx = usedTrials.indexOf(userTgId3);
+                            if (resetIdx !== -1) {
+                                usedTrials.splice(resetIdx, 1);
+                                sysConfig.usedTrials = usedTrials;
+                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                                await sendOrEdit(chatId, fa3
+                                    ? "✅ **تست رایگان ریست شد!**\n\nاکنون می‌توانید دوباره تست رایگان بگیرید."
+                                    : "✅ **Free trial reset!**\n\nYou can now take the free trial again.",
+                                    { inline_keyboard: [
+                                        [{ text: fa3 ? "🎮 شروع تست رایگان" : "🎮 Start Free Trial", callback_data: "user_free_trial" }],
+                                        [{ text: fa3 ? "🏠 منوی اصلی" : "🏠 Menu", callback_data: "user_main_menu" }]
+                                    ]}, messageId);
+                            } else {
+                                await sendOrEdit(chatId, fa3
+                                    ? "❌ شما تست رایگان ثبت نکرده‌اید.\n\nبرای شروع تست رایگان دکمه زیر را بزنید."
+                                    : "❌ You haven't taken the free trial yet.\n\nClick below to start:",
+                                    { inline_keyboard: [
+                                        [{ text: fa3 ? "🎮 شروع تست رایگان" : "🎮 Start Free Trial", callback_data: "user_free_trial" }],
+                                        [{ text: fa3 ? "🏠 منوی اصلی" : "🏠 Menu", callback_data: "user_main_menu" }]
+                                    ]}, messageId);
+                            }
+                        } else if (data.startsWith("user_get_link:")) {
                         const uid = data.replace("user_get_link:", "");
                         const linkUser = (sysConfig.users || []).find(u => u.id === uid);
                         const linkUrl = linkUser
@@ -4011,6 +4038,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:'];
                         const newUser = {
                             id: newUserId,
                             name: `${baseName}_${randomSuffix}`,
+                            subHash: generateSubHash(newUserId),
                             totalTrafficLimit: (purchase.gb || 10) * 1073741824,
                             limitTotalReq: Math.round((purchase.gb || 10) * 6000),
                             expiryMs: Date.now() + (purchase.days || 30) * 86400000,
