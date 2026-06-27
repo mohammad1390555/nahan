@@ -5,13 +5,17 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.1.0";
+const CURRENT_VERSION = "5.2.0";
+// v5.2.0 Changelog:
+// 🔒 Admin-only trial reset: members can't reset free trial anymore
+// 🔢 20-service limit per user: enforced during purchase approval
+// 🔄 Service renewal: renew any service with user_renew_service
+// ⏸️ Pause/Resume: toggle service status with user_pause_service
+// 🗑️ Soft delete: remove services without data loss
+// 🎧 Support button: quick access to support contact
+// 📋 Enhanced detail view: more action buttons in service details
+//
 // v5.1.0 Changelog:
-// 🧪 Admin trial users management: list + delete trial users from admin panel
-// ✏️ Service rename: users can rename their services
-// 📋 Enhanced My Services: each service shown as interactive button with details
-// 🔧 Fixed /sub/undefined: subHash added to purchase & trial user creation
-// 🔄 Reset Free Trial: button to allow re-taking free trial
 //
 // v4.0.0 Changelog:
 // 🔐 سیستم احراز هویت JWT با HMAC-SHA256
