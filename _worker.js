@@ -5,7 +5,14 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "4.0.0";
+const CURRENT_VERSION = "5.0.0";
+// v5.0.0 Changelog:
+// 🔐 Secure sub link: from ?sub=name to /sub/<hash> for better security
+// 🔑 Unique 44-char hash per user with SHA-224
+// 🎨 Improved subscription page with animated SVG ring and particles
+// 📱 Updated bot messages with user-specific subHash
+// ⚙️ Added subRoute config option
+//
 // v4.0.0 Changelog:
 // 🔐 سیستم احراز هویت JWT با HMAC-SHA256
 // 🛡️ Rate Limiting مبتنی بر D1 (100 req/min per IP)
@@ -90,6 +97,7 @@ const safeBtoa = (str) => {
 const SYSTEM_DEFAULTS = {
     name: "",
     apiRoute: "sync",
+    subRoute: "sub",
     maintenanceHost: "https://www.ubuntu.com, https://www.docker.com",
     backupRelay: "",
     customRelay: "",
@@ -306,6 +314,13 @@ function registerConfigEntry(uuid, userId, relayIp) {
 
 function lookupConfigEntry(uuidHex) {
     return configRegistry.get(uuidHex.toLowerCase()) || null;
+}
+
+// v5.0.0: Secure sub hash generator (40+ chars)
+function generateSubHash(id) {
+    const random = crypto.randomUUID() + crypto.randomUUID() + Date.now().toString(36);
+    const hash = sha224Hex(id + random);
+    return hash.substring(0, 44);
 }
 
 function generateConfigUuid(originalUuid, relayIpIndex) {
@@ -568,6 +583,8 @@ export default {
                 agency: `/${encodeURI(sysConfig.apiRoute)}/api/agency`,
                 search: `/${encodeURI(sysConfig.apiRoute)}/api/search`,
                 apiKeys: `/${encodeURI(sysConfig.apiRoute)}/api/keys`,
+                // v5.0.0: Sub route
+                sub: `/${encodeURI(sysConfig.subRoute || "sub")}`,
             };
 
             const isSyncRoute = reqPath.endsWith('/api/sync');
@@ -670,6 +687,19 @@ export default {
                 }
                 if (isApiKeysRoute) {
                     return await handleApiKeys(request, env, ctx);
+                }
+                // v5.0.0: Sub route handler (secure subscription page via /sub/<hash>)
+                if (reqPath.startsWith(routes.sub + "/") && reqPath.length > routes.sub.length + 1) {
+                    const subHash = reqPath.slice(routes.sub.length + 1);
+                    let targetUser = null;
+                    if (sysConfig.users && sysConfig.users.length > 0) {
+                        targetUser = sysConfig.users.find(u => u.subHash === subHash);
+                    }
+                    if (targetUser) {
+                        const host = request.headers.get("Host") || url.hostname;
+                        return serveSubscriptionInfoPage(targetUser, host, url, request);
+                    }
+                    return serveMaintenancePage(request, url);
                 }
                 if (reqPath === routes.data) {
                     const ua = (request.headers.get("User-Agent") || "").toLowerCase();
@@ -1757,7 +1787,8 @@ async function handleUsersApi(request, env, ctx) {
             else if (u.isPaused) status = "paused";
             else if (isExpired) status = "expired";
             const hostName = new URL(request.url).hostname;
-            const subUrl = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+            const subHash = u.subHash || generateSubHash(u.id);
+            const subUrl = `https://${hostName}/${encodeURI(sysConfig.subRoute || "sub")}/${subHash}`;
             return new Response(JSON.stringify({ success: true, user: { ...u, usage: { total: usedBytes, limit: limitBytes, daily: sysU.dReqs || 0, dailyLimit: u.limitDailyReq || 0 }, status, subscriptionUrl: subUrl } }), { headers: { "Content-Type": "application/json" } });
         }
 
@@ -1769,6 +1800,7 @@ async function handleUsersApi(request, env, ctx) {
             const newUser = {
                 id: newId,
                 name: name,
+                subHash: generateSubHash(newId),
                 limitTotalReq: trafficLimit ? Math.floor(parseFloat(trafficLimit) * 6000) : null,
                 limitDailyReq: body.dailyLimit ? Math.floor(parseFloat(body.dailyLimit) * 6000) : null,
                 expiryMs: expiryDays ? Date.now() + parseInt(expiryDays) * 86400000 : null,
@@ -1788,7 +1820,7 @@ cleanIp: cleanIp || null,
             await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
             ctx?.waitUntil(logActivity(env, "User Created", `User "${name}" (${newId}) created via API`).catch(()=>{}));
             const hostName = new URL(request.url).hostname;
-            const subUrl = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(name)}`;
+            const subUrl = `https://${hostName}/${encodeURI(sysConfig.subRoute || "sub")}/${newUser.subHash}`;
             return new Response(JSON.stringify({ success: true, user: newUser, subscriptionUrl: subUrl }), { status: 201, headers: { "Content-Type": "application/json" } });
         }
 
@@ -2069,6 +2101,7 @@ async function handleAuth(request, hostName, ctx, env) {
                 version: CURRENT_VERSION,
                 profiles: getAllProfiles().map(p => {
                     let subSuffix = p.name === 'Default' ? '' : '?sub=' + encodeURIComponent(p.name);
+                    let subHashField = p.subHash || generateSubHash(p.id);
                     return {
                         name: p.name,
                         id: p.id,
@@ -2806,7 +2839,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
             
             const statusEmoji = u.isPaused ? "⏸️" : (isExp ? "🔴" : "🟢");
             const statusText = u.isPaused ? t("paused") : (isExp ? t("dash_expired") : t("active"));
-            const subSync = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+            const subHash = u.subHash || generateSubHash(u.id);
+            const subSync = `https://${hostName}/${encodeURI(sysConfig.subRoute || "sub")}/${subHash}`;
             const maxCfgTxt = u.maxConfigs || t("unlimited");
             const notesTxt = u.notes || t("lbl_none");
             const modeTxt = u.userMode ? (u.userMode === 'alpha' ? 'Alpha (V)' : u.userMode === 'beta' ? 'Beta (T)' : 'Both') : t("unlimited");
@@ -2922,10 +2956,10 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                                     existingAcc.subId = trialId;
                                     existingAcc.lastActivity = Date.now();
                                 } else {
-                                    sysConfig.userAccounts.push({ tgId: userTgId2, tgName: cb.from?.username || '', firstName: cb.from?.first_name || '', subId: trialId, savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
+                                    sysConfig.userAccounts.push({ tgId: userTgId2, tgName: cb.from?.username || '', firstName: cb.from?.first_name || '', subId: trialId, subHash: generateSubHash(trialId), savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
                                 }
                                 await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                const trialLink = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(trialUser.name)}`;
+                                const trialLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${trialUser.subHash || generateSubHash(trialUser.id)}`;
                                 const trialMsg = fa3
                                     ? `🎉 **تست رایگان شما فعال شد!**\n━━━━━━━━━━━━━━\n⏱ مدت: **${sysConfig.freeTrialDays || 3}** روز\n📦 حجم: **${sysConfig.freeTrialGB || 1}** گیگابایت\n━━━━━━━━━━━━━━\n\n🔗 لینک اشتراک شما:\n\`${trialLink}\`\n\n💡 این لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
                                     : `🎉 **Free trial activated!**\n━━━━━━━━━━━━━━\n⏱ Duration: **${sysConfig.freeTrialDays || 3}** days\n📦 Traffic: **${sysConfig.freeTrialGB || 1}** GB\n━━━━━━━━━━━━━━\n\n🔗 Your subscription link:\n\`${trialLink}\`\n\n💡 Copy this link and add it to your app.`;
@@ -3032,7 +3066,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         const uid = data.replace("user_get_link:", "");
                         const linkUser = (sysConfig.users || []).find(u => u.id === uid);
                         const linkUrl = linkUser
-                            ? `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(linkUser.name)}`
+                            ? `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${linkUser.subHash || generateSubHash(linkUser.id)}`
                             : `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(uid)}`;
                         await sendOrEdit(chatId, fa3
                             ? `🔗 **لینک اشتراک شما:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
@@ -3073,7 +3107,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             const expiryDate2 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
                             const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
                             const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
-                            const subLink2 = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+                            const subLink2 = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${u.subHash || generateSubHash(u.id)}`;
                             const safeName2 = esc(u.name);
                             svcText = fa3
                                 ? `📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
@@ -3921,11 +3955,11 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                             existingAcc.subId = newUserId;
                             existingAcc.lastActivity = Date.now();
                         } else {
-                            sysConfig.userAccounts.push({ tgId: String(purchase.tgId), tgName: purchase.tgName || '', firstName: '', subId: newUserId, savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
+                            sysConfig.userAccounts.push({ tgId: String(purchase.tgId), tgName: purchase.tgName || '', firstName: '', subId: newUserId, subHash: generateSubHash(newUserId), savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
                         }
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
                         answerText = t("admin_approved_ok") || "✅ Approved";
-                        const subLink = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(newUser.name)}`;
+                        const subLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${newUser.subHash}`;
                         const fa3 = langCode === 'fa';
                         await sendOrEdit(chatId, fa3
                             ? `✅ **خرید تأیید شد**\n━━━━━━━━━━━━━━\n👤 کاربر: **${newUser.name}**\n📦 پکیج: ${purchase.pkgName || '—'}\n⏱ مدت: ${purchase.days || 30} روز\n📦 حجم: ${purchase.gb || 10} GB\n🔑 لینک: \`${subLink}\`\n━━━━━━━━━━━━━━`
@@ -4647,7 +4681,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                         const dLeft = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
                         const statusEmoji = u.isExpired ? '❌' : u.isPaused ? '⏸️' : '✅';
                         const statusText = u.isExpired ? (fa ? 'منقضی' : 'Expired') : u.isPaused ? (fa ? 'متوقف' : 'Paused') : (fa ? 'فعال' : 'Active');
-                        const subLink = `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
+                        const subLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${u.subHash || generateSubHash(u.id)}`;
                         // Save link to user account
                         if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
                         let userAcc = sysConfig.userAccounts.find(a => a.tgId === userTgId);
