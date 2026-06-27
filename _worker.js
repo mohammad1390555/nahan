@@ -57,9 +57,9 @@ const CURRENT_VERSION = "5.3.0";
                                 for (let accIdx = 0; accIdx < allUsers.length; accIdx++) {
                                     if (allUsers[accIdx].tgId) {
                                         try {
-                                            awaccIdxt fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                            await fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
                                                 method: "POST", headers: {"Content-Type": "application/json"},
-                                                body: JSON.stringify({chat_id: allUsers[ai].tgId, text: "📢 <b>پیام ادمین</b>\n\n"+text, parse_mode: "HTML"})
+                                                body: JSON.stringify({chat_id: allUsers[accIdx].tgId, text: "📢 <b>پیام ادمین</b>\n\n"+text, parse_mode: "HTML"})
                                             });
                                             sentCount++;
                                         } catch(e) {}
@@ -576,7 +576,7 @@ function trackUsage(uuid, bytes, env, ctx) {
                             u.disabledReason = reason;
                             u.disabledAt = Date.now();
                             changedConfig = true;
-                                                        // v5.3.0: Traffic threshold alerts (50%, 80%, 100%)
+                                                                                    // v5.3.0: Traffic threshold alerts (50%, 80%, 100%)
                             const usagePct = limitTotal ? Math.round((sysU?.reqs || 0) / limitTotal * 100) : 0;
                             const adminChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
                             if (sysConfig.tgToken && adminChatId && limitTotal && usagePct > 0) {
@@ -584,39 +584,39 @@ function trackUsage(uuid, bytes, env, ctx) {
                                     if (!sysConfig[notifKey]) sysConfig[notifKey] = {};
                                     if (sysConfig[notifKey][u.id]) return;
                                     sysConfig[notifKey][u.id] = true;
-                                    ctx?.waccIdxtUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                    ctx?.waitUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
                                         method: "POST", headers: {"Content-Type": "application/json"},
-                                        body: JSON.stringify({chat_id: notifyId2, text: msg3, parse_mode: "HTML"})
+                                        body: JSON.stringify({chat_id: adminChatId, text: notifMsg, parse_mode: "HTML"})
                                     }).catch(()=>{}));
                                     ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
                                 };
                                 if (usagePct >= 100) {
-                                    sendThresholdAlert(100, "trafficNotified100", '🚨 <b>Traffic Full: 100%</b>\\n\\n👤 User: '+u.name+'\\n🆔 ID: <code>'+u.id+'</code>\\n📊 Usage: 100%\\n⚠️ Service has been auto-disabled.');
-                                } else if (pctUsed2 >= 80) {
-                                    sendThresh(80, "trafficNotified80", '⚠️ <b>Traffic Warning: 80%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+pctUsed2+'%\n⏳ Service will be disabled soon.');
-                                } else if (pctUsed2 >= 50) {
-                                    sendThresh(50, "trafficNotified50", '🔔 <b>Traffic Notice: 50%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+pctUsed2+'%');
+                                    sendThresholdAlert(100, "trafficNotified100", '🚨 <b>Traffic Full: 100%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: 100%\n⚠️ Service has been auto-disabled.');
+                                } else if (usagePct >= 80) {
+                                    sendThresholdAlert(80, "trafficNotified80", '⚠️ <b>Traffic Warning: 80%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+usagePct+'%\n⏳ Service will be disabled soon.');
+                                } else if (usagePct >= 50) {
+                                    sendThresholdAlert(50, "trafficNotified50", '🔔 <b>Traffic Notice: 50%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+usagePct+'%');
                                 }
                             }
-                            // v5.3.0: Expiry notifications (7, 3, 1 days)
+                            // v5.3.0: Expiry notifications (7, 3, 1 days before expiry)
                             if (u.expiryMs && sysConfig.tgToken && adminChatId) {
                                 const daysToExpiry = Math.ceil((u.expiryMs - Date.now()) / 86400000);
                                 const sendExpiryAlert = async (expiryKey, expiryMsg) => {
                                     if (!sysConfig[expiryKey]) sysConfig[expiryKey] = {};
                                     if (sysConfig[expiryKey][u.id]) return;
                                     sysConfig[expiryKey][u.id] = true;
-                                    ctx?.waccIdxtUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
+                                    ctx?.waitUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
                                         method: "POST", headers: {"Content-Type": "application/json"},
-                                        body: JSON.stringify({chat_id: notifyId2, text: msg4, parse_mode: "HTML"})
+                                        body: JSON.stringify({chat_id: adminChatId, text: expiryMsg, parse_mode: "HTML"})
                                     }).catch(()=>{}));
                                     ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
                                 };
-                                if (d2e <= 1 && d2e > 0) {
-                                    sendExpNotif("expiryNotified1", '🚨 <b>Expiry Tomorrow!</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⚠️ '+d2e+' day(s) left.');
-                                } else if (d2e <= 3 && d2e > 1) {
-                                    sendExpNotif("expiryNotified3", '⚠️ <b>Expiry Soon: 3 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+d2e+' day(s) remaining.');
-                                } else if (d2e <= 7 && d2e > 3) {
-                                    sendExpNotif("expiryNotified7", '🔔 <b>Expiry Notice: 7 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+d2e+' day(s) remaining.');
+                                if (daysToExpiry <= 1 && daysToExpiry > 0) {
+                                    sendExpiryAlert("expiryNotified1", '🚨 <b>Expiry Tomorrow!</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⚠️ '+daysToExpiry+' day(s) left.');
+                                } else if (daysToExpiry <= 3 && daysToExpiry > 1) {
+                                    sendExpiryAlert("expiryNotified3", '⚠️ <b>Expiry Soon: 3 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+daysToExpiry+' day(s) remaining.');
+                                } else if (daysToExpiry <= 7 && daysToExpiry > 3) {
+                                    sendExpiryAlert("expiryNotified7", '🔔 <b>Expiry Notice: 7 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+daysToExpiry+' day(s) remaining.');
                                 }
                             }
 ctx?.waitUntil(logActivity(env, "User Auto-Disabled", `User "${u.name}" (${u.id}) disabled: ${reason}`).catch(()=>{}));
