@@ -1128,7 +1128,9 @@ export default {
             const isHashedSubRoute = reqPath.startsWith('/sub/') && reqPath.length > 5;
             const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isApiKeysRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isShopRoute || isAgencyRoute || isReferralRoute || isSubscriptionsRoute || isSearchRoute || isHashedSubRoute;
 
-            if (!isTelemetryStream && !isAuthorizedRoute) {
+            // V7.5.0 - Exclude public routes from rate limiting
+            const isPublicRoute = isHashedSubRoute || reqPath === routes.data;
+            if (!isTelemetryStream && !isAuthorizedRoute && !isPublicRoute) {
                 return serveMaintenancePage(request, url);
             }
 
@@ -1572,7 +1574,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         .gauge-ring { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke 0.5s; filter: drop-shadow(0 0 8px var(--gauge-color, #6366f1)); }
         @keyframes gaugeSpin { 0% { transform: rotate(-90deg); } 100% { transform: rotate(270deg); } }
         @keyframes gaugePulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }
-        @keyframes breathe { 0%,100% { opacity: 0.4; r: 6; } 50% { opacity: 1; r: 9; } }
+        @keyframes breathe { 0%,100% { opacity: 0.4; transform: scale(0.75); } 50% { opacity: 1; transform: scale(1.25); } }
         @keyframes sparkle { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.3); } }
         .gauge-text { animation: gaugePulse 2.5s ease-in-out infinite; }
         .gauge-breathing-dot { animation: breathe 2s ease-in-out infinite; }
@@ -6766,6 +6768,7 @@ function getDashboardUI(hasDB) {
                       <svg class="w-6 h-6 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                       <span class="font-semibold" data-i18n="tab_users">Users</span>
                   </button>
+                    
               </nav>
               <div class="p-4 border-t border-slate-100 dark:border-darkborder/50">
                   <button onclick="logout()" class="flex items-center justify-center w-full px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
@@ -7854,6 +7857,7 @@ function getDashboardUI(hasDB) {
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_users">Users</span>
               </button>
+                    
           </nav>
       </div>
   
@@ -9310,6 +9314,22 @@ function getDashboardUI(hasDB) {
 
           document.getElementById('pwd').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
   
+        // V7.5.0 - Animated Counter
+        function animateCounter(el, target, dur) {
+            let s = 0;
+            const step = (t) => {
+                if (!s) s = t;
+                const p = Math.min((t - s) / dur, 1);
+                el.textContent = Math.floor(p * target).toLocaleString();
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+        function initCounters() {
+            document.querySelectorAll("[data-count]").forEach(el => {
+                animateCounter(el, parseInt(el.getAttribute("data-count")) || 0, 1200);
+            });
+        }
           function renderUsersTable() {
               const tbl = document.getElementById('tbl-users');
               if(!tbl) return;
