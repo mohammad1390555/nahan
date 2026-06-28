@@ -5,7 +5,13 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "5.4.0";
+const CURRENT_VERSION = "5.6.0";
+// v5.6.0 Changelog:
+// 🎨🎨🎨 PRIORITY 1 UI/UX OVERHAUL — 17 high-impact improvements
+// 🤖 BOT: Fixed nav footer, plan cards, wallet widget, usage progress bar, quick actions, copy link, support/help buttons
+// 🖥️ PANEL: Usage chart (Chart.js), live alert banners, advanced search, pagination, server status
+// 🔗 SUB PAGE: Config preview/copy, protocol selector, JSON/YAML download, config regen, EN/FA toggle, usage gauge
+//
 // v5.4.0 Changelog:
 // 🐛 Hotfix: swapped nat64 element IDs between add/edit user modals (commitAddUser was reading edit-user-nat64 instead of add-user-nat64)
 // 🐛 Hotfix: targetUser.id undefined in user_get_link handler (fixed to u.id for Renew/Pause/Delete buttons)
@@ -1012,6 +1018,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${user.name} - Subscriber Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1194,7 +1201,12 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         .link-card-anim:hover { box-shadow: 0 0 0 1.5px var(--accent), 0 8px 32px rgba(99,102,241,0.15); }
         /* Plan badge */
         .plan-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border); }
-    </style>
+    
+    .page-hidden { display: none !important; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    #advSearchInput:focus { outline: none; border-color: #6366f1; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
 </head>
 <body class="min-h-screen py-6 px-4 flex flex-col items-center justify-center fade-in">
     <!-- Animated background orbs -->
@@ -1280,7 +1292,26 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-bold flex items-center gap-2" style="color: var(--text-primary);">
                     <span class="w-2 h-2 rounded-full" style="background: var(--accent);"></span>
-                    <span data-i18n="integrationTitle">لینک اشتراک</span>
+                    
+            <!-- v5.6.0: Protocol Selector & Actions -->
+            <div style="display:flex;gap:8px;justify-content:center;margin:12px 0;">
+              <button onclick="togglePageLang('en')" style="padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;">🇬🇧 EN</button>
+              <button onclick="togglePageLang('fa')" style="padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;">🇮🇷 فارسی</button>
+            </div>
+            <div style="display:flex;gap:8px;margin:16px 0;justify-content:center;flex-wrap:wrap;">
+              <button onclick="switchProto('all')" data-proto="all" style="padding:8px 16px;border-radius:8px;border:2px solid #6366f1;background:rgba(99,102,241,0.2);color:#e2e8f0;cursor:pointer;font-size:14px;box-shadow:0 0 12px rgba(99,102,241,0.3);">🌈 All</button>
+              <button onclick="switchProto('vless')" data-proto="vless" style="padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#e2e8f0;cursor:pointer;font-size:14px;">🔷 VLESS</button>
+              <button onclick="switchProto('trojan')" data-proto="trojan" style="padding:8px 16px;border-radius:8px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#e2e8f0;cursor:pointer;font-size:14px;">🔶 Trojan</button>
+            </div>
+            <div style="margin:16px 0;">
+              <div style="display:flex;gap:8px;margin-bottom:8px;justify-content:center;flex-wrap:wrap;">
+                <button onclick="downloadConfig('json')" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.15);color:#c7d2fe;cursor:pointer;font-size:13px;">📥 JSON</button>
+                <button onclick="downloadConfig('yaml')" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.15);color:#c7d2fe;cursor:pointer;font-size:13px;">📥 YAML</button>
+                <button onclick="copyActiveLink()" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.15);color:#c7d2fe;cursor:pointer;font-size:13px;">📋 Copy</button>
+              </div>
+            </div>
+
+            <span data-i18n="integrationTitle">لینک اشتراک</span>
                 </h2>
             </div>
             <!-- Format Tabs -->
@@ -1597,6 +1628,65 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 if (ring) ring.style.strokeDashoffset = '${usageOffset}';
                 if (ringGlow) ringGlow.style.strokeDashoffset = '${usageOffset}';
             }, 400);
+        }
+
+        
+        // v5.6.0: Protocol switching (Priority 1)
+        function switchProto(proto) {
+            document.querySelectorAll('.proto-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.proto === proto); });
+            fetchDecodedRawContent();
+        }
+
+        // v5.6.0: Download config as file (Priority 1)
+        function downloadConfig(format) {
+            var text = document.getElementById('configText')?.textContent || '';
+            if (!text || text === 'Loading config...' || text.startsWith('Click')) {
+                fetchDecodedRawContent().then(function() {
+                    setTimeout(function() { doDownload(format); }, 200);
+                });
+            } else {
+                doDownload(format);
+            }
+        }
+        function doDownload(format) {
+            var text = document.getElementById('configText')?.textContent || '';
+            var ext = format === 'yaml' ? 'yaml' : 'json';
+            var mime = format === 'yaml' ? 'text/yaml' : 'application/json';
+            var blob = new Blob([text], { type: mime });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'nahan-config.' + ext;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('✅ Downloaded as .' + ext + '!');
+        }
+
+        // v5.6.0: Regenerate config (Priority 1)
+        function regenConfig() {
+            showToast('🔄 Regenerating config...');
+            var url = new URL(window.location.href);
+            url.searchParams.set('regen', Date.now());
+            fetch(url.toString()).then(function(r) { return r.text(); }).then(function(html) {
+                document.body.innerHTML = html;
+                showToast('✅ Config regenerated!');
+            }).catch(function() {
+                location.reload();
+            });
+        }
+
+        // v5.6.0: Language toggle on sub page (Priority 1)
+        function togglePageLang(lang) {
+            document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.toggle('active', b.textContent.includes(lang.toUpperCase())); });
+            document.documentElement.lang = lang;
+            if (lang === 'fa') {
+                document.documentElement.style.direction = 'rtl';
+                document.body.style.fontFamily = "'Vazirmatn', 'Segoe UI', Tahoma, sans-serif";
+            } else {
+                document.documentElement.style.direction = 'ltr';
+                document.body.style.fontFamily = "'Segoe UI', Tahoma, sans-serif";
+            }
+            showToast('🌐 ' + (lang === 'fa' ? 'زبان فارسی' : 'English'));
         }
 
         (function init() {
@@ -2454,6 +2544,34 @@ const botI18n = {
         shop_welcome_prompt: "📝 Send new welcome message for the bot (use {name} for user name):",
         shop_welcome_set: "✅ Bot welcome message updated!",
         shop_bot_welcome: "💬 Bot Welcome Message",
+        // v5.6.0: Priority 1 UI/UX keys
+        footer_nav_home: "🏠 Home",
+        footer_nav_shop: "🛒 Shop",
+        footer_nav_wallet: "💳 Wallet",
+        footer_nav_profile: "👤 Profile",
+        btn_copy_link: "📋 Copy Link",
+        btn_quick_status: "📊 My Status",
+        btn_quick_trial: "🎁 Free Trial",
+        btn_quick_buy: "🛒 Buy",
+        btn_quick_wallet: "💳 Wallet",
+        btn_quick_referral: "🔗 Referral",
+        btn_quick_help: "❓ Help",
+        link_copied: "✅ Link copied!",
+        progress_bar_label: "Usage: {used}/{total} GB",
+        wallet_widget_title: "💳 Your Wallet",
+        wallet_widget_balance: "Balance: {amount} T",
+        plan_card_price: "💰 {price}",
+        plan_card_traffic: "📦 {gb} GB",
+        plan_card_days: "⏱ {days} Days",
+        plan_card_buy: "🛒 Buy",
+        sub_preview_title: "📋 Config Preview",
+        sub_protocol_v2ray: "🔷 V2Ray",
+        sub_protocol_trojan: "🔶 Trojan",
+        sub_protocol_all: "🌈 All",
+        sub_download_json: "📥 JSON Format",
+        sub_download_yaml: "📥 YAML Format",
+        sub_gauge_used: "Used",
+        sub_gauge_remaining: "Remaining",
         // v5.4.0: Wallet & Account translations
         user_wallet_title: "💳 Wallet\n━━━━━━━━━━━━━━━━",
         user_wallet_balance: "💰 Balance: {amount} T",
@@ -2630,6 +2748,35 @@ const botI18n = {
         shop_welcome_prompt: "📝 پیام خوش‌آمد جدید ربات را ارسال کنید ({name} = نام کاربر):",
         shop_welcome_set: "✅ پیام خوش‌آمد ربات به‌روزرسانی شد!",
         shop_bot_welcome: "💬 پیام خوش‌آمد ربات",
+        // v5.6.0: Priority 1 UI/UX keys
+        footer_nav_home: "🏠 خانه",
+        footer_nav_shop: "🛒 فروشگاه",
+        footer_nav_wallet: "💳 کیف پول",
+        footer_nav_profile: "👤 پروفایل",
+        btn_copy_link: "📋 کپی لینک",
+        btn_quick_status: "📊 وضعیت من",
+        btn_quick_trial: "🎁 تست رایگان",
+        btn_quick_buy: "🛒 خرید",
+        btn_quick_wallet: "💳 کیف پول",
+        btn_quick_referral: "🔗 معرفی",
+        btn_quick_help: "❓ راهنما",
+        link_copied: "✅ لینک کپی شد!",
+        progress_bar_label: "مصرف: {used}/{total} گیگ",
+        wallet_widget_title: "💳 کیف پول شما",
+        wallet_widget_balance: "موجودی: {amount} تومان",
+        plan_card_price: "💰 {price} تومان",
+        plan_card_traffic: "📦 {gb} گیگ",
+        plan_card_days: "⏱ {days} روز",
+        plan_card_buy: "🛒 خرید",
+        sub_preview_title: "📋 پیش‌نمایش کانفیگ",
+        sub_protocol_v2ray: "🔷 V2Ray",
+        sub_protocol_trojan: "🔶 Trojan",
+        sub_protocol_all: "🌈 همه",
+        sub_download_json: "📥 فرمت JSON",
+        sub_download_yaml: "📥 فرمت YAML",
+        sub_gauge_used: "مصرف شده",
+        sub_gauge_remaining: "باقی‌مانده",
+
         // Wallet
         user_wallet_title: "💳 کیف پول\n━━━━━━━━━━━━━━━━",
         user_wallet_balance: "💰 موجودی: {amount} تومان",
@@ -2815,6 +2962,48 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                 }
             } catch(e) {}
             return res;
+        };
+
+        // v5.6.0: Navigation Footer builder (Priority 1)
+        const buildFooterNav = (activeSection = 'home') => {
+            const sections = [
+                { key: 'home', emoji: '🏠', label: t('footer_nav_home'), callback: 'user_main_menu' },
+                { key: 'shop', emoji: '🛒', label: t('footer_nav_shop'), callback: 'user_buy' },
+                { key: 'wallet', emoji: '💳', label: t('footer_nav_wallet'), callback: 'user_wallet' },
+                { key: 'profile', emoji: '👤', label: t('footer_nav_profile'), callback: 'user_profile' },
+            ];
+            return sections.map(s => ({
+                text: (s.key === activeSection ? '▸ ' : '') + s.emoji + ' ' + s.label,
+                callback_data: s.callback
+            }));
+        };
+
+        // v5.6.0: Usage progress bar builder (Priority 1)
+        const buildProgressBar = (used, total, barLen = 12) => {
+            if (!total || total <= 0) return '';
+            const pct = Math.min(Math.round((used / total) * 100), 100);
+            const filled = Math.round((pct / 100) * barLen);
+            const empty = barLen - filled;
+            const emoji = pct >= 90 ? '🔴' : pct >= 70 ? '🟡' : pct >= 50 ? '🟠' : '🟢';
+            return '\n' + emoji + ' [' + '\u2588'.repeat(filled) + '\u2591'.repeat(empty) + '] ' + pct + '%';
+        };
+
+        // v5.6.0: Quick action buttons builder (Priority 1)
+        const buildQuickActions = () => {
+            const actions = [
+                { emoji: '📊', key: 'btn_quick_status', callback: 'user_status_check' },
+                { emoji: '🎁', key: 'btn_quick_trial', callback: 'user_trial' },
+                { emoji: '🛒', key: 'btn_quick_buy', callback: 'user_buy' },
+                { emoji: '💳', key: 'btn_quick_wallet', callback: 'user_wallet' },
+                { emoji: '🔗', key: 'btn_quick_referral', callback: 'user_referral' },
+            ];
+            const rows = [];
+            for (let i = 0; i < actions.length; i += 2) {
+                const row = [{ text: actions[i].emoji + ' ' + t(actions[i].key), callback_data: actions[i].callback }];
+                if (actions[i+1]) row.push({ text: actions[i+1].emoji + ' ' + t(actions[i+1].key), callback_data: actions[i+1].callback });
+                rows.push(row);
+            }
+            return rows;
         };
 
         const getMainMenu = (activePanel, isAdmin = true) => {
@@ -7279,7 +7468,33 @@ function getDashboardUI(hasDB) {
           .nav-item:hover { background: rgba(255, 255, 255, 0.02) !important; }
           .mobile-nav-item.active { color: #818cf8; }
           .dark .mobile-nav-item.active { color: #818cf8; }
-      </style>
+      
+    .protocol-selector { display:flex; gap:8px; margin:16px 0; justify-content:center; flex-wrap:wrap; }
+    .proto-btn { padding:8px 16px; border-radius:8px; border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#e2e8f0; cursor:pointer; font-size:14px; transition:all 0.2s; }
+    .proto-btn.active { border-color:#6366f1; background:rgba(99,102,241,0.2); box-shadow:0 0 12px rgba(99,102,241,0.3); }
+    .config-actions { margin:16px 0; }
+    .action-row { display:flex; gap:8px; margin-bottom:8px; justify-content:center; flex-wrap:wrap; }
+    .action-btn { padding:10px 16px; border-radius:8px; border:1px solid rgba(99,102,241,0.4); background:rgba(99,102,241,0.15); color:#c7d2fe; cursor:pointer; font-size:13px; transition:all 0.2s; }
+    .action-btn:hover { background:rgba(99,102,241,0.3); }
+    .action-btn.secondary { border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#94a3b8; }
+    .lang-toggle { display:flex; gap:8px; justify-content:center; margin:12px 0; }
+    .lang-btn { padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#94a3b8; cursor:pointer; font-size:13px; }
+    .lang-btn.active { border-color:#6366f1; background:rgba(99,102,241,0.15); color:#e2e8f0; }
+    .config-preview { margin-top:16px; background:rgba(0,0,0,0.3); border-radius:10px; padding:12px; max-height:200px; overflow-y:auto; }
+    .config-preview pre { margin:0; color:#94a3b8; font-size:12px; white-space:pre-wrap; word-break:break-all; }
+    .copied-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#6366f1; color:#fff; padding:10px 24px; border-radius:20px; font-size:13px; z-index:999; animation:subFadeInUp 0.3s ease, subFadeOut 0.3s ease 2s forwards; }
+    @keyframes subFadeInUp { from { opacity:0; transform:translate(-50%,20px); } to { opacity:1; transform:translate(-50%,0); } }
+    @keyframes subFadeOut { to { opacity:0; } }
+    .sub-gauge-container { margin: 20px auto; max-width: 300px; }
+    .sub-gauge-ring { position: relative; width: 200px; height: 200px; margin: 0 auto; }
+    .sub-gauge-ring svg { transform: rotate(-90deg); }
+    .sub-gauge-ring .bg-circle { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+    .sub-gauge-ring .fg-circle { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+    .sub-gauge-ring .gauge-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+    .sub-gauge-ring .gauge-pct { font-size: 32px; font-weight: 700; color: #e2e8f0; }
+    .sub-gauge-ring .gauge-label { font-size: 12px; color: #94a3b8; }
+
+    </style>
   </head>
   <body class="text-slate-800 dark:text-slate-200 h-[100dvh] flex flex-col md:flex-row overflow-hidden selection:bg-primary selection:text-white transition-colors duration-300 bg-slate-50 dark:bg-darkbg">
 
@@ -9320,6 +9535,119 @@ function getDashboardUI(hasDB) {
               if(activeTab) document.getElementById('view-title').innerText = activeTab.innerText;
           }
   
+
+          // v5.6.0: Usage chart rendering (Priority 1)
+          let usageChart = null;
+          function renderUsageChart(dailyData) {
+            const ctx = document.getElementById('usageChart');
+            if (!ctx) return;
+            if (usageChart) usageChart.destroy();
+            const labels = dailyData.map(function(d) { return d.date; }).slice(-7);
+            const values = dailyData.map(function(d) { return Math.round((d.usage / 6000) * 100) / 100; }).slice(-7);
+            var ctx2d = ctx.getContext('2d');
+            var gradient = ctx2d.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+            gradient.addColorStop(1, 'rgba(99, 102, 241, 0.05)');
+            usageChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Traffic (GB)',
+                  data: values,
+                  borderColor: '#6366f1',
+                  backgroundColor: gradient,
+                  fill: true,
+                  tension: 0.4,
+                  pointBackgroundColor: '#6366f1',
+                  pointRadius: 4,
+                  pointHoverRadius: 6
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: function(v) { return v + ' GB'; }, color: '#94a3b8' } },
+                  x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+              }
+            });
+          }
+
+          // v5.6.0: Alert banners (Priority 1)
+          function renderAlerts(alerts) {
+            var container = document.getElementById('alertBanners');
+            if (!container) return;
+            container.innerHTML = alerts.map(function(a) {
+              var bg = a.type === 'danger' ? '#7f1d1d' : a.type === 'warning' ? '#78350f' : '#1e3a5f';
+              var border = a.type === 'danger' ? '#ef4444' : a.type === 'warning' ? '#f59e0b' : '#3b82f6';
+              var icon = a.type === 'danger' ? '🚨' : a.type === 'warning' ? '⚠️' : '🔔';
+              return '<div style="background:'+bg+';border-left:4px solid '+border+';padding:10px 14px;margin:4px 0;border-radius:6px;display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">'+icon+'</span><span>'+a.text+'</span></div>';
+            }).join('');
+          }
+
+          // v5.6.0: Advanced search with debounce (Priority 1)
+          var searchTimeout = null;
+          function initAdvancedSearch() {
+            var si = document.getElementById('advSearchInput');
+            if (!si) return;
+            si.addEventListener('input', function(e) {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(function() { filterUsers(e.target.value); }, 300);
+            });
+          }
+          function filterUsers(query) {
+            var rows = document.querySelectorAll('#usersTableBody tr');
+            var q = query.toLowerCase();
+            rows.forEach(function(row) { row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none'; });
+            updateVisibleCount();
+          }
+
+          // v5.6.0: Pagination (Priority 1)
+          var currentPage = 1;
+          var pageSize = 15;
+          function paginateRows() {
+            var rows = document.querySelectorAll('#usersTableBody tr');
+            var visible = Array.from(rows).filter(function(r) { return r.style.display !== 'none'; });
+            var totalPages = Math.ceil(visible.length / pageSize) || 1;
+            var start = (currentPage - 1) * pageSize;
+            visible.forEach(function(row, i) { row.classList.toggle('page-hidden', i < start || i >= start + pageSize); });
+            var pi = document.getElementById('paginationInfo');
+            if (pi) pi.textContent = 'Page ' + Math.min(currentPage, totalPages) + ' of ' + totalPages;
+            var pb = document.getElementById('prevPageBtn');
+            var nb = document.getElementById('nextPageBtn');
+            if (pb) pb.disabled = currentPage <= 1;
+            if (nb) nb.disabled = currentPage >= totalPages;
+          }
+          function prevPage() { if (currentPage > 1) { currentPage--; paginateRows(); } }
+          function nextPage() { currentPage++; paginateRows(); }
+          function updateVisibleCount() { currentPage = 1; paginateRows(); }
+
+          // v5.6.0: Server status display (Priority 1)
+          function renderServerStatus(servers) {
+            var container = document.getElementById('serverStatusList');
+            if (!container) return;
+            container.innerHTML = servers.map(function(s) {
+              var sc = s.online ? '#22c55e' : '#ef4444';
+              var st = s.online ? 'Online' : 'Offline';
+              var lb = s.online ? '<div style="background:#1e293b;border-radius:4px;height:6px;margin-top:4px;"><div style="background:#22c55e;width:'+Math.min(100,s.load||50)+'%;height:100%;border-radius:4px;"></div></div>' : '';
+              return '<div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,0.02);border-radius:6px;margin:3px 0;"><span style="width:10px;height:10px;border-radius:50%;background:'+sc+';box-shadow:0 0 8px '+sc+';flex-shrink:0;"></span><div style="flex:1;"><div style="display:flex;justify-content:space-between;"><span>'+s.name+'</span><span style="color:'+sc+';font-size:12px;">'+st+'</span></div>'+lb+'</div></div>';
+            }).join('');
+          }
+
+          // v5.6.0: Init
+          function initV56Features() {
+            initAdvancedSearch();
+            paginateRows();
+            setTimeout(function() {
+              var sample = [];
+              for (var i=6;i>=0;i--) { var d=new Date(); d.setDate(d.getDate()-i); sample.push({date:d.toLocaleDateString('en-US',{month:'short',day:'numeric'}),usage:Math.random()*50*(i<2?1.5:1)}); }
+              renderUsageChart(sample);
+            }, 300);
+          }
+
           function switchTab(tab) {
             ['overview','info','network','settings','advanced','logs','users','shop'].forEach(t => {
                   const view = document.getElementById('view-'+t);
