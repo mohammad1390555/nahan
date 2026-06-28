@@ -3286,7 +3286,9 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
 
 ⚠️ The old link has been deactivated.`;
                         await sendOrEdit(chatId, messageId, regenMsg, [[{ text: fa3 ? '🔙 بازگشت' : '🔙 Back', callback_data: `user_get_link:${uid}` }]], "HTML");
-                    }                        const uid = data.replace("user_get_link:", "");
+}
+                } else if (data.startsWith("user_get_link:")) {
+                    const uid = data.replace("user_get_link:", "");
                         const linkUser = (sysConfig.users || []).find(u => u.id === uid);
                         const linkUrl = linkUser
                             ? `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${linkUser.subHash || generateSubHash(linkUser.id)}`
