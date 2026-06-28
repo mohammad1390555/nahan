@@ -968,7 +968,9 @@ const getUserMainMenu = () => {
             } else {
                 const refU=sysConfig.users.find(x=>x.id===uu.id);
                 if (refU) { refU.walletBalance=(refU.walletBalance||0)-price; if(!refU.walletTransactions) refU.walletTransactions=[]; refU.walletTransactions.push({ type:'renewal', amount:-price, detail:`تمدید: ${svc.name}`, ts:Date.now() }); const now=Date.now(); svc.expiryMs=Math.max(svc.expiryMs||now,now)+(pkg.days||30)*86400000; svc.isPaused=false; await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); }
-                await send(isFA?`✅ *تمدید موفق!*\n📦 ${svc.name}\n💳 موجودی جدید: *${(refU?.walletBalance||0).toLocaleString()} تومان*\n📅 انقضا: *${new Date(svc.expiryMs).toLocaleDateString()}*`:`✅ *Renewed!*\n📦 ${svc.name}\n💳 New balance: *${(refU?.walletBalance||0).toLocaleString()} IRT*\n📅 Expiry: *${new Date(svc.expiryMs).toLocaleDateString()}*`,{ inline_keyboard:[[{ text:isFA?'🔙 سرویس‌های من':'🔙 My Services',callback_data:'u_services' }]] },msgId);
+                await send(isFA?`✅ *تمدید موفق!*
+━━━━━━━━━━━━━━━━\n📦 ${svc.name}\n💳 موجودی جدید: *${(refU?.walletBalance||0).toLocaleString()} تومان*\n📅 انقضا: *${new Date(svc.expiryMs).toLocaleDateString()}*`:`✅ *Renewed!*
+━━━━━━━━━━━━━━━━\n📦 ${svc.name}\n💳 New balance: *${(refU?.walletBalance||0).toLocaleString()} IRT*\n📅 Expiry: *${new Date(svc.expiryMs).toLocaleDateString()}*`,{ inline_keyboard:[[{ text:isFA?'🔙 سرویس‌های من':'🔙 My Services',callback_data:'u_services' }]] },msgId);
             }
             await answerCb(); return new Response('OK',{status:200});
         }
@@ -1011,7 +1013,9 @@ const getUserMainMenu = () => {
             refU.services.push(service);
             await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig));
             const subUrl=`https://${hostName}/sub/${service.subHash}`;
-            await send(isFA?`✅ *خرید موفق!*\n📦 ${service.name}\n💳 موجودی جدید: *${(refU.walletBalance||0).toLocaleString()} تومان*\n\n🔗 لینک اشتراک:\n\`${subUrl}\`\n📅 ${new Date(service.expiryMs).toLocaleDateString()}`:`✅ *Purchase successful!*\n📦 ${service.name}\n💳 New balance: *${(refU.walletBalance||0).toLocaleString()} IRT*\n\n🔗 Sub link:\n\`${subUrl}\`\n📅 ${new Date(service.expiryMs).toLocaleDateString()}`,{ inline_keyboard:[[{ text:isFA?'📦 سرویس‌های من':'📦 My Services',callback_data:'u_services' },{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId);
+            await send(isFA?`✅ *خرید موفق!*
+━━━━━━━━━━━━━━━━\n📦 ${service.name}\n💳 موجودی جدید: *${(refU.walletBalance||0).toLocaleString()} تومان*\n\n🔗 لینک اشتراک:\n\`${subUrl}\`\n📅 ${new Date(service.expiryMs).toLocaleDateString()}`:`✅ *Purchase successful!*
+━━━━━━━━━━━━━━━━\n📦 ${service.name}\n💳 New balance: *${(refU.walletBalance||0).toLocaleString()} IRT*\n\n🔗 Sub link:\n\`${subUrl}\`\n📅 ${new Date(service.expiryMs).toLocaleDateString()}`,{ inline_keyboard:[[{ text:isFA?'📦 سرویس‌های من':'📦 My Services',callback_data:'u_services' },{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId);
             await answerCb(isFA?'✅ خرید موفق!':'✅ Done!'); return new Response('OK',{status:200});
         }
 
