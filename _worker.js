@@ -798,17 +798,20 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
 
     const uu = sysConfig.users.find(x=>x.id===linkedUser.id);
     const sysU = sysUsageCache?.users?.[uu?.id?.replace(/-/g,'').toLowerCase()]||{reqs:0};
-
-    const getUserMainMenu = () => {
+const getUserMainMenu = () => {
         const balance = uu?.walletBalance||0;
         const activeSvcs = (uu?.services||[]).filter(s=>!s.isPaused&&(!s.expiryMs||Date.now()<=s.expiryMs));
+        const allSvcs = (uu?.services||[]).length;
+        const usedGB = (sysU.reqs/6000).toFixed(2);
+        const expiry = uu?.expiryMs ? new Date(uu.expiryMs).toLocaleDateString() : (isFA?'\u0646\u0627\u0645\u062d\u062f\u0648\u062f':'Unlimited');
+        const sep = '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501';
         const text = isFA
-            ? `👋 *سلام ${uu?.name||''}!*\n\n💳 موجودی: *${balance.toLocaleString()} تومان*\n📦 سرویس‌های فعال: *${activeSvcs.length}*`
-            : `👋 *Hello ${uu?.name||''}!*\n\n💳 Wallet: *${balance.toLocaleString()} IRT*\n📦 Active services: *${activeSvcs.length}*`;
+            ? `\u{1F44B} *\u333C\u0627\u0645 ${uu?.name||''}!*\n${sep}\n\n\u{1F4B3} *\u0645\u0648\u062C\u0648\u062F\u06CC:* ${balance.toLocaleString()} \u062A\u0648\u0645\u0627\u0646\n\u{1F4E6} *\u0633\u0631\u0648\u06CC\u0633:* ${activeSvcs.length}/${allSvcs} \u0641\u0639\u0627\u0644\n\u{1F4CA} *\u0645\u0635\u0631\u0641:* ${usedGB} GB\n\u{1F4C5} *\u0627\u0646\u0642\u0636\u0627:* ${expiry}\n${sep}`
+            : `\u{1F44B} *Hello ${uu?.name||''}!*\n${sep}\n\n\u{1F4B3} *Wallet:* ${balance.toLocaleString()} IRT\n\u{1F4E6} *Services:* ${activeSvcs.length}/${allSvcs} active\n\u{1F4CA} *Usage:* ${usedGB} GB\n\u{1F4C5} *Expiry:* ${expiry}\n${sep}`;
         const kb = { inline_keyboard:[
-            [{ text:isFA?'📦 سرویس‌های من':'📦 My Services', callback_data:'u_services' },{ text:isFA?'🛒 خرید سرویس':'🛒 Buy Service', callback_data:'u_shop' }],
-            [{ text:isFA?'💳 کیف پول':'💳 Wallet', callback_data:'u_wallet' },{ text:isFA?'🎁 معرفی دوستان':'🎁 Referral', callback_data:'u_referral' }],
-            [{ text:isFA?'👤 پروفایل':'👤 Profile', callback_data:'u_profile' },{ text:isFA?'📞 پشتیبانی':'📞 Support', callback_data:'u_support' }],
+            [{ text:isFA?'\u{1F4E6} \u0633\u0631\u0648\u06CC\u0633\u200C\u0647\u0627\u06CC \u0645\u0646':'\u{1F4E6} My Services', callback_data:'u_services' },{ text:isFA?'\u{1F6D2} \u062E\u0631\u06CC\u062F \u0633\u0631\u0648\u06CC\u0633':'\u{1F6D2} Buy Service', callback_data:'u_shop' }],
+            [{ text:isFA?'\u{1F4B3} \u06A9\u06CC\u0641 \u067E\u0648\u0644':'\u{1F4B3} Wallet', callback_data:'u_wallet' },{ text:isFA?'\u{1F381} \u0645\u0639\u0631\u0641\u06CC \u062F\u0648\u0633\u062A\u0627\u0646':'\u{1F381} Referral', callback_data:'u_referral' }],
+            [{ text:isFA?'\u{1F464} \u067E\u0631\u0648\u0641\u0627\u06CC\u0644':'\u{1F464} Profile', callback_data:'u_profile' },{ text:isFA?'\u{1F4DE} \u067E\u0634\u062A\u06CC\u0628\u0627\u0646\u06CC':'\u{1F4DE} Support', callback_data:'u_support' }],
         ]};
         return { text, kb };
     };
