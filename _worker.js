@@ -5,10 +5,11 @@ import { connect } from "cloudflare:sockets";
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "7.4.0";
+const CURRENT_VERSION = "7.5.0";
 
 // Static changelog — fallback when GitHub is unreachable and for offline installs.
 const CHANGELOG_DATA = [
+    { version: "7.5.0", date: "2025-06", summary: "Stunning subscription portal, animated gauges, glassmorphism cards, QR modal, real-time updates, premium Telegram bot, shop management tab, modern dashboard, rate limit dashboard, security events." },
     { version: "7.4.0", date: "2025-06", summary: "Shop/Wallet/Referral system, secure sub-link hashes, JWT user auth, per-user services." },
     { version: "7.3.0", date: "2025-05", summary: "Panel federation (linkedPanels), hub-panel login signals, remote panel management via Telegram bot." },
     { version: "7.2.0", date: "2025-04", summary: "Multi-panel Telegram bot support, sub_search, sub_extend, tg_logs, CF settings via bot." },
@@ -1043,6 +1044,32 @@ export default {
         try {
             if (!isolateStartTime) isolateStartTime = Date.now();
             await loadSysConfig(env);
+
+            // V7.5.0 — Rate Limiting Middleware
+            const clientIP = request.headers.get('cf-connecting-ip') || '0.0.0.0';
+            const rateLimitKey = 'rl_' + clientIP;
+            if (!globalThis.__rateLimitMap) globalThis.__rateLimitMap = new Map();
+            const rlMap = globalThis.__rateLimitMap;
+            const now = Date.now();
+            const rlEntry = rlMap.get(rateLimitKey);
+            const RATE_LIMIT_MAX = 200; // requests
+            const RATE_LIMIT_WINDOW = 60000; // 1 minute
+            if (rlEntry && (now - rlEntry.start) < RATE_LIMIT_WINDOW) {
+                if (rlEntry.count >= RATE_LIMIT_MAX) {
+                    ctx?.waitUntil(logActivity(env, 'Rate Limit Hit', 'IP: ' + clientIP + ' exceeded ' + RATE_LIMIT_MAX + ' req/min').catch(()=>{}));
+                    return new Response('Rate limit exceeded. Try again later.', { status: 429, headers: { 'Retry-After': '60', 'Content-Type': 'text/plain' } });
+                }
+                rlEntry.count++;
+            } else {
+                rlMap.set(rateLimitKey, { count: 1, start: now });
+            }
+            // Cleanup old entries every 5 minutes
+            if (!globalThis.__rlCleanup || (now - globalThis.__rlCleanup) > 300000) {
+                globalThis.__rlCleanup = now;
+                for (const [k, v] of rlMap) {
+                    if ((now - v.start) > RATE_LIMIT_WINDOW) rlMap.delete(k);
+                }
+            }
             activeDeviceId = sysConfig.deviceId || generateHardwareId(sysConfig.apiRoute);
 
             const url = new URL(request.url);
@@ -1532,6 +1559,161 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         .fade-in { animation: fadeIn 0.4s ease-out; }
         .modal-overlay { background: var(--modal-bg); }
         .modal-card { background: var(--modal-card); border: 1px solid var(--border-card); }
+
+        /* ═══ V7.5.0 — ANIMATED GAUGE ═══ */
+        .gauge-ring-bg { fill: none; stroke: var(--progress-bg); stroke-width: 8; }
+        .gauge-ring { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke 0.5s; filter: drop-shadow(0 0 8px var(--gauge-color, #6366f1)); }
+        @keyframes gaugeSpin { 0% { transform: rotate(-90deg); } 100% { transform: rotate(270deg); } }
+        @keyframes gaugePulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }
+        @keyframes breathe { 0%,100% { opacity: 0.4; r: 6; } 50% { opacity: 1; r: 9; } }
+        @keyframes sparkle { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.3); } }
+        .gauge-text { animation: gaugePulse 2.5s ease-in-out infinite; }
+        .gauge-breathing-dot { animation: breathe 2s ease-in-out infinite; }
+        .sparkle-icon { animation: sparkle 1.5s ease-in-out infinite; display: inline-block; }
+
+        /* ═══ V7.5.0 — GLASSMORPHISM CARDS ═══ */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 1.25rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.05);
+            transition: transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s, border-color 0.3s;
+            transform-style: preserve-3d;
+            perspective: 800px;
+            will-change: transform;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 1.25rem 1.25rem 0 0;
+            background: var(--card-accent, var(--accent));
+            opacity: 0.8;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px) rotateX(2deg) rotateY(-1deg);
+            box-shadow: var(--shadow-card), 0 12px 40px rgba(99,102,241,0.15);
+        }
+        .glass-card.status-active::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .glass-card.status-paused::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .glass-card.status-expired::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+        .service-progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--progress-bg);
+            overflow: hidden;
+            position: relative;
+        }
+        .service-progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s cubic-bezier(.4,0,.2,1);
+            position: relative;
+        }
+        .service-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        /* ═══ V7.5.0 — ACTION BUTTONS ═══ */
+        .action-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
+            padding: 0.5rem 1rem; border-radius: 0.75rem;
+            font-size: 0.8125rem; font-weight: 600;
+            transition: all 0.2s cubic-bezier(.4,0,.2,1);
+            position: relative; overflow: hidden;
+            cursor: pointer; border: none;
+        }
+        .action-btn:active { transform: scale(0.95); }
+        .action-btn.primary { background: var(--btn-primary-bg); color: #fff; }
+        .action-btn.primary:hover { background: var(--btn-primary-hover); box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+        .action-btn.secondary { background: var(--btn-secondary-bg); color: var(--text-primary); border: 1px solid var(--border-inner); }
+        .action-btn.secondary:hover { background: var(--btn-secondary-hover); }
+        .action-btn .ripple {
+            position: absolute; border-radius: 50%; transform: scale(0);
+            animation: ripple 0.5s linear; background: rgba(255,255,255,0.3);
+        }
+        @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+        /* ═══ V7.5.0 — QR MODAL ═══ */
+        .qr-modal-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: var(--modal-bg); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .qr-modal-overlay.active { display: flex; opacity: 1; }
+        .qr-modal-card {
+            background: var(--modal-card); border: 1px solid var(--border-card);
+            border-radius: 1.5rem; padding: 2rem;
+            max-width: 22rem; width: 90%; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+        }
+        .qr-modal-overlay.active .qr-modal-card { transform: scale(1); }
+
+        /* ═══ V7.5.0 — TOAST ═══ */
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120%);
+            background: var(--btn-primary-bg); color: #fff;
+            padding: 0.75rem 1.5rem; border-radius: 0.75rem;
+            font-size: 0.875rem; font-weight: 600;
+            box-shadow: 0 8px 24px rgba(99,102,241,0.3);
+            z-index: 200; opacity: 0;
+            transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        /* ═══ V7.5.0 — REFRESH SPINNER ═══ */
+        .refresh-spinner {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid var(--text-muted); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ═══ V7.5.0 — COUNTDOWN ═══ */
+        .countdown { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+        /* ═══ V7.5.0 — FADE-IN STAGGER ═══ */
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-stagger > * { animation: fadeSlideUp 0.5s ease-out backwards; }
+        .fade-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+        .fade-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+        .fade-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+        .fade-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+        .fade-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+        .fade-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+
+        /* ═══ V7.5.0 — STATUS DOT ═══ */
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+            box-shadow: 0 0 6px currentColor;
+        }
+        .status-dot.active { background: #10b981; color: #10b981; }
+        .status-dot.paused { background: #f59e0b; color: #f59e0b; }
+        .status-dot.expired { background: #ef4444; color: #ef4444; }
+
+        /* ═══ V7.5.0 — PRINT STYLES ═══ */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .no-print { display: none !important; }
+            .card-main { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+            .glass-card { backdrop-filter: none !important; background: #f9f9f9 !important; border: 1px solid #ccc !important; break-inside: avoid; page-break-inside: avoid; }
+            .print-section { display: block !important; page-break-before: always; }
+            .gauge-ring { filter: none !important; }
+        }
+        .print-section { display: none; }
     </style>
 </head>
 <body class="min-h-screen py-6 px-4 flex flex-col items-center justify-center fade-in">
@@ -1566,19 +1748,40 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             <div class="shrink-0">
                 <span id="status-badge" class="px-4 py-2 rounded-2xl text-xs font-bold inline-block"></span>
             </div>
+        <div class="flex items-center gap-2 text-xs mt-2 no-print" style="color:var(--text-muted);">
+                <span id="refresh-indicator" class="refresh-spinner" style="display:none;"></span>
+                <span data-i18n="lastUpdated">Last updated:</span> <span id="last-updated">0s ago</span>
+            </div>
         </div>
 
         <!-- Metrics Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Total Traffic -->
-            <div class="card-inner rounded-2xl p-4">
-                <p class="text-xs font-semibold uppercase tracking-widest text-secondary" data-i18n="totalUsage">Total Usage</p>
-                <div class="flex items-baseline gap-1.5 mt-2">
-                    <span class="text-2xl font-black" style="color: var(--text-primary);">${totalGb}</span>
-                    <span class="text-xs text-secondary">/ ${limitTotalGb} GB</span>
+            <!-- V7.5.0 — Animated Circular Usage Gauge -->
+            <div class="glass-card status-${statusCode === 'active' ? 'active' : statusCode === 'paused' ? 'paused' : 'expired'} p-6 flex flex-col items-center justify-center" style="grid-column: span 1;">
+                <div class="relative" style="width:160px;height:160px;">
+                    <svg viewBox="0 0 160 160" class="w-full h-full" style="transform:rotate(-90deg);">
+                        <defs>
+                            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:${parseFloat(totalPercent) < 50 ? '#10b981' : parseFloat(totalPercent) < 80 ? '#f59e0b' : parseFloat(totalPercent) < 95 ? '#f97316' : '#ef4444'}"/>
+                                <stop offset="100%" style="stop-color:${parseFloat(totalPercent) < 50 ? '#34d399' : parseFloat(totalPercent) < 80 ? '#fbbf24' : parseFloat(totalPercent) < 95 ? '#fb923c' : '#f87171'}"/>
+                            </linearGradient>
+                            <filter id="gaugeGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        </defs>
+                        <circle cx="80" cy="80" r="68" class="gauge-ring-bg" stroke-width="7"/>
+                        <circle cx="80" cy="80" r="68" class="gauge-ring" stroke-width="7"
+                            stroke="url(#gaugeGrad)" filter="url(#gaugeGlow)"
+                            stroke-dasharray="427" stroke-dashoffset="427"
+                            id="gauge-ring-el"/>
+                        <circle cx="80" cy="80" r="68" class="gauge-breathing-dot" fill="${parseFloat(totalPercent) < 50 ? '#10b981' : parseFloat(totalPercent) < 80 ? '#f59e0b' : parseFloat(totalPercent) < 95 ? '#f97316' : '#ef4444'}" opacity="0" id="gauge-dot-el"/>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        ${limitTotal ? `<span class="gauge-text text-3xl font-black" style="color:var(--text-primary);">${totalPercent}%</span>` : `<span class="sparkle-icon text-3xl" style="color:var(--accent);">&#8734;</span>`}
+                    </div>
                 </div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-secondary mt-3" data-i18n="totalUsage">Total Usage</p>
+                <p class="text-sm font-bold mt-1" style="color:var(--text-primary);">${totalGb} <span class="text-xs font-normal text-secondary">/ ${limitTotalGb} GB</span></p>
                 ${limitTotal ? `
-                <div class="w-full rounded-full h-1.5 mt-3 overflow-hidden progress-bar-bg">
+                <div class="service-progress-bar mt-3">
                     <div class="h-1.5 rounded-full" style="background: var(--accent); width: ${totalPercent}%;"></div>
                 </div>
                 <p class="text-[10px] text-muted text-right mt-1.5" data-i18n="used">${totalPercent}% Used</p>
@@ -1586,7 +1789,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             </div>
 
             <!-- Daily Traffic -->
-            <div class="card-inner rounded-2xl p-4">
+            <div class="glass-card p-4">
                 <p class="text-xs font-semibold uppercase tracking-widest text-secondary" data-i18n="dailyUsage">Daily Usage</p>
                 <div class="flex items-baseline gap-1.5 mt-2">
                     <span class="text-2xl font-black" style="color: var(--text-primary);">${dailyGb}</span>
@@ -1594,14 +1797,14 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 </div>
                 ${limitDaily ? `
                 <div class="w-full rounded-full h-1.5 mt-3 overflow-hidden progress-bar-bg">
-                    <div class="h-1.5 rounded-full" style="background: var(--amber-text); width: ${dailyPercent}%;"></div>
+                    <div class="service-progress-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); width: ${dailyPercent}%;"></div>
                 </div>
                 <p class="text-[10px] text-muted text-right mt-1.5" data-i18n="used">${dailyPercent}% Used</p>
                 ` : `<p class="text-[10px] text-muted mt-2" data-i18n="noDailyLimit">No Daily Limit</p>`}
             </div>
 
             <!-- Expiration -->
-            <div class="card-inner rounded-2xl p-4 flex flex-col justify-between">
+            <div class="glass-card p-4 flex flex-col justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-secondary" data-i18n="expDate">Expiration Date</p>
                     <p class="text-lg font-bold mt-2" style="color: var(--text-primary);">${expiryDateTxt}</p>
@@ -1668,6 +1871,137 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-xs shadow-xl opacity-0 transition-opacity duration-350 pointer-events-none font-bold" style="background: var(--green-text); color: white;"></div>
 
     <script>
+        // V7.5.0 — Animated Gauge Initialization
+        (function initGauge() {
+            const ring = document.getElementById('gauge-ring-el');
+            const dot = document.getElementById('gauge-dot-el');
+            if (!ring) return;
+            const totalPct = parseFloat('${totalPercent}') || 0;
+            const circumference = 2 * Math.PI * 68; // r=68
+            const offset = circumference - (totalPct / 100) * circumference;
+            setTimeout(() => { ring.style.strokeDashoffset = offset; }, 300);
+            // Animate breathing dot along the path
+            if (dot) {
+                setTimeout(() => { dot.style.opacity = '1'; }, 1500);
+                const angle = (totalPct / 100) * 360 - 90;
+                const rad = angle * Math.PI / 180;
+                const cx = 80 + 68 * Math.cos(rad);
+                const cy = 80 + 68 * Math.sin(rad);
+                dot.setAttribute('cx', cx);
+                dot.setAttribute('cy', cy);
+            }
+        })();
+
+        // V7.5.0 — Auto-refresh every 15 seconds
+        (function initAutoRefresh() {
+            let lastUpdate = Date.now();
+            const refreshInterval = 15000;
+            const updateTimestamp = () => {
+                const elapsed = Math.floor((Date.now() - lastUpdate) / 1000);
+                const el = document.getElementById('last-updated');
+                if (el) el.textContent = elapsed + 's ago';
+            };
+            setInterval(updateTimestamp, 1000);
+            setInterval(() => {
+                const spinner = document.getElementById('refresh-indicator');
+                if (spinner) spinner.style.display = 'inline-block';
+                fetch(location.href, { headers: { 'X-Requested-With': 'v7.5-auto-refresh' } })
+                    .then(r => r.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        // Update gauge ring
+                        const gaugeEl = document.getElementById('gauge-ring-el');
+                        const newGauge = doc.getElementById('gauge-ring-el');
+                        if (gaugeEl && newGauge) gaugeEl.style.strokeDashoffset = newGauge.style.strokeDashoffset;
+                        // Update gauge percentage text
+                        const pctEl = document.querySelector('.gauge-text');
+                        const newPct = doc.querySelector('.gauge-text');
+                        if (pctEl && newPct) pctEl.textContent = newPct.textContent;
+                        // Update data values by re-rendering key stat elements
+                        const statEls = ['totalGb', 'dailyGb', 'totalPercent', 'dailyPercent'];
+                        statEls.forEach(id => {
+                            const el = document.getElementById(id);
+                            const newEl = doc.getElementById(id);
+                            if (el && newEl) el.textContent = newEl.textContent;
+                        });
+                        // Update all text elements with data-i18n
+                        doc.querySelectorAll('[data-i18n]').forEach(newEl => {
+                            const key = newEl.getAttribute('data-i18n');
+                            const oldEl = document.querySelector('[data-i18n="' + key + '"]');
+                            if (oldEl && oldEl.textContent !== newEl.textContent) oldEl.textContent = newEl.textContent;
+                        });
+                        lastUpdate = Date.now();
+                        if (spinner) spinner.style.display = 'none';
+                    })
+                    .catch(() => { if (spinner) spinner.style.display = 'none'; });
+            }, refreshInterval);
+        })();
+
+        // V7.5.0 — 3D Tilt Effect on Glass Cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+        if (window.matchMedia("(hover: hover)").matches) {card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                card.style.transform = `translateY(-4px) rotateX(${-y * 6}deg) rotateY(${x * 6}deg)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+            });}
+        });
+
+        // V7.5.0 — QR Modal
+        function showQRModal(url, title) {
+            const modal = document.getElementById('qr-modal');
+            const qrImg = document.getElementById('qr-img');
+            const qrTitle = document.getElementById('qr-title');
+            if (modal && qrImg) {
+                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+                if (qrTitle) qrTitle.textContent = title || 'QR Code';
+                modal.classList.add('active');
+            }
+        }
+        function closeQRModal() {
+            const modal = document.getElementById('qr-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        // V7.5.0 — Copy with Toast
+        function copyWithToast(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                }
+            });
+        }
+
+        // V7.5.0 — Button Ripple Effect
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 500);
+            });
+        });
+
+        // V7.5.0 — Share API
+        function shareLink(url, title) {
+            if (navigator.share) {
+                navigator.share({ title: title || 'Subscription Link', url: url });
+            } else {
+                copyWithToast(url);
+            }
+        }
+
         const I18N = {
             en: {
                 totalUsage: 'Total Usage',
