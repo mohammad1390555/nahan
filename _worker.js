@@ -7,6 +7,19 @@ import { connect } from "cloudflare:sockets";
 
 const CURRENT_VERSION = "7.4.0";
 
+// Static changelog — fallback when GitHub is unreachable and for offline installs.
+const CHANGELOG_DATA = [
+    { version: "7.4.0", date: "2025-06", summary: "Shop/Wallet/Referral system, secure sub-link hashes, JWT user auth, per-user services." },
+    { version: "7.3.0", date: "2025-05", summary: "Panel federation (linkedPanels), hub-panel login signals, remote panel management via Telegram bot." },
+    { version: "7.2.0", date: "2025-04", summary: "Multi-panel Telegram bot support, sub_search, sub_extend, tg_logs, CF settings via bot." },
+    { version: "7.1.0", date: "2025-03", summary: "Subscription info portal for browser visitors, QR code, dark/light theme, i18n." },
+    { version: "7.0.0", date: "2025-02", summary: "Auto-disable on expiry/traffic limit, Cloudflare Workers auto-deploy API." },
+    { version: "6.0.0", date: "2024-12", summary: "Slave node sync, syncApiKey, panel API keys, name strategy tags." },
+    { version: "5.0.0", date: "2024-10", summary: "Sing-Box JSON profile builder, Clash-JSON format, NAT64, geo-IP name tags." },
+    { version: "4.0.0", date: "2024-08", summary: "D1 database persistence, usage tracking, activity logs, per-user limits." },
+    { version: "3.0.0", date: "2024-06", summary: "Multi-user support, per-user proxy IPs, Clash YAML profiles, geo-IP preload." },
+];
+
 const getAlpha = () => String.fromCharCode(118, 108, 101, 115, 115);
 const getBeta = () => String.fromCharCode(116, 114, 111, 106, 97, 110);
 const getGamma = () => String.fromCharCode(99, 108, 97, 115, 104);
@@ -96,6 +109,11 @@ let configRegistry = new Map();
 
 let sysUsageCache = { users: {} };
 let lastSysUsageSync = 0;
+let lastSysUsageSyncLock = false;
+
+// Module-level D1 schema flag — avoids mutating the env object (which is
+// frozen in some runtimes) and prevents concurrent schema-init races.
+let d1SchemaInitialized = false;
 
 const CACHE_TTL_CONFIG = 10000;
 const CACHE_TTL_USAGE = 10000;
@@ -117,7 +135,9 @@ async function deployWorkerToCloudflare(accountId, apiToken, workerName, code) {
         if (settingsJson.success && settingsJson.result?.bindings) {
             currentBindings = settingsJson.result.bindings;
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error('[deployWorkerToCloudflare] failed to fetch current bindings:', e?.message || e);
+    }
 
     const metadata = {
         main_module: "_worker.js",
@@ -137,20 +157,37 @@ async function deployWorkerToCloudflare(accountId, apiToken, workerName, code) {
 }
 
 async function d1Init(env) {
-    if(env.IOT_DB && !env.IOT_DB_INITIALIZED) {
-        try { await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)").run(); env.IOT_DB_INITIALIZED = true; } catch(e) { env.IOT_DB_INITIALIZED = true; }
+    if (env.IOT_DB && !d1SchemaInitialized) {
+        try {
+            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)").run();
+            d1SchemaInitialized = true;
+        } catch(e) {
+            console.error('[d1Init] schema init failed:', e?.message || e);
+            // Mark initialized anyway so we don't retry every request;
+            // the table may already exist (race between two cold-start isolates).
+            d1SchemaInitialized = true;
+        }
     }
 }
 async function d1Get(env, key) {
-    if(!env.IOT_DB) return null;
+    if (!env.IOT_DB) return null;
     await d1Init(env);
-    try { const { results } = await env.IOT_DB.prepare("SELECT value FROM kv_store WHERE key = ?").bind(key).all(); if(results && results.length > 0) return results[0].value; } catch(e) {}
+    try {
+        const { results } = await env.IOT_DB.prepare("SELECT value FROM kv_store WHERE key = ?").bind(key).all();
+        if (results && results.length > 0) return results[0].value;
+    } catch(e) {
+        console.error(`[d1Get] key="${key}" error:`, e?.message || e);
+    }
     return null;
 }
 async function d1Put(env, key, value) {
-    if(!env.IOT_DB) return;
+    if (!env.IOT_DB) return;
     await d1Init(env);
-    try { await env.IOT_DB.prepare("INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(key, value).run(); } catch(e) {}
+    try {
+        await env.IOT_DB.prepare("INSERT INTO kv_store (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(key, value).run();
+    } catch(e) {
+        console.error(`[d1Put] key="${key}" error:`, e?.message || e);
+    }
 }
 
 async function cachedD1Put(env, key, value) {
@@ -273,8 +310,10 @@ function trackUsage(uuid, bytes, env, ctx) {
     }
     
     const now = Date.now();
-    if (now - lastSysUsageSync > 30000) {
+    if (!lastSysUsageSyncLock && now - lastSysUsageSync > 30000) {
+        lastSysUsageSyncLock = true;
         lastSysUsageSync = now;
+        try {
         if (env && env.IOT_DB) {
             let changedConfig = false;
             if (sysConfig.users && sysConfig.users.length > 0) {
@@ -313,7 +352,14 @@ function trackUsage(uuid, bytes, env, ctx) {
             if (changedConfig) {
                 ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
             }
-            ctx?.waitUntil(cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache)).catch(()=>{}));
+            ctx?.waitUntil(cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache)).catch(e => {
+                console.error('[trackUsage] sys_usage write failed:', e?.message || e);
+            }));
+        }
+        } catch(e) {
+            console.error('[trackUsage] sync block error:', e?.message || e);
+        } finally {
+            lastSysUsageSyncLock = false;
         }
     }
 }
@@ -1270,7 +1316,8 @@ export default {
 
             return new Response(null, { status: 404 });
         } catch (err) {
-            return new Response(null, { status: 404 });
+            console.error('[fetch handler] unhandled error:', err?.message || err);
+            return new Response(null, { status: 500 });
         }
     },
 };
@@ -1973,7 +2020,9 @@ async function logActivity(env, type, detail) {
         logs.unshift({ ts, type, detail });
         if (logs.length > 50) logs = logs.slice(0, 50);
         await d1Put(env, "sys_logs", JSON.stringify(logs));
-    } catch (e) {}
+    } catch (e) {
+        console.error('[logActivity] error:', e?.message || e);
+    }
 }
 
 async function handleLogs(request, env) {
@@ -2006,7 +2055,9 @@ async function handleUsersApi(request, env, ctx) {
             try {
                 const body = await request.clone().json();
                 bodyKey = body.key || "";
-            } catch(e) {}
+            } catch(e) {
+                // body may not be JSON (e.g. GET request with no body) — safe to ignore
+            }
         }
         const isAuth = (authKey === sysConfig.masterKey) || (bodyKey === sysConfig.masterKey) || isPanelApiKey(authKey) || isPanelApiKey(bodyKey);
         if (!isAuth) {
@@ -2234,7 +2285,9 @@ async function handleUpdateApi(request, env, ctx) {
                     const txt = (await res.text()).trim();
                     if (txt && txt.length <= 15) remoteVer = txt;
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error('[handleUpdateApi] failed to fetch version file:', e?.message || e);
+            }
             if (!remoteVer) {
                 try {
                     const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/_worker.js`);
@@ -2243,7 +2296,9 @@ async function handleUpdateApi(request, env, ctx) {
                         const match = code.match(/const\s+CURRENT_VERSION\s*=\s*["']([^"']+)["']/);
                         if (match) remoteVer = match[1];
                     }
-                } catch(e) {}
+                } catch(e) {
+                    console.error('[handleUpdateApi] failed to fetch worker script for version parse:', e?.message || e);
+                }
             }
             if (!remoteVer) {
                 return new Response(JSON.stringify({ success: false, error: "Could not fetch remote version" }), { status: 502, headers: { "Content-Type": "application/json" } });
@@ -2301,6 +2356,7 @@ async function handleUpdateApi(request, env, ctx) {
 
         return new Response(JSON.stringify({ success: false, error: "Invalid action" }), { status: 400, headers: { "Content-Type": "application/json" } });
     } catch(e) {
+        console.error('[handleUpdateApi] error:', e?.message || e);
         return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 }
@@ -2398,8 +2454,10 @@ async function handleAuth(request, hostName, ctx, env) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(signalPayload)
-                    }).catch(() => {}));
-                } catch(e) {}
+                    }).catch(e => console.error('[handleAuth] hub notify failed:', e?.message || e)));
+                } catch(e) {
+                    console.error('[handleAuth] hub notify setup failed:', e?.message || e);
+                }
             }
 
             const netInfo = {
@@ -2420,7 +2478,9 @@ async function handleAuth(request, hostName, ctx, env) {
                     const customUrl = new URL(customUrlStr);
                     baseHost = customUrl.host;
                     protocol = customUrl.protocol.replace(':', '');
-                } catch(e) {}
+                } catch(e) {
+                    console.error('[handleAuth] invalid customPanelUrl:', customUrlStr, e?.message || e);
+                }
             }
             return new Response(JSON.stringify({
                 success: true, config: isPanelApiKey(loginKey) ? { ...sysConfig, masterKey: "[PROTECTED]", panelApiKeys: "[PROTECTED]" } : sysConfig, deviceId: activeDeviceId, network: netInfo, usage: usageData, sysUsage: (sysUsageCache && sysUsageCache.users) ? sysUsageCache.users : {},
@@ -2438,7 +2498,10 @@ async function handleAuth(request, hostName, ctx, env) {
         ctx?.waitUntil(logActivity(env, "Auth Failed", `Failed login attempt from ${ip}`));
         if (ctx) ctx.waitUntil(sendTelegramMessage(request, "تلاش ناموفق ورود به پنل!", hostName));
         return new Response(JSON.stringify({ success: false }), { status: 401 });
-    } catch (e) { return new Response(JSON.stringify({ success: false }), { status: 400 }); }
+    } catch (e) {
+        console.error('[handleAuth] error:', e?.message || e);
+        return new Response(JSON.stringify({ success: false, error: 'Server error' }), { status: 500 });
+    }
 }
 
 async function handleConfigSync(request, env, ctx) {
@@ -2450,7 +2513,7 @@ async function handleConfigSync(request, env, ctx) {
                              isPanelApiKey(data.key) || isPanelApiKey(data.oldKey) ||
                              (data.fromMaster && data.config && data.config.masterKey && data.config.masterKey === sysConfig.masterKey);
         if (!isAuthSync) return new Response(JSON.stringify({ success: false, error: "Auth failed. Generate the API key on THIS panel, not the main panel." }), { status: 401 });
-        if (!env.IOT_DB) return new Response(JSON.stringify({ success: false, msg: "DB Error" }), { status: 400 });
+        if (!env.IOT_DB) return new Response(JSON.stringify({ success: false, msg: "Database not available" }), { status: 503 });
         
         let nextConfig = sysConfig;
         if (data.config) {
@@ -2506,7 +2569,9 @@ async function handleConfigSync(request, env, ctx) {
                          method: 'POST',
                          headers: { 'Content-Type': 'application/json' },
                          body: JSON.stringify({ key: syncKey, config: slaveConfig, fromMaster: true })
-                     }).catch(() => {}));
+                     }).catch(err => {
+                         console.error(`[configSync] failed to sync slave node "${node}":`, err?.message || err);
+                     }));
                 }
             });
         }
@@ -2521,7 +2586,10 @@ async function handleConfigSync(request, env, ctx) {
         }
 
         return new Response(JSON.stringify({ success: true, newRoute: nextConfig.apiRoute, tagWarning }), { status: 200 });
-    } catch (e) { return new Response(JSON.stringify({ success: false }), { status: 400 }); }
+    } catch (e) {
+        console.error('[handleConfigSync] error:', e?.message || e);
+        return new Response(JSON.stringify({ success: false, error: 'Server error: ' + (e?.message || e) }), { status: 500 });
+    }
 }
 
 async function handleSyncPanel(request, env, ctx) {
@@ -2551,7 +2619,8 @@ async function handleSyncPanel(request, env, ctx) {
         }
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (e) {
-        return new Response(JSON.stringify({ success: false }), { status: 400 });
+        console.error('[handleSyncPanel] error:', e?.message || e);
+        return new Response(JSON.stringify({ success: false, error: 'Server error: ' + (e?.message || e) }), { status: 500 });
     }
 }
 
@@ -2853,6 +2922,15 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
         const adminId = sysConfig.tgAdminId || sysConfig.tgChatId;
         const isAuthorized = adminId && callerId === adminId.toString();
 
+        // Load tgState early — needed by handleUserBotInteraction for non-admin users.
+        let tgState = {};
+        try {
+            const storedState = await d1Get(env, "tg_bot_state");
+            if (storedState) tgState = JSON.parse(storedState);
+        } catch (e) {
+            console.error('[handleTelegramWebhook] failed to load tg_bot_state:', e?.message || e);
+        }
+
         if (!isAuthorized) {
             const chatId = update.callback_query?.message?.chat?.id || update.message?.chat?.id;
             if (chatId && sysConfig.tgBotUserEnabled) {
@@ -2878,12 +2956,6 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
             return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 200 });
         }
 
-        let tgState = {};
-        try {
-            const storedState = await d1Get(env, "tg_bot_state");
-            if (storedState) tgState = JSON.parse(storedState);
-        } catch (e) { }
-
         const panels = getPanelsList();
 
         // Read last login signal from D1 (set by handleAuth or handleSyncPanel)
@@ -2891,7 +2963,9 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
         try {
             const stored = await d1Get(env, "tg_panel_login");
             if (stored) lastLoginPanel = JSON.parse(stored);
-        } catch (e) { }
+        } catch (e) {
+            console.error('[handleTelegramWebhook] failed to load tg_panel_login:', e?.message || e);
+        }
 
         const getActivePanel = () => {
             if (lastLoginPanel) {
@@ -4250,6 +4324,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
         }
         return new Response("OK", { status: 200 });
     } catch(e) {
+        console.error('[handleTelegramWebhook] unhandled error:', e?.message || e);
         return new Response("OK", { status: 200 });
     }
 }
