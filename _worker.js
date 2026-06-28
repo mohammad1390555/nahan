@@ -6,103 +6,6 @@ import { connect } from "cloudflare:sockets";
  */
 
 const CURRENT_VERSION = "7.4.0";
-// v5.4.0 Changelog:
-// 🐛 Hotfix: swapped nat64 element IDs between add/edit user modals (commitAddUser was reading edit-user-nat64 instead of add-user-nat64)
-// 🐛 Hotfix: targetUser.id undefined in user_get_link handler (fixed to u.id for Renew/Pause/Delete buttons)
-// 🌐 Persian (fa) translations for wallet/profile/referral/support/services
-// 🌐 3 missing EN translation keys added for parity
-
-// v5.3.1 Changelog:
-// 💥 Hotfix: removed duplicate broadcast handler from changelog area (caused Illegal return statement)
-// 💥 Hotfix: broadcast handler now exists only in proper text handler scope (line ~4951)
-// 💥 Hotfix: variable rename script mangled await/waitUntil -> awaccIdxt/waccIdxtUntil
-// 💥 Hotfix: threshold alert broken variable references (pctUsed2, notifyId2, d2e)
-// 💥 Hotfix: 100% notification used trafficNotified80 instead of trafficNotified100
-// 💥 Hotfix: allUsers[ai] -> allUsers[accIdx] loop variable mismatch
-//
-// v5.3.0 Changelog:
-// 🎨 UI/UX: beautified bot messages with professional Persian formatting
-// 📊 Traffic alerts: auto-notify admin at 50%, 80%, 100% usage per user
-// 🔔 Expiry notifications: notify 7, 3, 1 day before service expiry
-// 📢 Admin broadcast: send messages to all bot users
-// 📱 Referral menu: referral link & stats in user bot menu
-// ⚡ Web panel polish: better stats, fixed brace structure
-//
-// v5.2.0 Changelog:
-// 🔒 Admin-only trial reset: members can't reset free trial anymore
-// 🔢 20-service limit per user: enforced during purchase approval
-// 🔄 Service renewal: renew any service with user_renew_service
-// ⏸️ Pause/Resume: toggle service status with user_pause_service
-// 🗑️ Soft delete: remove services without data loss
-// 🎧 Support button: quick access to support contact
-// 📋 Enhanced detail view: more action buttons in service details
-//
-// v5.1.0 Changelog:
-//
-// v4.0.0 Changelog:
-// 🔐 سیستم احراز هویت JWT با HMAC-SHA256
-// 🛡️ Rate Limiting مبتنی بر D1 (100 req/min per IP)
-// 🔑 رمزنگاری masterKey با AES-GCM (Web Crypto API)
-// ✅ اعتبارسنجی ورودی‌ها با schema validation
-// 💳 سیستم کیف پول: شارژ حساب، تاریخچه تراکنش‌ها
-// 👥 سیستم نمایندگی: ثبت درخواست، مدیریت زیرمجموعه‌ها
-// 📊 D1 Schema جدید: users, subscriptions, invoices, agency_requests
-// 🔌 API های جدید: register, login, profile, payment, referral
-// 📦 فشرده‌سازی gzip خودکار برای پاسخ‌های بزرگ
-// 🔄 Streaming API برای اشتراک‌های حجیم (>1MB)
-// 🛡️ CSRF Token برای درخواست‌های حساس
-// 🔍 سیستم جستجوی سریع کاربران در ربات تلگرام
-// 📱 منوی مدیریتی بهبود یافته برای ادمین
-// 🐛 رفع تمام باگ‌های امنیتی گزارش شده
-//
-// v3.4.0 Changelog:
-// 🐛 رفع باگ اصلی "سرویس‌های من": نام‌های یوزر با underscore باعث خطای Markdown در تلگرام می‌شدند
-// 🛡️ sendOrEdit: اگر parse Markdown شکست، بدون parse_mode دوباره ارسال می‌کند (پیام همیشه می‌رسد)
-// 🔤 تابع esc(): همه محتوای داینامیک (نام یوزر، یوزرنیم) قبل از ارسال escape می‌شوند
-// 🔧 رفع routing: callback های user_* برای ادمین هم از handler کاربری عبور می‌کنند
-// 🔧 رفع state handler: ادمین در حالت 
-// user_awaiting_add_sub: پیام متنی درست پردازش می‌شود
-//
-// v3.2.0 Changelog:
-// 📱 منوی "سرویس‌های من": نمایش مصرف، انقضا، لینک و افزودن ساب لینک دستی
-// 🗑️ حذف "سرویس‌ها و تعرفه‌ها" و "لینک‌های ذخیره شده" از منو
-// 🐛 رفع کامل باگ حجم: fallback از totalTrafficLimit برای یوزرهای قدیمی
-// ✅ اشتراک‌های خریداری‌شده و تست رایگان خودکار در "سرویس‌های من" نمایش داده می‌شوند
-//
-// v3.1.0 Changelog:
-// 🐛 رفع باگ لینک تست رایگان: اکنون فرمت صحیح apiRoute+sub ارائه می‌شود
-// 🐛 رفع باگ لینک تأیید خرید: فرمت صحیح apiRoute+sub
-// 🐛 رفع باگ حجم در ساب‌لینک: limitTotalReq اکنون هنگام ساخت یوزر تنظیم می‌شود
-// 🔗 لینک وضعیت یوزر در ربات: فرمت صحیح apiRoute+sub
-//
-// v3.0.0 Changelog:
-// 📊 وضعیت اشتراک حرفه‌ای: نوار پیشرفت، UUID، پروتکل، محدودیت کانفیگ
-// 🔧 بخش مدیریت سرویس‌ها برای ادمین (افزودن/حذف سرویس‌های سفارشی)
-// 📋 بخش "سرویس‌ها و تعرفه‌ها" در منوی کاربران عادی
-// ⚡ تنظیم Rate قابل کاستومایز در ستینگ پیشرفته
-// 🎨 بهبود صفحه ساب لینک: انیمیشن، گلو، بکگراند نرم‌تر
-// 📈 نمایش حجم مصرفی با دایره SVG بزرگ‌تر و انیمیشن بهتر
-// 🛒 بهبود تجربه خرید: پیام‌های زیباتر، نوار پیشرفت مصرف
-// 💬 تمام پیام‌ها به فرمت حرفه‌ای مدیریتی (━━ جداکننده، ایموجی ساختاری)
-// 🔄 ورژن‌بندی خودکار و لاگ تغییرات
-//
-// v2.9.0 Changelog:
-// 🐛 رفع باگ "شما مدیر نیستید" برای کاربران عادی
-// 👥 منوی اصلی کاربران عادی: خرید سرویس، تست رایگان، وضعیت اشتراک
-// 🛒 رفع سیستم خرید: ساخت یوزر اتوماتیک با نام تلگرام + اعداد رندوم
-// 💾 قابلیت ذخیره لینک اشتراک در حساب کاربری
-// 🎨 تم مدیریتی حرفه‌ای برای پیام‌های ربات
-// ⚙️ تنظیمات کاستومایز ربات در پنل وب (پیام خوش‌آمد، تم، دکمه‌ها)
-// 🔒 بررسی یکبار بودن تست رایگان (جلوگیری از تکرار)
-// 📊 قابلیت‌های بیشتر برای ممبرها: تمدید، پشتیبانی، ویرایش پروفایل
-//
-// v2.8.0 Changelog:
-// ✨ صفحه ساب‌لینک انیمیشنی با دایره SVG نمایش حجم
-// 🎨 بک‌گراند متحرک نرم با گرادیانت
-// 🔗 لینک‌های چندفرمت (Clash، Singbox، Raw)
-// 🤖 ربات تلگرام کاربران عادی: وضعیت، تست رایگان، خرید با رسید
-// 🛒 سیستم خرید با آپلود رسید و تأیید ادمین
-// ⚙️ تنظیمات بیشتر: پکیج‌های خرید، تست رایگان، اطلاعات پرداخت
 
 const getAlpha = () => String.fromCharCode(118, 108, 101, 115, 115);
 const getBeta = () => String.fromCharCode(116, 114, 111, 106, 97, 110);
@@ -123,8 +26,7 @@ const safeBtoa = (str) => {
 
 const SYSTEM_DEFAULTS = {
     name: "",
-    apiRoute: "udp/sub",
-    subRoute: "sub",
+    apiRoute: "sync",
     maintenanceHost: "https://www.ubuntu.com, https://www.docker.com",
     backupRelay: "",
     customRelay: "",
@@ -160,62 +62,35 @@ const SYSTEM_DEFAULTS = {
     expiryMs: 0,
     linkedPanels: [],
     hubPanelUrl: "",
-    allowSyncWorker: false,
+    syncApiKey: "",
+    panelApiKeys: [],
     nat64Prefix: "",
     enableDirectConfigs: false,
     autoUpdate: false,
     autoUpdateFormat: "normal",
-    freeTrial: false,
-    freeTrialDays: 3,
-    freeTrialGB: 1,
-    purchaseEnabled: false,
-    adminCardNumber: "",
-    adminCardOwner: "",
-    purchaseOptions: [],
-    pendingPurchases: [],
-    usedTrials: [],
-    userAccounts: [],
-    // v4.0.0: Wallet & Agency System
-    walletEnabled: true,
-    minWalletCharge: 50000,
-    maxWalletCharge: 5000000,
-    referralEnabled: true,
-    referralCommission: 10,
-    agencyEnabled: true,
-    maxFreeTrialsPerUser: 3,
-    freeTrialVolumes: [50, 100, 200],
-    // v5.3.0: Notification tracking
-    trafficNotified50: {},
-    trafficNotified80: {},
-    trafficNotified100: {},
-    expiryNotified7: {},
-    expiryNotified3: {},
-    expiryNotified1: {},
-    broadcastMessages: [],
-    botBroadcastMode: false,
-    freeTrialDaysOptions: [2, 3, 5],
-    // v4.0.0: Security
-    jwtSecret: "",
-    rateLimitEnabled: true,
-    rateLimitRpm: 100,
-    encryptMasterKey: true,
-    csrfProtection: true,
-    // v4.0.0: Bot settings
-    botSupportUsername: "",
-    botFaqMessages: [],
-    botThemeColor: "#6366f1",
-    botSupportMsg: "",
-    botFooterMsg: "",
     fakeConfigs: [
         { name: "📊 {usage}", enabled: true },
         { name: "📅 {expiry}", enabled: true }
     ],
+    purchaseEnabled: false,
+    purchaseOptions: [],
+    pendingPurchases: [],
+    adminCardNumber: "",
+    adminCardOwner: "",
+    freeTrialDays: 3,
+    freeTrialGB: 1,
+    jwtSecret: "",
+    referralCommission: 10,
+    promoCodes: [],
+    maxServicesPerUser: 20,
+    tgBotUserEnabled: true,
 };
 
 let sysConfig = { ...SYSTEM_DEFAULTS };
 let isolateStartTime = 0;
 let activeConnections = 0;
 let uuidUsage = new Map();
+let activeConns = new Map();
 let activeDeviceId = "";
 let configRegistry = new Map();
 
@@ -229,10 +104,6 @@ let sysConfigCacheTime = 0;
 let sysUsageCacheTime = 0;
 let backupIpCache = null;
 let backupIpCacheTime = 0;
-// v4.0.0: Rate limiting & JWT caches
-let rateLimitCache = new Map();
-let jwtSecretKey = null;
-let d1SchemaInitialized = false;
 
 async function deployWorkerToCloudflare(accountId, apiToken, workerName, code) {
 
@@ -267,23 +138,7 @@ async function deployWorkerToCloudflare(accountId, apiToken, workerName, code) {
 
 async function d1Init(env) {
     if(env.IOT_DB && !env.IOT_DB_INITIALIZED) {
-        try {
-            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)").run();
-            // v4.0.0: Extended schema
-            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS nahan_users (id TEXT PRIMARY KEY, username TEXT UNIQUE, tg_id TEXT, full_name TEXT, phone TEXT, referrer_code TEXT, user_group TEXT DEFAULT 'normal', balance INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER)").run();
-            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS nahan_subscriptions (id TEXT PRIMARY KEY, user_id TEXT, type TEXT, volume_gb INTEGER, duration_days INTEGER, price INTEGER, status TEXT, created_at INTEGER, expires_at INTEGER)").run();
-            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS nahan_invoices (id TEXT PRIMARY KEY, user_id TEXT, amount INTEGER, status TEXT, description TEXT, created_at INTEGER, paid_at INTEGER)").run();
-            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS nahan_agency_requests (id TEXT PRIMARY KEY, user_id TEXT, description TEXT, status TEXT, created_at INTEGER)").run();
-            await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS nahan_rate_limits (ip TEXT PRIMARY KEY, count INTEGER, reset_at INTEGER)").run();
-            await env.IOT_DB.prepare("CREATE INDEX IF NOT EXISTS idx_users_tg ON nahan_users(tg_id)").run();
-            await env.IOT_DB.prepare("CREATE INDEX IF NOT EXISTS idx_users_username ON nahan_users(username)").run();
-            await env.IOT_DB.prepare("CREATE INDEX IF NOT EXISTS idx_subs_user ON nahan_subscriptions(user_id)").run();
-            await env.IOT_DB.prepare("CREATE INDEX IF NOT EXISTS idx_invoices_user ON nahan_invoices(user_id)").run();
-            d1SchemaInitialized = true;
-            env.IOT_DB_INITIALIZED = true;
-        } catch(e) {
-            env.IOT_DB_INITIALIZED = true;
-        }
+        try { await env.IOT_DB.prepare("CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT)").run(); env.IOT_DB_INITIALIZED = true; } catch(e) { env.IOT_DB_INITIALIZED = true; }
     }
 }
 async function d1Get(env, key) {
@@ -345,17 +200,14 @@ function getTrojanHash(uuid) {
 }
 
 function registerConfigEntry(uuid, userId, relayIp) {
-    configRegistry.set(uuid.replace(/-/g, '').toLowerCase(), { userId, relayIp: relayIp || '' });
+    const entry = { userId, relayIp: relayIp || '' };
+    configRegistry.set(uuid.replace(/-/g, '').toLowerCase(), entry);
+    const hashKey = getTrojanHash(uuid);
+    configRegistry.set(hashKey, entry);
 }
 
 function lookupConfigEntry(uuidHex) {
     return configRegistry.get(uuidHex.toLowerCase()) || null;
-}
-
-// v5.0.0: Secure sub hash generator (40+ chars)
-function generateSubHash(id) {
-    const hash = sha224Hex(id);
-    return hash.substring(0, 44);
 }
 
 function generateConfigUuid(originalUuid, relayIpIndex) {
@@ -374,147 +226,31 @@ function decodeConfigUuid(uuid) {
     return { userFingerprint, relayIpIndex };
 }
 
-// v4.0.0: JWT Authentication Utilities
-async function getJwtSecret(env) {
-    if (jwtSecretKey) return jwtSecretKey;
-    if (sysConfig.jwtSecret && sysConfig.jwtSecret.length >= 32) {
-        jwtSecretKey = new TextEncoder().encode(sysConfig.jwtSecret);
-        return jwtSecretKey;
-    }
-    const material = sysConfig.masterKey + (sysConfig.deviceId || 'nahan-default');
-    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(material));
-    jwtSecretKey = new Uint8Array(hash);
-    return jwtSecretKey;
+function isPanelApiKey(key) {
+    if (!key || !sysConfig.panelApiKeys || !Array.isArray(sysConfig.panelApiKeys)) return false;
+    return sysConfig.panelApiKeys.some(k => k.key === key);
 }
 
-function base64UrlEncode(buffer) {
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-    return base64.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-}
-
-function base64UrlDecode(str) {
-    str = str.replace(/-/g, "+").replace(/_/g, "/");
-    while (str.length % 4) str += "=";
-    return Uint8Array.from(atob(str), c => c.charCodeAt(0));
-}
-
-async function signJwt(payload, env) {
-    const header = { alg: "HS256", typ: "JWT" };
-    const encodedHeader = base64UrlEncode(new TextEncoder().encode(JSON.stringify(header)));
-    const encodedPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), iss: "nahan-gateway" })));
-    const key = await getJwtSecret(env);
-    const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-    const signature = await crypto.subtle.sign("HMAC", cryptoKey, new TextEncoder().encode(encodedHeader + "." + encodedPayload));
-    return encodedHeader + "." + encodedPayload + "." + base64UrlEncode(signature);
-}
-
-async function verifyJwt(token, env) {
-    try {
-        const parts = token.split(".");
-        if (parts.length !== 3) return null;
-        const [headerB64, payloadB64, signatureB64] = parts;
-        const key = await getJwtSecret(env);
-        const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
-        const valid = await crypto.subtle.verify("HMAC", cryptoKey, base64UrlDecode(signatureB64), new TextEncoder().encode(headerB64 + "." + payloadB64));
-        if (!valid) return null;
-        const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadB64)));
-        if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
-        return payload;
-    } catch(e) { return null; }
-}
-
-// v4.0.0: Rate Limiting
-async function checkRateLimit(env, ip) {
-    if (!sysConfig.rateLimitEnabled) return true;
-    const now = Date.now();
-    const maxReqs = sysConfig.rateLimitRpm || 100;
-    let entry = rateLimitCache.get(ip);
-    if (entry && now < entry.resetTime) {
-        if (entry.count >= maxReqs) return false;
-        entry.count++;
-        return true;
-    }
-    if (env.IOT_DB && d1SchemaInitialized) {
-        try {
-            const { results } = await env.IOT_DB.prepare("SELECT count, reset_at FROM nahan_rate_limits WHERE ip = ?").bind(ip).all();
-            if (results && results.length > 0) {
-                const dbEntry = results[0];
-                if (now < dbEntry.reset_at) {
-                    if (dbEntry.count >= maxReqs) {
-                        rateLimitCache.set(ip, { count: dbEntry.count, resetTime: dbEntry.reset_at });
-                        return false;
-                    }
-                    await env.IOT_DB.prepare("UPDATE nahan_rate_limits SET count = count + 1 WHERE ip = ?").bind(ip).run();
-                    rateLimitCache.set(ip, { count: dbEntry.count + 1, resetTime: dbEntry.reset_at });
-                    return true;
-                }
-            }
-            const resetTime = now + 60000;
-            await env.IOT_DB.prepare("INSERT INTO nahan_rate_limits (ip, count, reset_at) VALUES (?, 1, ?) ON CONFLICT(ip) DO UPDATE SET count = 1, reset_at = excluded.reset_at").bind(ip, resetTime).run();
-            rateLimitCache.set(ip, { count: 1, resetTime });
-            return true;
-        } catch(e) {}
-    }
-    rateLimitCache.set(ip, { count: 1, resetTime: now + 60000 });
-    return true;
-}
-
-// v4.0.0: Input validators
-const Validators = {
-    username: (v) => /^[a-zA-Z0-9_]{3,30}$/.test(v),
-    uuid: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),
-    telegramId: (v) => /^\d{5,15}$/.test(String(v)),
-    amount: (v) => Number.isInteger(v) && v > 0 && v <= 5000000,
-    volumeGb: (v) => Number.isInteger(v) && v > 0 && v <= 10000,
-    days: (v) => Number.isInteger(v) && v > 0 && v <= 365,
-    phone: (v) => /^09[0-9]{9}$/.test(v),
-    safeString: (v) => typeof v === "string" && v.length > 0 && v.length <= 200 && !/[<>]/.test(v),
-};
-
-function validateInput(fields) {
-    for (let i = 0; i < fields.length; i++) {
-        const [name, value, validator] = fields[i];
-        if (!validator(value)) return { valid: false, error: "Invalid field: " + name };
-    }
-    return { valid: true };
-}
-
-// v4.0.0: Encrypt/decrypt sensitive data
-async function encryptSensitive(plaintext, env) {
-    try {
-        const key = await getJwtSecret(env);
-        const cryptoKey = await crypto.subtle.importKey("raw", key.slice(0, 32), { name: "AES-GCM" }, false, ["encrypt"]);
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encoded = new TextEncoder().encode(plaintext);
-        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, cryptoKey, encoded);
-        const combined = new Uint8Array(iv.length + encrypted.byteLength);
-        combined.set(iv);
-        combined.set(new Uint8Array(encrypted), iv.length);
-        return btoa(String.fromCharCode(...combined));
-    } catch(e) { return plaintext; }
-}
-
-async function decryptSensitive(ciphertext, env) {
-    try {
-        const key = await getJwtSecret(env);
-        const cryptoKey = await crypto.subtle.importKey("raw", key.slice(0, 32), { name: "AES-GCM" }, false, ["decrypt"]);
-        const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
-        const iv = combined.slice(0, 12);
-        const data = combined.slice(12);
-        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, cryptoKey, data);
-        return new TextDecoder().decode(decrypted);
-    } catch(e) { return null; }
-}
-
-function generateCsrfToken() {
-    const arr = new Uint8Array(32);
-    crypto.getRandomValues(arr);
-    return btoa(String.fromCharCode(...arr)).replace(/[/+=]/g, "").substring(0, 64);
-}
-
-function extractAuthJwt(request) {
+function extractAuthKey(request, data) {
     const authHeader = request.headers.get("Authorization") || "";
-    return authHeader.replace("Bearer ", "");
+    const authKey = authHeader.replace("Bearer ", "") || "";
+    let bodyKey = "";
+    if (data && typeof data === "object") bodyKey = data.key || "";
+    const url = new URL(request.url);
+    const urlKey = url.searchParams.get("key") || "";
+    return authKey || bodyKey || urlKey;
+}
+
+function isAuthorized(request, data) {
+    const key = extractAuthKey(request, data);
+    return key === sysConfig.masterKey || isPanelApiKey(key);
+}
+
+function generateApiKey(name) {
+    const id = crypto.randomUUID();
+    const raw = `nahan_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    const key = raw;
+    return { id, name: name || "Unnamed Key", key, createdAt: Date.now(), lastUsed: null };
 }
 
 function trackUsage(uuid, bytes, env, ctx) {
@@ -559,50 +295,7 @@ function trackUsage(uuid, bytes, env, ctx) {
                             u.disabledReason = reason;
                             u.disabledAt = Date.now();
                             changedConfig = true;
-                                                                                    // v5.3.0: Traffic threshold alerts (50%, 80%, 100%)
-                            const usagePct = limitTotal ? Math.round((sysU?.reqs || 0) / limitTotal * 100) : 0;
-                            const adminChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
-                            if (sysConfig.tgToken && adminChatId && limitTotal && usagePct > 0) {
-                                const sendThresholdAlert = async (thresholdPct, notifKey, notifMsg) => {
-                                    if (!sysConfig[notifKey]) sysConfig[notifKey] = {};
-                                    if (sysConfig[notifKey][u.id]) return;
-                                    sysConfig[notifKey][u.id] = true;
-                                    ctx?.waitUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
-                                        method: "POST", headers: {"Content-Type": "application/json"},
-                                        body: JSON.stringify({chat_id: adminChatId, text: notifMsg, parse_mode: "HTML"})
-                                    }).catch(()=>{}));
-                                    ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
-                                };
-                                if (usagePct >= 100) {
-                                    sendThresholdAlert(100, "trafficNotified100", '🚨 <b>Traffic Full: 100%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: 100%\n⚠️ Service has been auto-disabled.');
-                                } else if (usagePct >= 80) {
-                                    sendThresholdAlert(80, "trafficNotified80", '⚠️ <b>Traffic Warning: 80%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+usagePct+'%\n⏳ Service will be disabled soon.');
-                                } else if (usagePct >= 50) {
-                                    sendThresholdAlert(50, "trafficNotified50", '🔔 <b>Traffic Notice: 50%</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📊 Usage: '+usagePct+'%');
-                                }
-                            }
-                            // v5.3.0: Expiry notifications (7, 3, 1 days before expiry)
-                            if (u.expiryMs && sysConfig.tgToken && adminChatId) {
-                                const daysToExpiry = Math.ceil((u.expiryMs - Date.now()) / 86400000);
-                                const sendExpiryAlert = async (expiryKey, expiryMsg) => {
-                                    if (!sysConfig[expiryKey]) sysConfig[expiryKey] = {};
-                                    if (sysConfig[expiryKey][u.id]) return;
-                                    sysConfig[expiryKey][u.id] = true;
-                                    ctx?.waitUntil(fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
-                                        method: "POST", headers: {"Content-Type": "application/json"},
-                                        body: JSON.stringify({chat_id: adminChatId, text: expiryMsg, parse_mode: "HTML"})
-                                    }).catch(()=>{}));
-                                    ctx?.waitUntil(cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)).catch(()=>{}));
-                                };
-                                if (daysToExpiry <= 1 && daysToExpiry > 0) {
-                                    sendExpiryAlert("expiryNotified1", '🚨 <b>Expiry Tomorrow!</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⚠️ '+daysToExpiry+' day(s) left.');
-                                } else if (daysToExpiry <= 3 && daysToExpiry > 1) {
-                                    sendExpiryAlert("expiryNotified3", '⚠️ <b>Expiry Soon: 3 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+daysToExpiry+' day(s) remaining.');
-                                } else if (daysToExpiry <= 7 && daysToExpiry > 3) {
-                                    sendExpiryAlert("expiryNotified7", '🔔 <b>Expiry Notice: 7 Days</b>\n\n👤 User: '+u.name+'\n🆔 ID: <code>'+u.id+'</code>\n📅 Expires: '+new Date(u.expiryMs).toLocaleDateString()+'\n⏳ '+daysToExpiry+' day(s) remaining.');
-                                }
-                            }
-ctx?.waitUntil(logActivity(env, "User Auto-Disabled", `User "${u.name}" (${u.id}) disabled: ${reason}`).catch(()=>{}));
+                            ctx?.waitUntil(logActivity(env, "User Auto-Disabled", `User "${u.name}" (${u.id}) disabled: ${reason}`).catch(()=>{}));
                             if (sysConfig.tgToken && (sysConfig.tgAdminId || sysConfig.tgChatId)) {
                                 const tgMsg = `⚠️ <b>User Auto-Disabled</b>\n\n👤 <b>User:</b> ${u.name}\n🆔 <b>ID:</b> <code>${u.id}</code>\n📝 <b>Reason:</b> ${reason}`;
                                 const notifyChatId = sysConfig.tgAdminId || sysConfig.tgChatId;
@@ -623,6 +316,680 @@ ctx?.waitUntil(logActivity(env, "User Auto-Disabled", `User "${u.name}" (${u.id}
             ctx?.waitUntil(cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache)).catch(()=>{}));
         }
     }
+}
+
+// ============================================================
+// V7.4.0 — SECURE SUB-LINKS, SHOP, WALLET, REFERRAL SYSTEM
+// ============================================================
+
+// ── Sub-Link Hash Utilities ──────────────────────────────────
+
+async function generateSubHash(seed) {
+    const input = seed + ':' + Date.now() + ':' + crypto.randomUUID();
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    return hex.substring(0, 44);
+}
+
+function getUserBySubHash(hash) {
+    if (!hash || !sysConfig.users) return null;
+    return sysConfig.users.find(u => u.subHash === hash) || null;
+}
+
+// ── JWT Utilities ────────────────────────────────────────────
+
+let jwtSecretKey = null;
+
+async function getJwtSecret(env) {
+    if (jwtSecretKey) return jwtSecretKey;
+    const material = (sysConfig.jwtSecret && sysConfig.jwtSecret.length >= 32)
+        ? sysConfig.jwtSecret
+        : sysConfig.masterKey + ':' + (sysConfig.deviceId || 'nahan-jwt-v740');
+    const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(material));
+    jwtSecretKey = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+    return jwtSecretKey;
+}
+
+function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer || buf)))
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function signJwt(payload, env) {
+    const key = await getJwtSecret(env);
+    const header = btoa(JSON.stringify({ alg:'HS256', typ:'JWT' })).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const body   = btoa(JSON.stringify(payload)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(header + '.' + body));
+    return header + '.' + body + '.' + b64url(sig);
+}
+
+async function verifyJwt(token, env) {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const key = await getJwtSecret(env);
+        const sigBuf = Uint8Array.from(atob(parts[2].replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0));
+        const valid = await crypto.subtle.verify('HMAC', key, sigBuf, new TextEncoder().encode(parts[0]+'.'+parts[1]));
+        if (!valid) return null;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+        if (payload.exp && Date.now() > payload.exp) return null;
+        return payload;
+    } catch(e) { return null; }
+}
+
+async function getUserFromRequest(request, env) {
+    const auth = request.headers.get('Authorization') || '';
+    const token = auth.replace('Bearer ','').trim();
+    if (!token) return null;
+    const payload = await verifyJwt(token, env);
+    if (!payload || !payload.userId) return null;
+    return (sysConfig.users || []).find(u => u.id === payload.userId) || null;
+}
+
+// ── User Registration / Login ────────────────────────────────
+
+async function handleRegisterApi(request, env) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type'}});
+    if (request.method !== 'POST') return J({ error:'Method not allowed' }, 405);
+    try {
+        const body = await request.json();
+        const { username, password, referralCode } = body;
+        if (!username || !password) return J({ error:'username and password are required' }, 400);
+        if (!/^[a-zA-Z0-9_\-\.]{3,32}$/.test(username)) return J({ error:'Invalid username format (3-32 chars, alphanumeric/_/-)' }, 400);
+        if (password.length < 6) return J({ error:'Password must be at least 6 characters' }, 400);
+        if ((sysConfig.users||[]).find(u => u.name.toLowerCase() === username.toLowerCase())) return J({ error:'Username already taken' }, 409);
+        let referredById = null;
+        if (referralCode) {
+            const referrer = (sysConfig.users||[]).find(u => u.referralCode === referralCode);
+            if (referrer) referredById = referrer.id;
+        }
+        const pwRaw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password+':nahan'));
+        const pwHex = Array.from(new Uint8Array(pwRaw)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        const newId = crypto.randomUUID();
+        const subHash = await generateSubHash(newId);
+        const userReferralCode = Math.random().toString(36).slice(2,10).toUpperCase();
+        const newUser = {
+            id: newId, name: username, passwordHash: pwHex,
+            subHash, referralCode: userReferralCode, referredBy: referredById,
+            walletBalance: 0, walletTransactions: [], services: [],
+            freeTrialUsed: false, telegramId: null, isPaused: false,
+            limitTotalReq: null, limitDailyReq: null, expiryMs: null, createdAt: Date.now()
+        };
+        if (!sysConfig.users) sysConfig.users = [];
+        sysConfig.users.push(newUser);
+        await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+        if (referredById) {
+            const referrer = sysConfig.users.find(u => u.id === referredById);
+            if (referrer) {
+                const commission = sysConfig.referralCommission || 10;
+                referrer.walletBalance = (referrer.walletBalance||0) + commission;
+                if (!referrer.walletTransactions) referrer.walletTransactions = [];
+                referrer.walletTransactions.push({ type:'referral', amount:commission, detail:`Referral: ${username}`, ts:Date.now() });
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+            }
+        }
+        const token = await signJwt({ userId:newId, username, exp:Date.now()+30*24*3600*1000 }, env);
+        return J({ success:true, token, user:{ id:newId, username, referralCode:userReferralCode, walletBalance:0 } });
+    } catch(e) { return J({ error:'Server error: '+e.message }, 500); }
+}
+
+async function handleLoginApi(request, env) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type'}});
+    if (request.method !== 'POST') return J({ error:'Method not allowed' }, 405);
+    try {
+        const body = await request.json();
+        const { username, password } = body;
+        if (!username || !password) return J({ error:'username and password are required' }, 400);
+        const user = (sysConfig.users||[]).find(u => u.name.toLowerCase() === username.toLowerCase());
+        if (!user || !user.passwordHash) return J({ error:'Invalid credentials' }, 401);
+        const pwRaw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password+':nahan'));
+        const pwHex = Array.from(new Uint8Array(pwRaw)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        if (pwHex !== user.passwordHash) return J({ error:'Invalid credentials' }, 401);
+        const token = await signJwt({ userId:user.id, username:user.name, exp:Date.now()+30*24*3600*1000 }, env);
+        return J({ success:true, token, user:{ id:user.id, username:user.name, referralCode:user.referralCode, walletBalance:user.walletBalance||0 } });
+    } catch(e) { return J({ error:'Server error: '+e.message }, 500); }
+}
+
+async function handleProfileApi(request, env) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,OPTIONS','Access-Control-Allow-Headers':'Authorization'}});
+    const user = await getUserFromRequest(request, env);
+    if (!user) return J({ error:'Unauthorized' }, 401);
+    const sysU = sysUsageCache?.users?.[user.id.replace(/-/g,'').toLowerCase()] || { reqs:0 };
+    return J({ success:true, profile:{
+        id:user.id, username:user.name, walletBalance:user.walletBalance||0,
+        referralCode:user.referralCode, freeTrialUsed:!!user.freeTrialUsed,
+        services:(user.services||[]).length, usedGB:parseFloat((sysU.reqs/6000).toFixed(2)),
+        isPaused:!!user.isPaused, expiryMs:user.expiryMs||null,
+        telegramLinked:!!user.telegramId, createdAt:user.createdAt||null
+    }});
+}
+
+// ── Wallet ───────────────────────────────────────────────────
+
+async function handleWalletChargeApi(request, env, ctx) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization'}});
+    const user = await getUserFromRequest(request, env);
+    if (!user) return J({ error:'Unauthorized' }, 401);
+    try {
+        const body = await request.json();
+        const { amount, receiptNote } = body;
+        if (!amount || isNaN(amount) || amount <= 0) return J({ error:'Invalid amount' }, 400);
+        const receiptId = crypto.randomUUID();
+        const receipt = { id:receiptId, userId:user.id, username:user.name, amount:parseInt(amount), receiptNote:receiptNote||'', status:'pending', ts:Date.now() };
+        if (!sysConfig.pendingPurchases) sysConfig.pendingPurchases = [];
+        sysConfig.pendingPurchases.push(receipt);
+        await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+        if (sysConfig.tgToken && (sysConfig.tgAdminId||sysConfig.tgChatId)) {
+            const adminChat = sysConfig.tgAdminId||sysConfig.tgChatId;
+            ctx?.waitUntil(fetch(`https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`,{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({ chat_id:adminChat, parse_mode:'HTML',
+                    text:`💳 <b>درخواست شارژ کیف پول</b>\n\n👤 <b>کاربر:</b> ${user.name}\n💰 <b>مبلغ:</b> ${parseInt(amount).toLocaleString()} تومان\n📝 <b>یادداشت:</b> ${receiptNote||'—'}\n🆔 <code>${receiptId}</code>`,
+                    reply_markup:{ inline_keyboard:[[{ text:'✅ تایید', callback_data:`wallet_approve:${receiptId}` },{ text:'❌ رد', callback_data:`wallet_reject:${receiptId}` }]] }
+                })
+            }).catch(()=>{}));
+        }
+        return J({ success:true, receiptId, message:'Receipt submitted. Awaiting admin approval.' });
+    } catch(e) { return J({ error:'Server error: '+e.message }, 500); }
+}
+
+async function handleWalletHistoryApi(request, env) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,OPTIONS','Access-Control-Allow-Headers':'Authorization'}});
+    const user = await getUserFromRequest(request, env);
+    if (!user) return J({ error:'Unauthorized' }, 401);
+    return J({ success:true, balance:user.walletBalance||0, transactions:(user.walletTransactions||[]).slice(-50).reverse() });
+}
+
+// ── Shop (Public) ────────────────────────────────────────────
+
+async function handleShopApi(request, env, ctx) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization'}});
+    if (request.method === 'GET') {
+        return J({ success:true, packages:(sysConfig.purchaseOptions||[]).filter(p=>p.active!==false), enabled:sysConfig.purchaseEnabled, cardNumber:sysConfig.adminCardNumber||'', cardOwner:sysConfig.adminCardOwner||'' });
+    }
+    if (request.method === 'POST') {
+        const user = await getUserFromRequest(request, env);
+        if (!user) return J({ error:'Unauthorized' }, 401);
+        if (!sysConfig.purchaseEnabled) return J({ error:'Shop is currently disabled' }, 403);
+        try {
+            const body = await request.json();
+            const { action, packageId, promoCode } = body;
+            if (action === 'purchase') {
+                const pkg = (sysConfig.purchaseOptions||[]).find(p=>p.id===packageId);
+                if (!pkg) return J({ error:'Package not found' }, 404);
+                const uu = sysConfig.users.find(x=>x.id===user.id);
+                if (!uu) return J({ error:'User not found' }, 404);
+                if ((uu.services||[]).length >= (sysConfig.maxServicesPerUser||20)) return J({ error:`Maximum ${sysConfig.maxServicesPerUser||20} services per user` }, 403);
+                let finalPrice = pkg.priceIrt||pkg.price||0;
+                let discountAmount = 0; let promoUsed = null;
+                if (promoCode) {
+                    const promo = (sysConfig.promoCodes||[]).find(p=>p.code===promoCode&&p.active!==false);
+                    if (!promo) return J({ error:'Invalid or expired promo code' }, 400);
+                    if (promo.expiryMs && Date.now()>promo.expiryMs) return J({ error:'Promo code has expired' }, 400);
+                    if (promo.usageLimit && (promo.usedCount||0)>=promo.usageLimit) return J({ error:'Promo code usage limit reached' }, 400);
+                    discountAmount = promo.type==='fixed' ? Math.min(promo.value,finalPrice) : Math.floor(finalPrice*promo.value/100);
+                    finalPrice = Math.max(0, finalPrice-discountAmount); promoUsed = promo;
+                }
+                if ((uu.walletBalance||0) < finalPrice) return J({ error:'Insufficient wallet balance', required:finalPrice, balance:uu.walletBalance||0 }, 402);
+                uu.walletBalance = (uu.walletBalance||0) - finalPrice;
+                if (!uu.walletTransactions) uu.walletTransactions = [];
+                uu.walletTransactions.push({ type:'purchase', amount:-finalPrice, detail:`Purchase: ${pkg.name}${discountAmount>0?` (Promo: -${discountAmount})`:''}`, ts:Date.now() });
+                const svcHash = await generateSubHash(uu.id+':svc:'+Date.now());
+                const service = { id:crypto.randomUUID(), name:pkg.name, packageId:pkg.id, subHash:svcHash, gb:pkg.gb, days:pkg.days, startedAt:Date.now(), expiryMs:Date.now()+(pkg.days||30)*86400000, isPaused:false };
+                if (!uu.services) uu.services = [];
+                uu.services.push(service);
+                if (promoUsed) { const pi=(sysConfig.promoCodes||[]).findIndex(p=>p.code===promoUsed.code); if(pi>=0) sysConfig.promoCodes[pi].usedCount=(sysConfig.promoCodes[pi].usedCount||0)+1; }
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                return J({ success:true, service, newBalance:uu.walletBalance });
+            }
+            if (action === 'free_trial') {
+                if (!sysConfig.freeTrialDays && !sysConfig.freeTrialGB) return J({ error:'Free trial not configured' }, 403);
+                const uu = sysConfig.users.find(x=>x.id===user.id);
+                if (!uu) return J({ error:'User not found' }, 404);
+                if (uu.freeTrialUsed) return J({ error:'Free trial already used' }, 409);
+                const gb=sysConfig.freeTrialGB||1; const days=sysConfig.freeTrialDays||3;
+                const svcHash = await generateSubHash(uu.id+':trial:'+Date.now());
+                const trialSvc = { id:crypto.randomUUID(), name:'Free Trial', packageId:'trial', subHash:svcHash, gb, days, startedAt:Date.now(), expiryMs:Date.now()+days*86400000, isTrial:true, isPaused:false };
+                if (!uu.services) uu.services = [];
+                uu.services.push(trialSvc); uu.freeTrialUsed=true;
+                if (!uu.limitTotalReq) uu.limitTotalReq=Math.round(gb*6000);
+                if (!uu.expiryMs) uu.expiryMs=Date.now()+days*86400000;
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                return J({ success:true, service:trialSvc });
+            }
+            return J({ error:'Unknown action' }, 400);
+        } catch(e) { return J({ error:'Server error: '+e.message }, 500); }
+    }
+    return J({ error:'Method not allowed' }, 405);
+}
+
+// ── Agency (Admin Shop Management) ───────────────────────────
+
+async function handleAgencyApi(request, env, ctx) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization'}});
+    if (!isAuthorized(request, null)) return J({ error:'Unauthorized' }, 401);
+    const url = new URL(request.url);
+    const action = url.searchParams.get('action');
+    if (request.method === 'GET') {
+        return J({ success:true, packages:sysConfig.purchaseOptions||[], promoCodes:sysConfig.promoCodes||[], pendingReceipts:(sysConfig.pendingPurchases||[]).filter(p=>p.status==='pending'), purchaseEnabled:sysConfig.purchaseEnabled||false, adminCardNumber:sysConfig.adminCardNumber||'', adminCardOwner:sysConfig.adminCardOwner||'', freeTrialDays:sysConfig.freeTrialDays||3, freeTrialGB:sysConfig.freeTrialGB||1, referralCommission:sysConfig.referralCommission||10, maxServicesPerUser:sysConfig.maxServicesPerUser||20 });
+    }
+    if (request.method === 'POST') {
+        try {
+            const body = await request.json();
+            if (action === 'save_settings') {
+                sysConfig.purchaseEnabled=!!body.purchaseEnabled; sysConfig.adminCardNumber=body.adminCardNumber||''; sysConfig.adminCardOwner=body.adminCardOwner||''; sysConfig.freeTrialDays=parseInt(body.freeTrialDays)||3; sysConfig.freeTrialGB=parseFloat(body.freeTrialGB)||1; sysConfig.referralCommission=parseInt(body.referralCommission)||10; sysConfig.maxServicesPerUser=parseInt(body.maxServicesPerUser)||20;
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                return J({ success:true, message:'Settings saved' });
+            }
+            if (action === 'add_package') {
+                if (!body.name||!body.priceIrt) return J({ error:'name and priceIrt are required' }, 400);
+                const pkg = { id:crypto.randomUUID(), name:body.name, priceIrt:parseInt(body.priceIrt)||0, gb:parseFloat(body.gb)||1, days:parseInt(body.days)||30, description:body.description||'', active:true };
+                if (!sysConfig.purchaseOptions) sysConfig.purchaseOptions=[];
+                sysConfig.purchaseOptions.push(pkg); await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                return J({ success:true, package:pkg });
+            }
+            if (action === 'remove_package') {
+                const pkgId=body.id||url.searchParams.get('id'); if(!pkgId) return J({ error:'Package id required' },400);
+                sysConfig.purchaseOptions=(sysConfig.purchaseOptions||[]).filter(p=>p.id!==pkgId);
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig)); return J({ success:true });
+            }
+            if (action === 'add_promo') {
+                if (!body.code||!body.value) return J({ error:'code and value are required' },400);
+                const promo = { id:crypto.randomUUID(), code:body.code.toUpperCase(), type:body.type==='fixed'?'fixed':'percent', value:parseFloat(body.value), usageLimit:parseInt(body.usageLimit)||null, usedCount:0, expiryMs:body.expiryDays?Date.now()+parseInt(body.expiryDays)*86400000:null, active:true };
+                if (!sysConfig.promoCodes) sysConfig.promoCodes=[];
+                sysConfig.promoCodes.push(promo); await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                return J({ success:true, promo });
+            }
+            if (action === 'remove_promo') {
+                const promoId=body.id||url.searchParams.get('id'); if(!promoId) return J({ error:'Promo id required' },400);
+                sysConfig.promoCodes=(sysConfig.promoCodes||[]).filter(p=>p.id!==promoId);
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig)); return J({ success:true });
+            }
+            if (action === 'approve_receipt') {
+                const receipt=(sysConfig.pendingPurchases||[]).find(p=>p.id===body.id); if(!receipt) return J({ error:'Receipt not found' },404);
+                receipt.status='approved'; receipt.approvedAt=Date.now();
+                const rUser=(sysConfig.users||[]).find(u=>u.id===receipt.userId);
+                if (rUser) { rUser.walletBalance=(rUser.walletBalance||0)+receipt.amount; if(!rUser.walletTransactions) rUser.walletTransactions=[]; rUser.walletTransactions.push({ type:'deposit', amount:receipt.amount, detail:'Admin approved deposit', ts:Date.now() }); }
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                if (sysConfig.tgToken&&rUser?.telegramId) ctx?.waitUntil(fetch(`https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:rUser.telegramId,parse_mode:'HTML',text:`✅ <b>شارژ کیف پول تایید شد</b>\n\n💰 <b>${receipt.amount.toLocaleString()}</b> تومان اضافه شد.\n💳 موجودی جدید: <b>${(rUser.walletBalance||0).toLocaleString()}</b> تومان`})}).catch(()=>{}));
+                return J({ success:true, newBalance:rUser?.walletBalance });
+            }
+            if (action === 'reject_receipt') {
+                const receipt=(sysConfig.pendingPurchases||[]).find(p=>p.id===body.id); if(!receipt) return J({ error:'Receipt not found' },404);
+                receipt.status='rejected'; receipt.rejectedAt=Date.now();
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                const rUser=(sysConfig.users||[]).find(u=>u.id===receipt.userId);
+                if (sysConfig.tgToken&&rUser?.telegramId) ctx?.waitUntil(fetch(`https://api.telegram.org/bot${sysConfig.tgToken}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:rUser.telegramId,parse_mode:'HTML',text:`❌ <b>درخواست شارژ رد شد</b>\n\n💰 مبلغ <b>${receipt.amount.toLocaleString()}</b> تومان تایید نشد.`})}).catch(()=>{}));
+                return J({ success:true });
+            }
+            if (action === 'reset_trial') {
+                const rUser=(sysConfig.users||[]).find(u=>u.id===body.userId); if(!rUser) return J({ error:'User not found' },404);
+                rUser.freeTrialUsed=false; rUser.services=(rUser.services||[]).filter(s=>!s.isTrial);
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                return J({ success:true, message:'Free trial reset for '+rUser.name });
+            }
+            return J({ error:'Unknown action' }, 400);
+        } catch(e) { return J({ error:'Server error: '+e.message }, 500); }
+    }
+    return J({ error:'Method not allowed' }, 405);
+}
+
+// ── Referral ─────────────────────────────────────────────────
+
+async function handleReferralApi(request, env) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,OPTIONS','Access-Control-Allow-Headers':'Authorization'}});
+    const user = await getUserFromRequest(request, env);
+    if (!user) return J({ error:'Unauthorized' }, 401);
+    const referrals = (sysConfig.users||[]).filter(u=>u.referredBy===user.id);
+    const totalCommission = (user.walletTransactions||[]).filter(t=>t.type==='referral').reduce((s,t)=>s+(t.amount||0),0);
+    return J({ success:true, referralCode:user.referralCode, commission:sysConfig.referralCommission||10, referrals:referrals.map(u=>({ username:u.name, joinedAt:u.createdAt })), totalCommission, currentBalance:user.walletBalance||0 });
+}
+
+// ── Subscriptions (User's Services) ─────────────────────────
+
+async function handleSubscriptionsApi(request, env, ctx) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (request.method === 'OPTIONS') return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization'}});
+    const user = await getUserFromRequest(request, env);
+    if (!user) return J({ error:'Unauthorized' }, 401);
+    const sysU = sysUsageCache?.users?.[user.id.replace(/-/g,'').toLowerCase()]||{reqs:0};
+    const hostName = new URL(request.url).hostname;
+    if (request.method === 'GET') {
+        const services = (user.services||[]).map(s=>({ ...s, subUrl:`https://${hostName}/sub/${s.subHash}`, usedGB:parseFloat((sysU.reqs/6000).toFixed(2)), remainingDays:s.expiryMs?Math.max(0,Math.ceil((s.expiryMs-Date.now())/86400000)):null }));
+        return J({ success:true, services });
+    }
+    if (request.method === 'POST') {
+        try {
+            const body = await request.json();
+            const { action, serviceId } = body;
+            const uu = sysConfig.users.find(x=>x.id===user.id);
+            if (!uu) return J({ error:'User not found' },404);
+            const svc = (uu.services||[]).find(s=>s.id===serviceId);
+            if (!svc) return J({ error:'Service not found' },404);
+            if (action==='pause') { svc.isPaused=true; await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); return J({ success:true }); }
+            if (action==='resume') { svc.isPaused=false; await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); return J({ success:true }); }
+            if (action==='rename') { if(!body.name) return J({ error:'name required' },400); svc.name=body.name.slice(0,50); await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); return J({ success:true }); }
+            if (action==='regenerate_link') { svc.subHash=await generateSubHash(uu.id+':regen:'+Date.now()); await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); return J({ success:true, newSubHash:svc.subHash, subUrl:`https://${hostName}/sub/${svc.subHash}` }); }
+            if (action==='delete') { uu.services=(uu.services||[]).filter(s=>s.id!==serviceId); await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); return J({ success:true }); }
+            if (action==='renew') {
+                const pkg=(sysConfig.purchaseOptions||[]).find(p=>p.id===svc.packageId); if(!pkg) return J({ error:'Original package not found' },404);
+                const price=pkg.priceIrt||pkg.price||0;
+                if ((uu.walletBalance||0)<price) return J({ error:'Insufficient balance', required:price, balance:uu.walletBalance||0 },402);
+                uu.walletBalance=(uu.walletBalance||0)-price;
+                if(!uu.walletTransactions) uu.walletTransactions=[];
+                uu.walletTransactions.push({ type:'renewal', amount:-price, detail:`Renewal: ${svc.name}`, ts:Date.now() });
+                const now=Date.now(); svc.expiryMs=Math.max(svc.expiryMs||now,now)+(pkg.days||30)*86400000; svc.isPaused=false;
+                await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig));
+                return J({ success:true, newBalance:uu.walletBalance, newExpiry:svc.expiryMs });
+            }
+            return J({ error:'Unknown action' },400);
+        } catch(e) { return J({ error:'Server error: '+e.message },500); }
+    }
+    return J({ error:'Method not allowed' },405);
+}
+
+// ── Search (Admin) ────────────────────────────────────────────
+
+async function handleSearchApi(request, env) {
+    const J = (d, s=200) => new Response(JSON.stringify(d), { status:s, headers:{ 'Content-Type':'application/json','Access-Control-Allow-Origin':'*' }});
+    if (!isAuthorized(request, null)) return J({ error:'Unauthorized' },401);
+    const url = new URL(request.url);
+    const q = (url.searchParams.get('q')||'').toLowerCase().trim();
+    if (!q) return J({ success:true, users:[] });
+    const results = (sysConfig.users||[]).filter(u=>u.name.toLowerCase().includes(q)||u.id.includes(q)).slice(0,20);
+    return J({ success:true, users:results.map(u=>({ id:u.id, name:u.name, isPaused:u.isPaused, expiryMs:u.expiryMs, walletBalance:u.walletBalance||0 })) });
+}
+
+// ── Hashed Sub-Link Route ─────────────────────────────────────
+
+async function handleHashedSubRoute(hash, request, env, ctx) {
+    if (!hash) return new Response('Not Found', { status:404 });
+    let targetUser = getUserBySubHash(hash);
+    let serviceEntry = null;
+    if (!targetUser) {
+        for (const u of (sysConfig.users||[])) {
+            const svc=(u.services||[]).find(s=>s.subHash===hash);
+            if (svc) { targetUser=u; serviceEntry=svc; break; }
+        }
+    }
+    if (!targetUser) return new Response('Subscription not found.', { status:404 });
+    if (targetUser.isPaused||(serviceEntry&&serviceEntry.isPaused)) return new Response('This subscription is paused.', { status:403 });
+    if (serviceEntry&&serviceEntry.expiryMs&&Date.now()>serviceEntry.expiryMs) return new Response('This subscription has expired.', { status:403 });
+    const url = new URL(request.url);
+    const clientHost = request.headers.get('Host')||url.hostname;
+    const ua = (request.headers.get('User-Agent')||'').toLowerCase();
+    const isRealBrowser = (ua.includes('mozilla')||ua.includes('chrome')||ua.includes('safari'))&&!ua.includes('clash')&&!ua.includes('sing-box')&&!ua.includes('v2ray')&&!ua.includes('shadowrocket')&&!ua.includes('quantumult')&&!ua.includes('surfboard')&&!ua.includes('stash');
+    if (isRealBrowser) return serveSubscriptionInfoPage(targetUser, clientHost, url, request);
+    const flag = (url.searchParams.get('flag')||url.searchParams.get('format')||url.searchParams.get('type')||'').toLowerCase();
+    const redirectUrl = `/${encodeURI(sysConfig.apiRoute)}?sub=${encodeURIComponent(targetUser.name)}${flag?'&flag='+flag:''}`;
+    return new Response(null, { status:302, headers:{ 'Location':redirectUrl, 'Cache-Control':'no-store' }});
+}
+
+// ── User-Facing Telegram Bot ──────────────────────────────────
+
+async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText, cbData, linkedUser, env, ctx, t, langCode, hostName, update, tgState) {
+    const isFA = langCode === 'fa';
+    const send = async (text, kb, editMsgId) => {
+        const payload = { chat_id:chatId, text, parse_mode:'Markdown', reply_markup:kb };
+        let res;
+        if (editMsgId) {
+            res = await fetch(`${tgApi}/editMessageText`,{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,message_id:editMsgId}) });
+            if (res.ok) return res;
+            try { const e=await res.json(); if(e?.description?.includes('not modified')) return res; } catch(_) {}
+        }
+        return fetch(`${tgApi}/sendMessage`,{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload) });
+    };
+    const answerCb = (text='') => fetch(`${tgApi}/answerCallbackQuery`,{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ callback_query_id:update.callback_query?.id, text, show_alert:false }) });
+
+    const uu = sysConfig.users.find(x=>x.id===linkedUser.id);
+    const sysU = sysUsageCache?.users?.[uu?.id?.replace(/-/g,'').toLowerCase()]||{reqs:0};
+
+    const getUserMainMenu = () => {
+        const balance = uu?.walletBalance||0;
+        const activeSvcs = (uu?.services||[]).filter(s=>!s.isPaused&&(!s.expiryMs||Date.now()<=s.expiryMs));
+        const text = isFA
+            ? `👋 *سلام ${uu?.name||''}!*\n\n💳 موجودی: *${balance.toLocaleString()} تومان*\n📦 سرویس‌های فعال: *${activeSvcs.length}*`
+            : `👋 *Hello ${uu?.name||''}!*\n\n💳 Wallet: *${balance.toLocaleString()} IRT*\n📦 Active services: *${activeSvcs.length}*`;
+        const kb = { inline_keyboard:[
+            [{ text:isFA?'📦 سرویس‌های من':'📦 My Services', callback_data:'u_services' },{ text:isFA?'🛒 خرید سرویس':'🛒 Buy Service', callback_data:'u_shop' }],
+            [{ text:isFA?'💳 کیف پول':'💳 Wallet', callback_data:'u_wallet' },{ text:isFA?'🎁 معرفی دوستان':'🎁 Referral', callback_data:'u_referral' }],
+            [{ text:isFA?'👤 پروفایل':'👤 Profile', callback_data:'u_profile' },{ text:isFA?'📞 پشتیبانی':'📞 Support', callback_data:'u_support' }],
+        ]};
+        return { text, kb };
+    };
+
+    if (update.message) {
+        const txt = update.message.text||'';
+        const state = tgState[chatId];
+        if (state) {
+            if (state.step==='u_wallet_charge_amount') {
+                const amount = parseInt(txt.replace(/[^0-9]/g,''));
+                if (isNaN(amount)||amount<10000) { await send(isFA?'❌ مبلغ نامعتبر. حداقل ۱۰,۰۰۰ تومان.':'❌ Invalid amount. Min 10,000 IRT.',{ inline_keyboard:[[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_wallet' }]] }); return new Response('OK',{status:200}); }
+                tgState[chatId]={ step:'u_wallet_charge_note', amount };
+                ctx?.waitUntil(d1Put(env,'tg_bot_state',JSON.stringify(tgState)).catch(()=>{}));
+                await send(isFA?`💳 مبلغ: *${amount.toLocaleString()} تومان*\n\nشماره کارت:\n\`${sysConfig.adminCardNumber||'تنظیم نشده'}\`\n👤 ${sysConfig.adminCardOwner||''}\n\nشماره پیگیری یا یادداشت را ارسال کنید:`:`💳 Amount: *${amount.toLocaleString()} IRT*\n\nCard:\n\`${sysConfig.adminCardNumber||'Not set'}\`\n👤 ${sysConfig.adminCardOwner||''}\n\nSend tracking number or note:`,{ inline_keyboard:[[{ text:isFA?'❌ لغو':'❌ Cancel',callback_data:'u_wallet' }]] });
+                return new Response('OK',{status:200});
+            }
+            if (state.step==='u_wallet_charge_note') {
+                const receiptId = crypto.randomUUID();
+                const receipt = { id:receiptId, userId:uu.id, username:uu.name, amount:state.amount, receiptNote:txt, status:'pending', ts:Date.now() };
+                if (!sysConfig.pendingPurchases) sysConfig.pendingPurchases=[];
+                sysConfig.pendingPurchases.push(receipt);
+                await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig));
+                tgState[chatId]=null;
+                ctx?.waitUntil(d1Put(env,'tg_bot_state',JSON.stringify(tgState)).catch(()=>{}));
+                const adminChat = sysConfig.tgAdminId||sysConfig.tgChatId;
+                if (sysConfig.tgToken&&adminChat) ctx?.waitUntil(fetch(`${tgApi}/sendMessage`,{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ chat_id:adminChat, parse_mode:'Markdown', text:`💳 *درخواست شارژ جدید*\n\n👤 کاربر: *${uu.name}*\n💰 مبلغ: *${state.amount.toLocaleString()} تومان*\n📝 یادداشت: ${txt}\n🆔 \`${receiptId}\``, reply_markup:{ inline_keyboard:[[{ text:'✅ تایید',callback_data:`wallet_approve:${receiptId}` },{ text:'❌ رد',callback_data:`wallet_reject:${receiptId}` }]] } }) }).catch(()=>{}));
+                const menu = getUserMainMenu();
+                await send(isFA?`✅ درخواست شارژ ثبت شد!\n💰 مبلغ: *${state.amount.toLocaleString()} تومان*\nبعد از تایید ادمین، موجودی به‌روز می‌شود.`:`✅ Charge request submitted!\n💰 Amount: *${state.amount.toLocaleString()} IRT*\nAfter admin approval, balance updates.`,menu.kb);
+                return new Response('OK',{status:200});
+            }
+            if (state.step==='u_service_rename') {
+                const svc=(uu.services||[]).find(s=>s.id===state.serviceId);
+                if (svc) { svc.name=txt.slice(0,50); await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); }
+                tgState[chatId]=null;
+                ctx?.waitUntil(d1Put(env,'tg_bot_state',JSON.stringify(tgState)).catch(()=>{}));
+                await send(isFA?'✅ نام سرویس تغییر کرد.':'✅ Service renamed.',{ inline_keyboard:[[{ text:isFA?'🔙 سرویس‌های من':'🔙 My Services',callback_data:'u_services' }]] });
+                return new Response('OK',{status:200});
+            }
+        }
+        if (txt.startsWith('/start')) { const m=getUserMainMenu(); await send(m.text,m.kb); return new Response('OK',{status:200}); }
+        const menu = getUserMainMenu(); await send(menu.text,menu.kb); return new Response('OK',{status:200});
+    }
+
+    if (update.callback_query) {
+        const data = cbData||'';
+        tgState[chatId]=null;
+        ctx?.waitUntil(d1Put(env,'tg_bot_state',JSON.stringify(tgState)).catch(()=>{}));
+
+        if (data==='u_main'||data==='u_back_main') { const m=getUserMainMenu(); await send(m.text,m.kb,msgId); await answerCb(); return new Response('OK',{status:200}); }
+
+        if (data==='u_profile') {
+            const usedGB=(sysU.reqs/6000).toFixed(2);
+            const expiry=uu?.expiryMs?new Date(uu.expiryMs).toLocaleDateString():(isFA?'نامحدود':'Unlimited');
+            const trialSt=uu?.freeTrialUsed?(isFA?'استفاده شده':'Used'):(isFA?'موجود':'Available');
+            const text=isFA?`👤 *پروفایل من*\n\n📛 نام: *${uu?.name}*\n💳 موجودی: *${(uu?.walletBalance||0).toLocaleString()} تومان*\n📊 مصرف: *${usedGB} GB*\n📅 انقضا: *${expiry}*\n🎁 تست رایگان: *${trialSt}*\n🔗 کد معرفی: \`${uu?.referralCode||'—'}\``:`👤 *My Profile*\n\n📛 Name: *${uu?.name}*\n💳 Balance: *${(uu?.walletBalance||0).toLocaleString()} IRT*\n📊 Used: *${usedGB} GB*\n📅 Expiry: *${expiry}*\n🎁 Free trial: *${trialSt}*\n🔗 Referral code: \`${uu?.referralCode||'—'}\``;
+            await send(text,{ inline_keyboard:[[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_wallet') {
+            const text=isFA?`💳 *کیف پول*\n\n💰 موجودی: *${(uu?.walletBalance||0).toLocaleString()} تومان*\n\n🏦 شماره کارت:\n\`${sysConfig.adminCardNumber||'تنظیم نشده'}\`\n👤 ${sysConfig.adminCardOwner||''}`:`💳 *Wallet*\n\n💰 Balance: *${(uu?.walletBalance||0).toLocaleString()} IRT*\n\n🏦 Card:\n\`${sysConfig.adminCardNumber||'Not set'}\`\n👤 ${sysConfig.adminCardOwner||''}`;
+            await send(text,{ inline_keyboard:[[{ text:isFA?'➕ شارژ کیف پول':'➕ Charge Wallet',callback_data:'u_wallet_charge' }],[{ text:isFA?'📋 تاریخچه':'📋 History',callback_data:'u_wallet_history' }],[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_wallet_charge') {
+            tgState[chatId]={ step:'u_wallet_charge_amount' };
+            ctx?.waitUntil(d1Put(env,'tg_bot_state',JSON.stringify(tgState)).catch(()=>{}));
+            await send(isFA?'💳 *شارژ کیف پول*\n\nمبلغ مورد نظر را به تومان وارد کنید:':'💳 *Charge Wallet*\n\nEnter amount in IRT:',{ inline_keyboard:[[{ text:isFA?'❌ لغو':'❌ Cancel',callback_data:'u_wallet' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_wallet_history') {
+            const txs=(uu?.walletTransactions||[]).slice(-10).reverse();
+            let text=isFA?'📋 *تاریخچه تراکنش‌ها*\n\n':'📋 *Transaction History*\n\n';
+            if (!txs.length) text+=isFA?'هیچ تراکنشی یافت نشد.':'No transactions found.';
+            else txs.forEach(tx=>{ const sign=tx.amount>0?'➕':'➖'; const d=new Date(tx.ts).toLocaleDateString(); text+=`${sign} ${Math.abs(tx.amount).toLocaleString()} — ${tx.detail} (${d})\n`; });
+            await send(text,{ inline_keyboard:[[{ text:isFA?'🔙 کیف پول':'🔙 Wallet',callback_data:'u_wallet' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_referral') {
+            const refs=(sysConfig.users||[]).filter(r=>r.referredBy===uu.id);
+            const text=isFA?`🎁 *برنامه معرفی*\n\n🔗 کد: \`${uu?.referralCode||'—'}\`\n💰 کمیسیون: *${sysConfig.referralCommission||10} تومان*\n👥 تعداد معرفی‌ها: *${refs.length}*`:`🎁 *Referral Program*\n\n🔗 Code: \`${uu?.referralCode||'—'}\`\n💰 Commission: *${sysConfig.referralCommission||10} IRT* per referral\n👥 Total referrals: *${refs.length}*`;
+            await send(text,{ inline_keyboard:[[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_services') {
+            const services=uu?.services||[];
+            let text=isFA?'📦 *سرویس‌های من*\n\n':'📦 *My Services*\n\n';
+            const kbr=[];
+            if (!services.length) text+=isFA?'هیچ سرویسی ندارید.':'No services.';
+            else services.forEach((s,i)=>{ const st=s.isPaused?'⏸':(s.expiryMs&&Date.now()>s.expiryMs?'🔴':'🟢'); const exp=s.expiryMs?new Date(s.expiryMs).toLocaleDateString():(isFA?'نامحدود':'Unltd'); text+=`${i+1}. ${st} *${s.name}* — ${s.gb||'?'}GB — ${exp}\n`; kbr.push([{ text:`${st} ${s.name}`,callback_data:`u_svc:${s.id}` }]); });
+            kbr.push([{ text:isFA?'🛒 خرید سرویس جدید':'🛒 Buy New Service',callback_data:'u_shop' }]);
+            kbr.push([{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]);
+            await send(text,{ inline_keyboard:kbr },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_svc:')) {
+            const svcId=data.replace('u_svc:','');
+            const svc=(uu?.services||[]).find(s=>s.id===svcId);
+            if (!svc) { await answerCb(isFA?'سرویس یافت نشد':'Service not found'); return new Response('OK',{status:200}); }
+            const exp=svc.expiryMs?new Date(svc.expiryMs).toLocaleDateString():(isFA?'نامحدود':'Unlimited');
+            const st=svc.isPaused?'⏸':(svc.expiryMs&&Date.now()>svc.expiryMs?'🔴':'🟢');
+            const subUrl=`https://${hostName}/sub/${svc.subHash}`;
+            const text=isFA?`📦 *${svc.name}*\n\n🚦 وضعیت: ${st}\n💾 حجم: *${svc.gb||'?'} GB*\n📅 انقضا: *${exp}*\n\n🔗 لینک اشتراک:\n\`${subUrl}\``:`📦 *${svc.name}*\n\n🚦 Status: ${st}\n💾 Data: *${svc.gb||'?'} GB*\n📅 Expiry: *${exp}*\n\n🔗 Sub link:\n\`${subUrl}\``;
+            await send(text,{ inline_keyboard:[[{ text:svc.isPaused?(isFA?'▶️ فعال‌سازی':'▶️ Resume'):(isFA?'⏸ توقف':'⏸ Pause'),callback_data:`u_svc_${svc.isPaused?'resume':'pause'}:${svcId}` },{ text:isFA?'🔄 تمدید':'🔄 Renew',callback_data:`u_svc_renew:${svcId}` }],[{ text:isFA?'✏️ تغییر نام':'✏️ Rename',callback_data:`u_svc_rename:${svcId}` },{ text:isFA?'🔗 لینک جدید':'🔗 New Link',callback_data:`u_svc_regen:${svcId}` }],[{ text:isFA?'🗑️ حذف':'🗑️ Delete',callback_data:`u_svc_del:${svcId}` }],[{ text:isFA?'🔙 سرویس‌های من':'🔙 My Services',callback_data:'u_services' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_svc_pause:')||data.startsWith('u_svc_resume:')) {
+            const isPause=data.startsWith('u_svc_pause:');
+            const svcId=data.replace(isPause?'u_svc_pause:':'u_svc_resume:','');
+            const svc=(uu?.services||[]).find(s=>s.id===svcId);
+            if (svc) { svc.isPaused=isPause; await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); }
+            await answerCb(isFA?(isPause?'⏸ متوقف شد':'▶️ فعال شد'):(isPause?'⏸ Paused':'▶️ Resumed'));
+            if (svc) { const exp=svc.expiryMs?new Date(svc.expiryMs).toLocaleDateString():(isFA?'نامحدود':'Unlimited'); const st=svc.isPaused?'⏸':(svc.expiryMs&&Date.now()>svc.expiryMs?'🔴':'🟢'); const subUrl=`https://${hostName}/sub/${svc.subHash}`; const text=isFA?`📦 *${svc.name}*\n🚦 وضعیت: ${st}\n💾 ${svc.gb||'?'} GB\n📅 ${exp}\n🔗\`${subUrl}\``:`📦 *${svc.name}*\n🚦 ${st}\n💾 ${svc.gb||'?'} GB\n📅 ${exp}\n🔗\`${subUrl}\``; await send(text,{ inline_keyboard:[[{ text:svc.isPaused?(isFA?'▶️ فعال‌سازی':'▶️ Resume'):(isFA?'⏸ توقف':'⏸ Pause'),callback_data:`u_svc_${svc.isPaused?'resume':'pause'}:${svcId}` }],[{ text:isFA?'🔙 سرویس‌ها':'🔙 Services',callback_data:'u_services' }]] },msgId); }
+            return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_svc_rename:')) {
+            const svcId=data.replace('u_svc_rename:','');
+            tgState[chatId]={ step:'u_service_rename', serviceId:svcId };
+            ctx?.waitUntil(d1Put(env,'tg_bot_state',JSON.stringify(tgState)).catch(()=>{}));
+            await send(isFA?'✏️ نام جدید سرویس را ارسال کنید:':'✏️ Send new service name:',{ inline_keyboard:[[{ text:isFA?'❌ لغو':'❌ Cancel',callback_data:`u_svc:${svcId}` }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_svc_regen:')) {
+            const svcId=data.replace('u_svc_regen:','');
+            const svc=(uu?.services||[]).find(s=>s.id===svcId);
+            if (svc) { svc.subHash=await generateSubHash(uu.id+':regen:'+Date.now()); await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); }
+            await answerCb(isFA?'🔗 لینک جدید ساخته شد!':'🔗 New link generated!');
+            const subUrl=`https://${hostName}/sub/${svc?.subHash||''}`;
+            await send(isFA?`✅ لینک جدید:\n\`${subUrl}\``:`✅ New link:\n\`${subUrl}\``,{ inline_keyboard:[[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:`u_svc:${svcId}` }]] },msgId); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_svc_del:')) {
+            const svcId=data.replace('u_svc_del:','');
+            const refU=sysConfig.users.find(x=>x.id===uu.id);
+            if (refU) { refU.services=(refU.services||[]).filter(s=>s.id!==svcId); await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); }
+            await answerCb(isFA?'🗑️ حذف شد':'🗑️ Deleted');
+            const svcs=refU?.services||[];
+            let text=isFA?'📦 *سرویس‌های من*\n\n':'📦 *My Services*\n\n'; const kbr=[];
+            if (!svcs.length) text+=isFA?'هیچ سرویسی ندارید.':'No services.';
+            else svcs.forEach((s,i)=>{ const st=s.isPaused?'⏸':(s.expiryMs&&Date.now()>s.expiryMs?'🔴':'🟢'); text+=`${i+1}. ${st} *${s.name}*\n`; kbr.push([{ text:`${st} ${s.name}`,callback_data:`u_svc:${s.id}` }]); });
+            kbr.push([{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]);
+            await send(text,{ inline_keyboard:kbr },msgId); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_svc_renew:')) {
+            const svcId=data.replace('u_svc_renew:','');
+            const svc=(uu?.services||[]).find(s=>s.id===svcId);
+            if (!svc) { await answerCb(isFA?'سرویس یافت نشد':'Service not found'); return new Response('OK',{status:200}); }
+            const pkg=(sysConfig.purchaseOptions||[]).find(p=>p.id===svc.packageId);
+            if (!pkg) { await send(isFA?'❌ پکیج اصلی یافت نشد.':'❌ Original package not found.',{ inline_keyboard:[[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:`u_svc:${svcId}` }]] },msgId); await answerCb(); return new Response('OK',{status:200}); }
+            const price=pkg.priceIrt||pkg.price||0; const balance=uu?.walletBalance||0;
+            if (balance<price) {
+                await send(isFA?`❌ موجودی کافی نیست.\n💰 موجودی: *${balance.toLocaleString()}*\n💳 قیمت: *${price.toLocaleString()} تومان*`:`❌ Insufficient balance.\n💰 Balance: *${balance.toLocaleString()} IRT*\n💳 Price: *${price.toLocaleString()} IRT*`,{ inline_keyboard:[[{ text:isFA?'💳 شارژ':'💳 Charge',callback_data:'u_wallet_charge' },{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:`u_svc:${svcId}` }]] },msgId);
+            } else {
+                const refU=sysConfig.users.find(x=>x.id===uu.id);
+                if (refU) { refU.walletBalance=(refU.walletBalance||0)-price; if(!refU.walletTransactions) refU.walletTransactions=[]; refU.walletTransactions.push({ type:'renewal', amount:-price, detail:`تمدید: ${svc.name}`, ts:Date.now() }); const now=Date.now(); svc.expiryMs=Math.max(svc.expiryMs||now,now)+(pkg.days||30)*86400000; svc.isPaused=false; await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig)); }
+                await send(isFA?`✅ *تمدید موفق!*\n📦 ${svc.name}\n💳 موجودی جدید: *${(refU?.walletBalance||0).toLocaleString()} تومان*\n📅 انقضا: *${new Date(svc.expiryMs).toLocaleDateString()}*`:`✅ *Renewed!*\n📦 ${svc.name}\n💳 New balance: *${(refU?.walletBalance||0).toLocaleString()} IRT*\n📅 Expiry: *${new Date(svc.expiryMs).toLocaleDateString()}*`,{ inline_keyboard:[[{ text:isFA?'🔙 سرویس‌های من':'🔙 My Services',callback_data:'u_services' }]] },msgId);
+            }
+            await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_shop') {
+            const pkgs=sysConfig.purchaseOptions||[]; const balance=uu?.walletBalance||0;
+            let text=isFA?`🛒 *فروشگاه*\n💳 موجودی: *${balance.toLocaleString()} تومان*\n\n`:`🛒 *Shop*\n💳 Balance: *${balance.toLocaleString()} IRT*\n\n`;
+            const kbr=[];
+            if (!sysConfig.purchaseEnabled) { text+=isFA?'⛔ فروشگاه غیرفعال است.':'⛔ Shop is disabled.'; }
+            else if (!pkgs.length) { text+=isFA?'هیچ پکیجی موجود نیست.':'No packages available.'; }
+            else pkgs.filter(p=>p.active!==false).forEach(pkg=>{ text+=`📦 *${pkg.name}*\n💰 ${(pkg.priceIrt||0).toLocaleString()} تومان | 💾 ${pkg.gb}GB | 📅 ${pkg.days} ${isFA?'روز':'days'}\n`; if(pkg.description) text+=`📝 ${pkg.description}\n`; text+='\n'; kbr.push([{ text:`🛒 ${pkg.name}`,callback_data:`u_buy:${pkg.id}` }]); });
+            if (!uu?.freeTrialUsed&&sysConfig.freeTrialDays&&sysConfig.purchaseEnabled) kbr.push([{ text:isFA?'🎁 تست رایگان':'🎁 Free Trial',callback_data:'u_free_trial' }]);
+            kbr.push([{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]);
+            await send(text,{ inline_keyboard:kbr },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_buy:')) {
+            const pkgId=data.replace('u_buy:','');
+            const pkg=(sysConfig.purchaseOptions||[]).find(p=>p.id===pkgId);
+            if (!pkg) { await answerCb(isFA?'پکیج یافت نشد':'Package not found'); return new Response('OK',{status:200}); }
+            const balance=uu?.walletBalance||0; const price=pkg.priceIrt||pkg.price||0;
+            if (balance<price) { await send(isFA?`❌ موجودی ناکافی.\n📦 ${pkg.name}: *${price.toLocaleString()} تومان*\n💳 موجودی: *${balance.toLocaleString()} تومان*`:`❌ Insufficient balance.\n📦 ${pkg.name}: *${price.toLocaleString()} IRT*\n💳 Balance: *${balance.toLocaleString()} IRT*`,{ inline_keyboard:[[{ text:isFA?'💳 شارژ':'💳 Charge',callback_data:'u_wallet_charge' },{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_shop' }]] },msgId); }
+            else { await send(isFA?`✅ *تایید خرید*\n📦 *${pkg.name}*\n💰 قیمت: *${price.toLocaleString()} تومان*\n💾 ${pkg.gb} GB | 📅 ${pkg.days} روز\n\nموجودی بعد از خرید: *${(balance-price).toLocaleString()} تومان*`:`✅ *Confirm Purchase*\n📦 *${pkg.name}*\n💰 Price: *${price.toLocaleString()} IRT*\n💾 ${pkg.gb} GB | 📅 ${pkg.days} days\n\nBalance after: *${(balance-price).toLocaleString()} IRT*`,{ inline_keyboard:[[{ text:isFA?'✅ تایید':'✅ Confirm',callback_data:`u_confirm_buy:${pkg.id}` },{ text:isFA?'❌ لغو':'❌ Cancel',callback_data:'u_shop' }]] },msgId); }
+            await answerCb(); return new Response('OK',{status:200});
+        }
+
+        if (data.startsWith('u_confirm_buy:')) {
+            const pkgId=data.replace('u_confirm_buy:','');
+            const pkg=(sysConfig.purchaseOptions||[]).find(p=>p.id===pkgId);
+            if (!pkg) { await answerCb(isFA?'پکیج یافت نشد':'Not found'); return new Response('OK',{status:200}); }
+            const refU=sysConfig.users.find(x=>x.id===uu.id); const price=pkg.priceIrt||pkg.price||0;
+            if (!refU||(refU.walletBalance||0)<price) { await answerCb(isFA?'موجودی ناکافی':'Insufficient balance'); return new Response('OK',{status:200}); }
+            if ((refU.services||[]).length>=(sysConfig.maxServicesPerUser||20)) { await answerCb(isFA?`حداکثر ${sysConfig.maxServicesPerUser||20} سرویس`:`Max ${sysConfig.maxServicesPerUser||20} services`); return new Response('OK',{status:200}); }
+            refU.walletBalance=(refU.walletBalance||0)-price;
+            if(!refU.walletTransactions) refU.walletTransactions=[];
+            refU.walletTransactions.push({ type:'purchase', amount:-price, detail:`خرید: ${pkg.name}`, ts:Date.now() });
+            const svcHash=await generateSubHash(refU.id+':svc:'+Date.now());
+            const service={ id:crypto.randomUUID(), name:pkg.name, packageId:pkg.id, subHash:svcHash, gb:pkg.gb, days:pkg.days, startedAt:Date.now(), expiryMs:Date.now()+(pkg.days||30)*86400000, isPaused:false };
+            if(!refU.services) refU.services=[];
+            refU.services.push(service);
+            await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig));
+            const subUrl=`https://${hostName}/sub/${service.subHash}`;
+            await send(isFA?`✅ *خرید موفق!*\n📦 ${service.name}\n💳 موجودی جدید: *${(refU.walletBalance||0).toLocaleString()} تومان*\n\n🔗 لینک اشتراک:\n\`${subUrl}\`\n📅 ${new Date(service.expiryMs).toLocaleDateString()}`:`✅ *Purchase successful!*\n📦 ${service.name}\n💳 New balance: *${(refU.walletBalance||0).toLocaleString()} IRT*\n\n🔗 Sub link:\n\`${subUrl}\`\n📅 ${new Date(service.expiryMs).toLocaleDateString()}`,{ inline_keyboard:[[{ text:isFA?'📦 سرویس‌های من':'📦 My Services',callback_data:'u_services' },{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId);
+            await answerCb(isFA?'✅ خرید موفق!':'✅ Done!'); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_free_trial') {
+            if (uu?.freeTrialUsed) { await answerCb(isFA?'قبلاً استفاده کرده‌اید':'Already used'); return new Response('OK',{status:200}); }
+            const gb=sysConfig.freeTrialGB||1; const days=sysConfig.freeTrialDays||3;
+            const refU=sysConfig.users.find(x=>x.id===uu.id);
+            if (!refU) { await answerCb('Error'); return new Response('OK',{status:200}); }
+            const svcHash=await generateSubHash(refU.id+':trial:'+Date.now());
+            const trialSvc={ id:crypto.randomUUID(), name:isFA?'تست رایگان':'Free Trial', packageId:'trial', subHash:svcHash, gb, days, startedAt:Date.now(), expiryMs:Date.now()+days*86400000, isTrial:true, isPaused:false };
+            if(!refU.services) refU.services=[];
+            refU.services.push(trialSvc); refU.freeTrialUsed=true;
+            if(!refU.limitTotalReq) refU.limitTotalReq=Math.round(gb*6000);
+            if(!refU.expiryMs) refU.expiryMs=Date.now()+days*86400000;
+            await cachedD1Put(env,'sys_config',JSON.stringify(sysConfig));
+            const subUrl=`https://${hostName}/sub/${trialSvc.subHash}`;
+            await send(isFA?`✅ *تست رایگان فعال شد!*\n💾 ${gb} GB | 📅 ${days} روز\n\n🔗\`${subUrl}\``:`✅ *Free trial activated!*\n💾 ${gb} GB | 📅 ${days} days\n\n🔗\`${subUrl}\``,{ inline_keyboard:[[{ text:isFA?'📦 سرویس‌ها':'📦 Services',callback_data:'u_services' }]] },msgId);
+            await answerCb(isFA?'✅ فعال شد!':'✅ Activated!'); return new Response('OK',{status:200});
+        }
+
+        if (data==='u_support') {
+            const text=isFA?'📞 *پشتیبانی*\n\nبرای دریافت کمک با ادمین تماس بگیرید.':'📞 *Support*\n\nFor help, please contact admin.';
+            await send(text,{ inline_keyboard:[[{ text:isFA?'🔙 برگشت':'🔙 Back',callback_data:'u_main' }]] },msgId); await answerCb(); return new Response('OK',{status:200});
+        }
+
+        const menu=getUserMainMenu(); await send(menu.text,menu.kb,msgId); await answerCb(); return new Response('OK',{status:200});
+    }
+    return new Response('OK',{status:200});
 }
 
 export default {
@@ -650,49 +1017,36 @@ export default {
                 users: `/${encodeURI(sysConfig.apiRoute)}/api/users`,
                 stats: `/${encodeURI(sysConfig.apiRoute)}/api/stats`,
                 update: `/${encodeURI(sysConfig.apiRoute)}/api/update`,
-                // v4.0.0: New API routes
+                apiKeys: `/${encodeURI(sysConfig.apiRoute)}/api/keys`,
                 register: `/${encodeURI(sysConfig.apiRoute)}/api/register`,
                 login: `/${encodeURI(sysConfig.apiRoute)}/api/login`,
                 profile: `/${encodeURI(sysConfig.apiRoute)}/api/profile`,
                 walletCharge: `/${encodeURI(sysConfig.apiRoute)}/api/wallet/charge`,
                 walletHistory: `/${encodeURI(sysConfig.apiRoute)}/api/wallet/history`,
-                subscriptions: `/${encodeURI(sysConfig.apiRoute)}/api/subscriptions`,
-                referral: `/${encodeURI(sysConfig.apiRoute)}/api/referral`,
+                shop: `/${encodeURI(sysConfig.apiRoute)}/api/shop`,
                 agency: `/${encodeURI(sysConfig.apiRoute)}/api/agency`,
+                referral: `/${encodeURI(sysConfig.apiRoute)}/api/referral`,
+                subscriptions: `/${encodeURI(sysConfig.apiRoute)}/api/subscriptions`,
                 search: `/${encodeURI(sysConfig.apiRoute)}/api/search`,
-                apiKeys: `/${encodeURI(sysConfig.apiRoute)}/api/keys`,
-                // v5.0.0: Sub route
-                sub: `/${encodeURI(sysConfig.subRoute || "sub")}`,
             };
 
             const isSyncRoute = reqPath.endsWith('/api/sync');
             const isUsersRoute = reqPath === routes.users || reqPath.endsWith('/api/users');
             const isStatsRoute = reqPath === routes.stats || reqPath.endsWith('/api/stats');
             const isUpdateRoute = reqPath === routes.update || reqPath.endsWith('/api/update');
-            // v4.0.0: New route matchers
-            const isRegisterRoute = reqPath === routes.register || reqPath.endsWith('/api/register');
-            const isLoginRoute = reqPath === routes.login || reqPath.endsWith('/api/login');
-            const isProfileRoute = reqPath === routes.profile || reqPath.endsWith('/api/profile');
-            const isWalletChargeRoute = reqPath === routes.walletCharge || reqPath.endsWith('/api/wallet/charge');
-            const isWalletHistoryRoute = reqPath === routes.walletHistory || reqPath.endsWith('/api/wallet/history');
-            const isSubscriptionsRoute = reqPath === routes.subscriptions || reqPath.endsWith('/api/subscriptions');
-            const isReferralRoute = reqPath === routes.referral || reqPath.endsWith('/api/referral');
-            const isAgencyRoute = reqPath === routes.agency || reqPath.endsWith('/api/agency');
-            const isSearchRoute = reqPath === routes.search || reqPath.endsWith('/api/search');
             const isApiKeysRoute = reqPath === routes.apiKeys || reqPath.endsWith('/api/keys');
-            const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isSubscriptionsRoute || isReferralRoute || isAgencyRoute || isSearchRoute || isApiKeysRoute || (reqPath.startsWith(routes.sub + "/") && reqPath.length > routes.sub.length + 1);
-
-            // v4.0.0: Rate limiting for API routes
-            if (isAuthorizedRoute && !isTelemetryStream && reqPath !== routes.data && reqPath !== routes.dash) {
-                const clientIp = request.headers.get("cf-connecting-ip") || "0.0.0.0";
-                const allowed = await checkRateLimit(env, clientIp);
-                if (!allowed) {
-                    return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again later." }), {
-                        status: 429,
-                        headers: { "Content-Type": "application/json", "Retry-After": "60" }
-                    });
-                }
-            }
+            const isRegisterRoute = reqPath === routes.register;
+            const isLoginRoute = reqPath === routes.login;
+            const isProfileRoute = reqPath === routes.profile;
+            const isWalletChargeRoute = reqPath === routes.walletCharge;
+            const isWalletHistoryRoute = reqPath === routes.walletHistory;
+            const isShopRoute = reqPath === routes.shop;
+            const isAgencyRoute = reqPath === routes.agency;
+            const isReferralRoute = reqPath === routes.referral;
+            const isSubscriptionsRoute = reqPath === routes.subscriptions;
+            const isSearchRoute = reqPath === routes.search;
+            const isHashedSubRoute = reqPath.startsWith('/sub/') && reqPath.length > 5;
+            const isAuthorizedRoute = reqPath === routes.data || reqPath === routes.dash || reqPath === routes.auth || reqPath === routes.sync || reqPath === routes.tg || reqPath === routes.syncPanel || reqPath === routes.logs || isSyncRoute || isUsersRoute || isStatsRoute || isUpdateRoute || isApiKeysRoute || isRegisterRoute || isLoginRoute || isProfileRoute || isWalletChargeRoute || isWalletHistoryRoute || isShopRoute || isAgencyRoute || isReferralRoute || isSubscriptionsRoute || isSearchRoute || isHashedSubRoute;
 
             if (!isTelemetryStream && !isAuthorizedRoute) {
                 return serveMaintenancePage(request, url);
@@ -707,8 +1061,14 @@ export default {
                     return await handleAuth(request, url.hostname, ctx, env);
                 }
                 if (reqPath === routes.sync || isSyncRoute) {
+                    if (request.method === "OPTIONS") {
+                        return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", "Access-Control-Max-Age": "86400" } });
+                    }
                     if (request.method !== "POST") return new Response("405", { status: 405 });
-                    return await handleConfigSync(request, env, ctx);
+                    const syncRes = await handleConfigSync(request, env, ctx);
+                    syncRes.headers.set("Access-Control-Allow-Origin", "*");
+                    syncRes.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+                    return syncRes;
                 }
                 if (reqPath === routes.logs) {
                     if (request.method !== "POST" && request.method !== "GET") return new Response("405", { status: 405 });
@@ -723,6 +1083,23 @@ export default {
                 if (isUpdateRoute) {
                     return await handleUpdateApi(request, env, ctx);
                 }
+                if (isApiKeysRoute) {
+                    return await handleApiKeys(request, env, ctx);
+                }
+                if (isRegisterRoute) return await handleRegisterApi(request, env);
+                if (isLoginRoute) return await handleLoginApi(request, env);
+                if (isProfileRoute) return await handleProfileApi(request, env);
+                if (isWalletChargeRoute) return await handleWalletChargeApi(request, env, ctx);
+                if (isWalletHistoryRoute) return await handleWalletHistoryApi(request, env);
+                if (isShopRoute) return await handleShopApi(request, env, ctx);
+                if (isAgencyRoute) return await handleAgencyApi(request, env, ctx);
+                if (isReferralRoute) return await handleReferralApi(request, env);
+                if (isSubscriptionsRoute) return await handleSubscriptionsApi(request, env, ctx);
+                if (isSearchRoute) return await handleSearchApi(request, env);
+                if (isHashedSubRoute) {
+                    const hash = reqPath.replace('/sub/', '');
+                    return await handleHashedSubRoute(hash, request, env, ctx);
+                }
                 if (reqPath === routes.syncPanel) {
                     if (request.method !== "POST") return new Response("405", { status: 405 });
                     return await handleSyncPanel(request, env, ctx);
@@ -730,54 +1107,6 @@ export default {
                 if (reqPath === routes.tg) {
                     if (request.method !== "POST") return new Response("405", { status: 405 });
                     return await handleTelegramWebhook(request, env, url.hostname, ctx);
-                }
-                // v4.0.0: New API handlers
-                if (isRegisterRoute) {
-                    if (request.method !== "POST") return new Response("405", { status: 405 });
-                    return await handleRegisterApi(request, env, ctx);
-                }
-                if (isLoginRoute) {
-                    if (request.method !== "POST") return new Response("405", { status: 405 });
-                    return await handleLoginApi(request, env, ctx);
-                }
-                if (isProfileRoute) {
-                    return await handleProfileApi(request, env, ctx);
-                }
-                if (isWalletChargeRoute) {
-                    if (request.method !== "POST") return new Response("405", { status: 405 });
-                    return await handleWalletChargeApi(request, env, ctx);
-                }
-                if (isWalletHistoryRoute) {
-                    return await handleWalletHistoryApi(request, env, ctx);
-                }
-                if (isSubscriptionsRoute) {
-                    return await handleSubscriptionsApi(request, env, ctx);
-                }
-                if (isReferralRoute) {
-                    return await handleReferralApi(request, env, ctx);
-                }
-                if (isAgencyRoute) {
-                    if (request.method === "POST") return await handleAgencyApi(request, env, ctx);
-                    return await handleAgencyStatusApi(request, env, ctx);
-                }
-                if (isSearchRoute) {
-                    return await handleSearchApi(request, env, ctx);
-                }
-                if (isApiKeysRoute) {
-                    return await handleApiKeys(request, env, ctx);
-                }
-                // v5.0.0: Sub route handler (secure subscription page via /sub/<hash>)
-                if (reqPath.startsWith(routes.sub + "/") && reqPath.length > routes.sub.length + 1) {
-                    const subHash = reqPath.slice(routes.sub.length + 1);
-                    let targetUser = null;
-                    if (sysConfig.users && sysConfig.users.length > 0) {
-                        targetUser = sysConfig.users.find(u => u.subHash === subHash || generateSubHash(u.id) === subHash);
-                    }
-                    if (targetUser) {
-                        const host = request.headers.get("Host") || url.hostname;
-                        return serveSubscriptionInfoPage(targetUser, host, url, request);
-                    }
-                    return serveMaintenancePage(request, url);
                 }
                 if (reqPath === routes.data) {
                     const ua = (request.headers.get("User-Agent") || "").toLowerCase();
@@ -913,7 +1242,30 @@ export default {
 
             if (isTelemetryStream) {
                 if (sysConfig.isPaused) return new Response(null, { status: 503 });
-                return await processTelemetryStream(env, ctx);
+                let wsRelayIdx = -1;
+                try {
+                    const riParam = url.searchParams.get('ri');
+                    if (riParam !== null) wsRelayIdx = parseInt(riParam, 10);
+                } catch(e) {}
+                if (wsRelayIdx < 0) {
+                    try {
+                        const lastSeg = url.pathname.split('/').pop();
+                        if (lastSeg) {
+                            const num = parseInt(lastSeg, 10);
+                            if (!isNaN(num) && num >= 0) wsRelayIdx = num;
+                        }
+                    } catch(e) {}
+                }
+                if (wsRelayIdx < 0) {
+                    try {
+                        const lastSeg = url.pathname.split('/').pop();
+                        if (lastSeg) {
+                            const decoded = JSON.parse(atob(lastSeg));
+                            if (typeof decoded.relayIdx === 'number') wsRelayIdx = decoded.relayIdx;
+                        }
+                    } catch(e) {}
+                }
+                return await processTelemetryStream(env, ctx, wsRelayIdx);
             }
 
             return new Response(null, { status: 404 });
@@ -951,7 +1303,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     let todayDate = new Date().toISOString().split('T')[0];
     let dailyReqs = sysU.lastDay === todayDate ? (sysU.dReqs || 0) : 0;
 
-    let limitTotal = user.limitTotalReq || (user.totalTrafficLimit ? Math.round(user.totalTrafficLimit / (1073741824 / 6000)) : 0);
+    let limitTotal = user.limitTotalReq || 0;
     let limitDaily = user.limitDailyReq || 0;
 
     let totalGb = (totalReqs / 6000).toFixed(2);
@@ -980,8 +1332,12 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     else if (limitDaily && dailyReqs >= limitDaily) statusCode = 'dailyLimit';
 
     let cleanUrl = new URL(url.href);
-    if (sysConfig.customPanelUrl && sysConfig.customPanelUrl.trim()) {
-        let customUrlStr = sysConfig.customPanelUrl.trim();
+    let panelUrlToUse = sysConfig.customPanelUrl;
+    if (user.userPanelUrl && user.userPanelUrl.trim()) {
+        panelUrlToUse = user.userPanelUrl.trim();
+    }
+    if (panelUrlToUse) {
+        let customUrlStr = panelUrlToUse;
         if (!customUrlStr.startsWith('http://') && !customUrlStr.startsWith('https://')) {
             customUrlStr = 'https://' + customUrlStr;
         }
@@ -999,14 +1355,6 @@ function serveSubscriptionInfoPage(user, host, url, request) {
 
     let syncNormal = cleanUrl.href;
     let syncRaw = cleanUrl.href + (cleanUrl.href.includes('?') ? '&flag=a' : '?flag=a');
-    let syncClash = cleanUrl.href + (cleanUrl.href.includes('?') ? '&output=clash' : '?output=clash');
-    let syncSingbox = cleanUrl.href + (cleanUrl.href.includes('?') ? '&output=singbox' : '?output=singbox');
-    let circumference = 251.327;
-    let usagePct = parseFloat(totalPercent);
-    let usageOffset = limitTotal ? +(circumference * (1 - usagePct / 100)).toFixed(2) : circumference;
-    let ringColor = usagePct > 90 ? '#ef4444' : usagePct > 70 ? '#f59e0b' : '#8b5cf6';
-    let daysLeft = user.expiryMs ? Math.max(0, Math.ceil((user.expiryMs - Date.now()) / 86400000)) : -1;
-    let daysLeftStr = daysLeft < 0 ? '∞' : String(daysLeft);
 
     const html = `<!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -1097,23 +1445,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             font-family: 'Inter', 'Vazirmatn', sans-serif;
             background: var(--bg-primary) !important;
             color: var(--text-primary);
-            transition: background 0.4s ease, color 0.3s;
-        }
-        /* Soft gradient mesh background */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.04) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%),
-                        radial-gradient(ellipse at 60% 80%, rgba(14,165,233,0.03) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .dark body::before {
-            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%),
-                        radial-gradient(ellipse at 60% 80%, rgba(14,165,233,0.05) 0%, transparent 50%);
+            transition: background 0.3s, color 0.3s;
         }
         [lang="fa"] body { font-family: 'Vazirmatn', sans-serif; }
         .card-main {
@@ -1149,68 +1481,16 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         .text-muted { color: var(--text-muted); }
         .border-card-main { border-color: var(--border-card) !important; }
         .progress-bar-bg { background: var(--progress-bg); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes slideInScale { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .fade-in { animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
-        .stagger-1 { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
-        .stagger-2 { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
-        .stagger-3 { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
-        .stagger-4 { animation: slideInScale 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
         .modal-overlay { background: var(--modal-bg); }
         .modal-card { background: var(--modal-card); border: 1px solid var(--border-card); }
-        /* Animated background orbs - smooth float */
-        .bg-orb { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.10; pointer-events: none; z-index: 0; animation: orbFloat 18s ease-in-out infinite alternate; }
-        .dark .bg-orb { opacity: 0.15; filter: blur(140px); }
-        .bg-orb-1 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(124,58,237,0.6), transparent 70%); top: -180px; left: -120px; animation-delay: 0s; animation-duration: 20s; }
-        .bg-orb-2 { width: 420px; height: 420px; background: radial-gradient(circle, rgba(59,130,246,0.5), transparent 70%); top: 35%; right: -100px; animation-delay: -6s; animation-duration: 16s; }
-        .bg-orb-3 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(14,165,233,0.4), transparent 70%); bottom: -100px; left: 25%; animation-delay: -10s; animation-duration: 22s; }
-        @keyframes orbFloat { 0% { transform: translate(0,0) scale(1) rotate(0deg); } 33% { transform: translate(20px,-25px) scale(1.04) rotate(2deg); } 66% { transform: translate(-15px,20px) scale(0.96) rotate(-1deg); } 100% { transform: translate(10px,-10px) scale(1.02) rotate(1deg); } }
-        /* SVG usage ring - enhanced */
-        .ring-fill { fill: none; stroke-width: 9; stroke-linecap: round; stroke-dasharray: 251.327; stroke-dashoffset: 251.327; transform-origin: 50% 50%; transition: stroke-dashoffset 2s cubic-bezier(0.34, 1.56, 0.64, 1); transform: rotate(-90deg); filter: drop-shadow(0 0 6px currentColor); }
-        .ring-track { fill: none; stroke-width: 9; opacity: 0.3; }
-        .ring-bg-glow { fill: none; stroke-width: 18; stroke-linecap: round; stroke-dasharray: 251.327; transform-origin: 50% 50%; transform: rotate(-90deg); opacity: 0.15; filter: blur(4px); transition: stroke-dashoffset 2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        /* Format tabs */
-        .fmt-tab { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border-inner); background: transparent; color: var(--text-secondary); transition: all 0.2s; white-space: nowrap; }
-        .fmt-tab.active, .fmt-tab:hover { background: var(--accent); color: white; border-color: var(--accent); }
-        /* Animated link card */
-        .link-card-anim { transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s; }
-        .link-card-anim:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.14); border-color: var(--accent-border) !important; }
-        @keyframes copyFlash { 0%,100% { transform: scale(1); } 40% { transform: scale(0.93); } }
-        .copy-flash { animation: copyFlash 0.25s ease; }
-        /* Theme color dots */
-        .theme-dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; flex-shrink: 0; display: inline-block; }
-        .theme-dot.active, .theme-dot:hover { border-color: rgba(255,255,255,0.9); transform: scale(1.25); box-shadow: 0 0 8px currentColor; }
-        /* Animated ring glow - smoother */
-        @keyframes ringPulse { 0%,100% { filter: drop-shadow(0 0 4px var(--accent)); } 50% { filter: drop-shadow(0 0 20px var(--accent)); } }
-        .ring-svg-wrap { animation: ringPulse 4s ease-in-out infinite; }
-        /* Pulsing center pct - subtle breathe */
-        @keyframes pulsePct { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.88; transform: scale(0.98); } }
-        .pulse-pct { animation: pulsePct 3s ease-in-out infinite; }
-        /* Ring counter animation */
-        @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .count-anim { animation: countUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
-        /* Link card gradient border on hover */
-        .link-card-anim:hover { box-shadow: 0 0 0 1.5px var(--accent), 0 8px 32px rgba(99,102,241,0.15); }
-        /* Plan badge */
-        .plan-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border); }
     </style>
 </head>
 <body class="min-h-screen py-6 px-4 flex flex-col items-center justify-center fade-in">
-    <!-- Animated background orbs -->
-    <div class="bg-orb bg-orb-1"></div>
-    <div class="bg-orb bg-orb-2"></div>
-    <div class="bg-orb bg-orb-3"></div>
 
     <!-- Theme & Language Toggle -->
-    <div class="fixed top-4 left-4 right-4 flex justify-between items-center z-50 max-w-2xl mx-auto gap-2 flex-wrap">
-        <div class="flex gap-1.5 items-center px-2.5 py-2 rounded-xl btn-secondary" title="Theme Color">
-            <span onclick="applyAccent('purple')" class="theme-dot active" data-theme="purple" style="background:#818cf8;"></span>
-            <span onclick="applyAccent('blue')" class="theme-dot" data-theme="blue" style="background:#3b82f6;"></span>
-            <span onclick="applyAccent('emerald')" class="theme-dot" data-theme="emerald" style="background:#10b981;"></span>
-            <span onclick="applyAccent('orange')" class="theme-dot" data-theme="orange" style="background:#f97316;"></span>
-            <span onclick="applyAccent('rose')" class="theme-dot" data-theme="rose" style="background:#f43f5e;"></span>
-        </div>
+    <div class="fixed top-4 left-4 right-4 flex justify-between items-center z-50 max-w-2xl mx-auto">
         <div class="flex gap-2">
             <button onclick="toggleTheme()" id="theme-toggle" class="btn-secondary px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5" title="Toggle Theme">
                 <span id="theme-icon">\u2600\ufe0f</span>
@@ -1226,7 +1506,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     <div class="w-full max-w-2xl card-main rounded-3xl p-6 md:p-8 space-y-6 relative overflow-hidden mt-12" id="main-card">
 
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-card-main stagger-1" style="border-color: var(--border-inner);">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-card-main" style="border-color: var(--border-inner);">
             <div class="flex items-center gap-4">
                 <div class="p-4 rounded-2xl" style="background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border);">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -1241,81 +1521,87 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             </div>
         </div>
 
-        <!-- Usage Ring + Stats -->
-        <div class="flex flex-col items-center gap-5 stagger-2">
-            <!-- SVG Donut Ring -->
-            <div style="position: relative; width: 240px; height: 240px; flex-shrink: 0;">
-                <div class="ring-svg-wrap" style="width:240px;height:240px;">
-                    <svg viewBox="0 0 100 100" width="240" height="240">
-                        <circle class="ring-track" cx="50" cy="50" r="40" stroke="var(--border-inner)" stroke-opacity="0.3"/>
-                        <circle class="ring-bg-glow" id="usage-ring-glow" cx="50" cy="50" r="40" stroke="${ringColor}" stroke-dashoffset="251.327"/>
-                        <circle class="ring-fill" id="usage-ring" cx="50" cy="50" r="40" stroke="${ringColor}"/>
-                    </svg>
+        <!-- Metrics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Total Traffic -->
+            <div class="card-inner rounded-2xl p-4">
+                <p class="text-xs font-semibold uppercase tracking-widest text-secondary" data-i18n="totalUsage">Total Usage</p>
+                <div class="flex items-baseline gap-1.5 mt-2">
+                    <span class="text-2xl font-black" style="color: var(--text-primary);">${totalGb}</span>
+                    <span class="text-xs text-secondary">/ ${limitTotalGb} GB</span>
                 </div>
-                <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px;">
-                    <span class="pulse-pct count-anim" style="font-size: 36px; font-weight: 900; line-height: 1; color: var(--text-primary);">${limitTotal ? totalPercent + '%' : '∞'}</span>
-                    <span class="count-anim" style="font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);" data-i18n="used">مصرف</span>
-                    <span class="count-anim" style="font-size: 13px; font-weight: 800; color: ${ringColor}; margin-top: 3px;">${totalGb} / ${limitTotalGb} GB</span>
+                ${limitTotal ? `
+                <div class="w-full rounded-full h-1.5 mt-3 overflow-hidden progress-bar-bg">
+                    <div class="h-1.5 rounded-full" style="background: var(--accent); width: ${totalPercent}%;"></div>
                 </div>
+                <p class="text-[10px] text-muted text-right mt-1.5" data-i18n="used">${totalPercent}% Used</p>
+                ` : `<p class="text-[10px] text-muted mt-2" data-i18n="unlimitedPlan">Unlimited Plan</p>`}
             </div>
-            <!-- Stats Grid -->
-            <div class="w-full grid grid-cols-3 gap-3">
-                <div class="card-inner rounded-2xl p-3 text-center">
-                    <p class="text-[10px] font-semibold text-secondary mb-1.5" data-i18n="expDate">انقضا</p>
-                    <p class="text-xs font-black" style="color: var(--text-primary);">${expiryDateTxt === '2099-01-01' ? '∞' : expiryDateTxt}</p>
+
+            <!-- Daily Traffic -->
+            <div class="card-inner rounded-2xl p-4">
+                <p class="text-xs font-semibold uppercase tracking-widest text-secondary" data-i18n="dailyUsage">Daily Usage</p>
+                <div class="flex items-baseline gap-1.5 mt-2">
+                    <span class="text-2xl font-black" style="color: var(--text-primary);">${dailyGb}</span>
+                    <span class="text-xs text-secondary">/ ${limitDailyGb} GB</span>
                 </div>
-                <div class="card-inner rounded-2xl p-3 text-center">
-                    <p class="text-[10px] font-semibold text-secondary mb-1" data-i18n="daysLeft">روز مانده</p>
-                    <p class="text-xl font-black" style="color: var(--accent);">${daysLeftStr}</p>
+                ${limitDaily ? `
+                <div class="w-full rounded-full h-1.5 mt-3 overflow-hidden progress-bar-bg">
+                    <div class="h-1.5 rounded-full" style="background: var(--amber-text); width: ${dailyPercent}%;"></div>
                 </div>
-                <div class="card-inner rounded-2xl p-3 text-center">
-                    <p class="text-[10px] font-semibold text-secondary mb-1.5" data-i18n="dailyUsage">امروز</p>
-                    <p class="text-xs font-black" style="color: var(--text-primary);">${dailyGb} GB</p>
+                <p class="text-[10px] text-muted text-right mt-1.5" data-i18n="used">${dailyPercent}% Used</p>
+                ` : `<p class="text-[10px] text-muted mt-2" data-i18n="noDailyLimit">No Daily Limit</p>`}
+            </div>
+
+            <!-- Expiration -->
+            <div class="card-inner rounded-2xl p-4 flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-secondary" data-i18n="expDate">Expiration Date</p>
+                    <p class="text-lg font-bold mt-2" style="color: var(--text-primary);">${expiryDateTxt}</p>
                 </div>
+                <p class="text-[10px] text-muted mt-1" data-i18n="calendarLocal">Calendar Local Time</p>
             </div>
         </div>
 
-        <!-- Subscription Links -->
-        <div class="stagger-3">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-bold flex items-center gap-2" style="color: var(--text-primary);">
-                    <span class="w-2 h-2 rounded-full" style="background: var(--accent);"></span>
-                    <span data-i18n="integrationTitle">لینک اشتراک</span>
-                </h2>
-            </div>
-            <!-- Format Tabs -->
-            <div class="flex gap-2 mb-3 flex-wrap">
-                <button class="fmt-tab active" onclick="switchFmt('normal',this)" data-i18n="fmtNormal">معمولی</button>
-                <button class="fmt-tab" onclick="switchFmt('clash',this)">Clash</button>
-                <button class="fmt-tab" onclick="switchFmt('singbox',this)">Sing-box</button>
-                <button class="fmt-tab" onclick="switchFmt('raw',this)">Raw</button>
-            </div>
-            <!-- Active Link Card -->
-            <div class="card-inner p-4 rounded-2xl link-card-anim" id="link-card" onclick="copyActiveLink(event)">
-                <div class="flex items-start gap-3">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-[11px] font-bold mb-1.5" id="link-label" style="color: var(--green-text);"></p>
-                        <input type="text" id="active-link" readonly class="input-field w-full px-3 py-2 rounded-xl text-[11px] font-mono truncate outline-none" style="color: var(--text-secondary); cursor: pointer;">
-                    </div>
-                    <div class="flex flex-col gap-1.5 shrink-0 mt-4">
-                        <button onclick="event.stopPropagation(); copyActiveLink(event)" id="copy-btn" class="btn-primary px-3 py-2 rounded-lg text-xs font-bold transition-all" data-i18n="copy">کپی</button>
-                        <button onclick="event.stopPropagation(); showQRModal()" class="btn-secondary px-3 py-2 rounded-lg text-xs font-bold transition-all" data-i18n="qr">QR</button>
+        <!-- Connection Settings Title -->
+        <div>
+            <h2 class="text-lg font-bold mb-1 flex items-center gap-2" style="color: var(--text-primary);">
+                <span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent);"></span>
+                <span data-i18n="integrationTitle">Integration Connections</span>
+            </h2>
+            <p class="text-xs text-secondary" data-i18n="integrationDesc">Add the correct configuration link based on your preferred format below.</p>
+        </div>
+
+        <!-- Connection Options -->
+        <div class="space-y-4">
+            <div class="card-inner p-5 rounded-2xl relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <span class="text-xs font-bold" style="color: var(--green-text);" data-i18n="universalLink">Universal Auto-Detecting Configuration Link</span>
+                        <p class="text-[11px] text-secondary mt-1" data-i18n="universalDesc">This universal URL automatically detects your client and delivers the optimal format.</p>
                     </div>
                 </div>
-                <p class="text-[10px] text-muted mt-2" id="link-desc"></p>
+                <div class="relative flex items-center">
+                    <input type="text" id="sub-norm" readonly value="${syncNormal}" class="input-field w-full px-4 py-3 rounded-xl text-xs font-mono pr-16 truncate outline-none" style="color: var(--text-secondary);">
+                    <div class="absolute right-2 flex gap-1">
+                        <button onclick="copyLink('sub-norm')" class="btn-primary px-3 py-2 rounded-lg text-xs font-bold transition-colors" data-i18n="copy">Copy</button>
+                        <button onclick="showQRModal()" class="btn-secondary px-3 py-2 rounded-lg text-xs font-bold transition-colors" data-i18n="qr">QR</button>
+                    </div>
+                </div>
+                <p class="text-[10px] text-muted mt-2" data-i18n="universalNote">Real-time import of complete nodes list with dynamic configuration update.</p>
             </div>
+        </div>
 
-            <!-- Action Buttons -->
-            <div class="pt-4 border-t mt-4 grid grid-cols-2 gap-3" style="border-color: var(--border-inner);">
-                <button onclick="fetchDecodedRawContent()" class="py-2.5 px-4 btn-primary rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                    <span data-i18n="parsedContent">دریافت Raw</span>
-                </button>
-                <button onclick="openSubPage()" class="py-2.5 px-4 btn-secondary rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    <span data-i18n="openSub">باز کردن</span>
-                </button>
-            </div>
+        <!-- Action Buttons -->
+        <div class="pt-5 border-t grid grid-cols-1 sm:grid-cols-2 gap-4" style="border-color: var(--border-inner);">
+            <button onclick="fetchDecodedRawContent()" class="py-3 px-6 btn-primary rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                <span data-i18n="parsedContent">Retrieve Parsed Content</span>
+            </button>
+            <button onclick="window.print()" class="py-3 px-6 btn-secondary rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-11h.01"></path></svg>
+                <span data-i18n="printConfig">Print Config Card</span>
+            </button>
         </div>
     </div>
 
@@ -1335,63 +1621,29 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-xs shadow-xl opacity-0 transition-opacity duration-350 pointer-events-none font-bold" style="background: var(--green-text); color: white;"></div>
 
     <script>
-        const THEMES = {
-            purple:  { accent: '#818cf8', hover: '#6366f1', light: 'rgba(99,102,241,0.15)',   border: 'rgba(99,102,241,0.3)' },
-            blue:    { accent: '#3b82f6', hover: '#2563eb', light: 'rgba(59,130,246,0.15)',    border: 'rgba(59,130,246,0.3)' },
-            emerald: { accent: '#10b981', hover: '#059669', light: 'rgba(16,185,129,0.15)',    border: 'rgba(16,185,129,0.3)' },
-            orange:  { accent: '#f97316', hover: '#ea580c', light: 'rgba(249,115,22,0.15)',    border: 'rgba(249,115,22,0.3)' },
-            rose:    { accent: '#f43f5e', hover: '#e11d48', light: 'rgba(244,63,94,0.15)',     border: 'rgba(244,63,94,0.3)'  },
-        };
-        let currentAccent = 'purple';
-
-        function applyAccent(key) {
-            const theme = THEMES[key];
-            if (!theme) return;
-            currentAccent = key;
-            const root = document.documentElement;
-            root.style.setProperty('--accent', theme.accent);
-            root.style.setProperty('--btn-primary-bg', theme.accent);
-            root.style.setProperty('--btn-primary-hover', theme.hover);
-            root.style.setProperty('--accent-light', theme.light);
-            root.style.setProperty('--accent-border', theme.border);
-            root.style.setProperty('--accent-hover', theme.hover);
-            document.querySelectorAll('.theme-dot').forEach(d => {
-                d.classList.toggle('active', d.dataset.theme === key);
-            });
-            // Update ring color if usage is not critical
-            const ring = document.getElementById('usage-ring');
-            const ringGlow = document.getElementById('usage-ring-glow');
-            const pct = parseFloat('${totalPercent}');
-            if (ring && pct <= 70) { ring.style.stroke = theme.accent; if (ringGlow) ringGlow.style.stroke = theme.accent; }
-            try { localStorage.setItem('sub-accent', key); } catch(e) {}
-        }
-
         const I18N = {
             en: {
                 totalUsage: 'Total Usage',
-                dailyUsage: 'Today',
-                expDate: 'Expiry',
-                daysLeft: 'Days Left',
+                dailyUsage: 'Daily Usage',
+                expDate: 'Expiration Date',
                 calendarLocal: 'Calendar Local Time',
                 unlimitedPlan: 'Unlimited Plan',
                 noDailyLimit: 'No Daily Limit',
-                integrationTitle: 'Subscription Links',
+                integrationTitle: 'Integration Connections',
                 integrationDesc: 'Add the correct configuration link based on your preferred format below.',
                 universalLink: 'Universal Auto-Detecting Link',
                 universalDesc: 'This URL automatically detects your client and delivers the optimal format.',
                 universalNote: 'Real-time import of complete nodes list with dynamic update.',
-                fmtNormal: 'Auto',
                 copy: 'Copy',
                 qr: 'QR',
-                parsedContent: 'Get Raw',
-                openSub: 'Open',
+                parsedContent: 'Retrieve Raw Content',
                 printConfig: 'Print Config Card',
                 close: 'Close',
                 qrTitle: 'Scan QR Code',
-                copied: 'Copied!',
+                copied: 'Copied to clipboard!',
                 decodedCopied: 'Decoded links copied!',
                 decodedError: 'Error fetching content',
-                used: 'Usage',
+                used: '% Used',
                 active: 'Active',
                 paused: 'Paused',
                 expired: 'Expired',
@@ -1400,29 +1652,26 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             },
             fa: {
                 totalUsage: 'مصرف کل',
-                dailyUsage: 'امروز',
-                expDate: 'انقضا',
-                daysLeft: 'روز مانده',
+                dailyUsage: 'مصرف روزانه',
+                expDate: 'تاریخ انقضا',
                 calendarLocal: 'زمان محلی',
                 unlimitedPlan: 'طرح نامحدود',
                 noDailyLimit: 'بدون محدودیت روزانه',
-                integrationTitle: 'لینک اشتراک',
+                integrationTitle: 'لینک اتصال',
                 integrationDesc: 'لینک پیکربندی مورد نظر خود را اضافه کنید.',
                 universalLink: 'لینک خودکار برای همه کلاینت‌ها',
                 universalDesc: 'این لینک کلاینت شما را شناسایی و بهترین فرمت را ارسال می‌کند.',
                 universalNote: 'دریافت لحظه‌ای لیست نودها با به‌روزرسانی پویا.',
-                fmtNormal: 'معمولی',
                 copy: 'کپی',
                 qr: 'QR',
-                parsedContent: 'دریافت Raw',
-                openSub: 'باز کردن',
+                parsedContent: 'دریافت متن خام',
                 printConfig: 'چاپ کارت پیکربندی',
                 close: 'بستن',
                 qrTitle: 'اسکن کد QR',
                 copied: 'کپی شد!',
                 decodedCopied: 'لینک‌ها کپی شد!',
                 decodedError: 'خطا در دریافت',
-                used: 'مصرف',
+                used: '% مصرف',
                 active: 'فعال',
                 paused: 'متوقف',
                 expired: 'منقضی',
@@ -1467,7 +1716,6 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 document.getElementById('lang-label').textContent = 'EN';
             }
             initStatusBadge();
-            if (typeof renderLink === 'function') renderLink();
             try { localStorage.setItem('sub-lang', currentLang); } catch(e) {}
         }
 
@@ -1541,64 +1789,6 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             setTimeout(() => { t.style.opacity = '0'; }, 2000);
         }
 
-        const LINKS = {
-            normal: { url: '${syncNormal}', label_fa: '🔗 لینک معمولی (همه کلاینت‌ها)', label_en: '🔗 Auto Link (All Clients)', desc_fa: 'به‌صورت خودکار بهترین فرمت را برای کلاینت شما ارسال می‌کند.', desc_en: 'Auto-detects your client and delivers the optimal format.' },
-            clash: { url: '${syncClash}', label_fa: '🌐 لینک Clash', label_en: '🌐 Clash Link', desc_fa: 'برای Clash، Clash Meta و Stash.', desc_en: 'For Clash, Clash Meta and Stash clients.' },
-            singbox: { url: '${syncSingbox}', label_fa: '📦 لینک Sing-box', label_en: '📦 Sing-box Link', desc_fa: 'برای Sing-box.', desc_en: 'For Sing-box clients.' },
-            raw: { url: '${syncRaw}', label_fa: '⚡ لینک Raw (Base64)', label_en: '⚡ Raw Link (Base64)', desc_fa: 'خروجی Base64 خام برای کلاینت‌های قدیمی.', desc_en: 'Raw Base64 output for legacy clients.' },
-        };
-        let currentFmt = 'normal';
-
-        function switchFmt(fmt, el) {
-            currentFmt = fmt;
-            document.querySelectorAll('.fmt-tab').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            renderLink();
-        }
-
-        function renderLink() {
-            const lnk = LINKS[currentFmt];
-            if (!lnk) return;
-            const inp = document.getElementById('active-link');
-            const lbl = document.getElementById('link-label');
-            const desc = document.getElementById('link-desc');
-            if (inp) inp.value = lnk.url;
-            if (lbl) lbl.textContent = currentLang === 'fa' ? lnk.label_fa : lnk.label_en;
-            if (desc) desc.textContent = currentLang === 'fa' ? lnk.desc_fa : lnk.desc_en;
-            const copyBtn = document.getElementById('copy-btn');
-            if (copyBtn) copyBtn.textContent = I18N[currentLang].copy || 'کپی';
-        }
-
-        function copyActiveLink() {
-            const lnk = LINKS[currentFmt];
-            if (!lnk) return;
-            const btn = document.getElementById('copy-btn');
-            navigator.clipboard.writeText(lnk.url).then(() => {
-                showToast(I18N[currentLang].copied || 'کپی شد!');
-                if (btn) {
-                    const orig = btn.textContent;
-                    btn.textContent = '✅';
-                    btn.classList.add('copy-flash');
-                    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copy-flash'); }, 1800);
-                }
-            }).catch(() => {
-                try { const ta = document.createElement('textarea'); ta.value = lnk.url; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast(I18N[currentLang].copied || 'کپی شد!'); } catch(er) {}
-            });
-        }
-
-        function openSubPage() {
-            window.open(LINKS.normal.url, '_blank');
-        }
-
-        function animateRing() {
-            setTimeout(() => {
-                const ring = document.getElementById('usage-ring');
-                const ringGlow = document.getElementById('usage-ring-glow');
-                if (ring) ring.style.strokeDashoffset = '${usageOffset}';
-                if (ringGlow) ringGlow.style.strokeDashoffset = '${usageOffset}';
-            }, 400);
-        }
-
         (function init() {
             try {
                 const savedTheme = localStorage.getItem('sub-theme');
@@ -1610,13 +1800,6 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             } catch(e) {}
             applyTheme();
             applyLang();
-            renderLink();
-            animateRing();
-            try {
-                const savedAccent = localStorage.getItem('sub-accent');
-                if (savedAccent && THEMES[savedAccent]) applyAccent(savedAccent);
-                else document.querySelector('.theme-dot[data-theme="purple"]')?.classList.add('active');
-            } catch(e) {}
         })();
     <\/script>
 </body>
@@ -1797,7 +1980,7 @@ async function handleLogs(request, env) {
     try {
         if (request.method === "POST") {
             const data = await request.json();
-            if (data.key !== sysConfig.masterKey) return new Response(JSON.stringify({ success: false }), { status: 401 });
+            if (!isAuthorized(request, data)) return new Response(JSON.stringify({ success: false }), { status: 401 });
             let logs = [];
             if (env.IOT_DB) {
                 const stored = await d1Get(env, "sys_logs");
@@ -1825,7 +2008,7 @@ async function handleUsersApi(request, env, ctx) {
                 bodyKey = body.key || "";
             } catch(e) {}
         }
-        const isAuth = (authKey === sysConfig.masterKey) || (bodyKey === sysConfig.masterKey);
+        const isAuth = (authKey === sysConfig.masterKey) || (bodyKey === sysConfig.masterKey) || isPanelApiKey(authKey) || isPanelApiKey(bodyKey);
         if (!isAuth) {
             return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
         }
@@ -1865,31 +2048,40 @@ async function handleUsersApi(request, env, ctx) {
             else if (u.isPaused) status = "paused";
             else if (isExpired) status = "expired";
             const hostName = new URL(request.url).hostname;
-            const subHash = u.subHash || generateSubHash(u.id);
-            const subUrl = `https://${hostName}/${encodeURI(sysConfig.subRoute || "sub")}/${subHash}`;
+            const subUrl = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
             return new Response(JSON.stringify({ success: true, user: { ...u, usage: { total: usedBytes, limit: limitBytes, daily: sysU.dReqs || 0, dailyLimit: u.limitDailyReq || 0 }, status, subscriptionUrl: subUrl } }), { headers: { "Content-Type": "application/json" } });
         }
 
         if (method === "POST" && !userId) {
             const body = await request.json();
-            const { name, trafficLimit, expiryDays, notes, maxConfigs, proxyIp, cleanIp, userMode, userPorts, userNodes, nat64 } = body;
+            const { name, trafficLimit, expiryDays, notes, maxConfigs, proxyIp, cleanIp, userMode, userPorts, userNodes, nat64, connLimit, userPanelUrl } = body;
             if (!name) return new Response(JSON.stringify({ success: false, error: "Name is required" }), { status: 400, headers: { "Content-Type": "application/json" } });
             const newId = crypto.randomUUID();
+            const newSubHash = await generateSubHash(newId);
+            const newReferralCode = Math.random().toString(36).slice(2,10).toUpperCase();
             const newUser = {
                 id: newId,
                 name: name,
-                subHash: generateSubHash(newId),
+                subHash: newSubHash,
+                referralCode: newReferralCode,
+                walletBalance: 0,
+                walletTransactions: [],
+                services: [],
+                freeTrialUsed: false,
+                telegramId: null,
                 limitTotalReq: trafficLimit ? Math.floor(parseFloat(trafficLimit) * 6000) : null,
                 limitDailyReq: body.dailyLimit ? Math.floor(parseFloat(body.dailyLimit) * 6000) : null,
                 expiryMs: expiryDays ? Date.now() + parseInt(expiryDays) * 86400000 : null,
                 notes: notes || "",
                 maxConfigs: maxConfigs ? parseInt(maxConfigs) : null,
                 proxyIp: proxyIp || null,
-cleanIp: cleanIp || null,
+                cleanIp: cleanIp || null,
                 userMode: userMode || null,
                 userPorts: userPorts || null,
                 userNodes: userNodes || null,
                 nat64: nat64 || null,
+                connLimit: connLimit ? parseInt(connLimit) : null,
+                userPanelUrl: userPanelUrl || null,
                 createdAt: Date.now()
             };
             await resolveUserProxyIpGeo(newUser);
@@ -1898,7 +2090,7 @@ cleanIp: cleanIp || null,
             await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
             ctx?.waitUntil(logActivity(env, "User Created", `User "${name}" (${newId}) created via API`).catch(()=>{}));
             const hostName = new URL(request.url).hostname;
-            const subUrl = `https://${hostName}/${encodeURI(sysConfig.subRoute || "sub")}/${newUser.subHash}`;
+            const subUrl = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(name)}`;
             return new Response(JSON.stringify({ success: true, user: newUser, subscriptionUrl: subUrl }), { status: 201, headers: { "Content-Type": "application/json" } });
         }
 
@@ -1919,6 +2111,8 @@ cleanIp: cleanIp || null,
             if (body.userPorts !== undefined) u.userPorts = body.userPorts;
             if (body.userNodes !== undefined) u.userNodes = body.userNodes;
             if (body.nat64 !== undefined) u.nat64 = body.nat64;
+            if (body.connLimit !== undefined) u.connLimit = body.connLimit ? parseInt(body.connLimit) : null;
+            if (body.userPanelUrl !== undefined) u.userPanelUrl = body.userPanelUrl || null;
             if (body.status !== undefined) {
                 if (body.status === "active") { u.isPaused = false; u.disabledReason = null; u.disabledAt = null; }
                 else if (body.status === "paused") { u.isPaused = true; u.disabledReason = null; u.disabledAt = null; }
@@ -1973,7 +2167,7 @@ async function handleStatsApi(request, env) {
         const url = new URL(request.url);
         const authHeader = request.headers.get("Authorization") || "";
         const authKey = authHeader.replace("Bearer ", "") || url.searchParams.get("key") || "";
-        if (authKey !== sysConfig.masterKey) {
+        if (authKey !== sysConfig.masterKey && !isPanelApiKey(authKey)) {
             return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
         }
 
@@ -2023,7 +2217,7 @@ async function handleUpdateApi(request, env, ctx) {
     try {
         if (request.method !== "POST") return new Response("405", { status: 405 });
         const data = await request.json();
-        if (data.key !== sysConfig.masterKey) {
+        if (!isAuthorized(request, data)) {
             return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
         }
 
@@ -2111,12 +2305,66 @@ async function handleUpdateApi(request, env, ctx) {
     }
 }
 
+async function handleApiKeys(request, env, ctx) {
+    try {
+        const url = new URL(request.url);
+        const method = request.method;
+
+        const authKey = extractAuthKey(request, null);
+        if (authKey !== sysConfig.masterKey) {
+            return new Response(JSON.stringify({ success: false, error: "Only master key can manage API keys" }), { status: 401, headers: { "Content-Type": "application/json" } });
+        }
+
+        if (method === "GET") {
+            const keys = (sysConfig.panelApiKeys || []).map(k => ({
+                id: k.id, name: k.name, keyPreview: k.key.slice(0, 8) + "..." + k.key.slice(-4),
+                createdAt: k.createdAt, lastUsed: k.lastUsed
+            }));
+            return new Response(JSON.stringify({ success: true, keys }), { headers: { "Content-Type": "application/json" } });
+        }
+
+        if (method === "POST") {
+            const body = await request.json();
+            if (body.action === "create") {
+                if (!sysConfig.panelApiKeys) sysConfig.panelApiKeys = [];
+                if (sysConfig.panelApiKeys.length >= 10) {
+                    return new Response(JSON.stringify({ success: false, error: "Maximum 10 API keys allowed" }), { status: 400, headers: { "Content-Type": "application/json" } });
+                }
+                const newKey = generateApiKey(body.name);
+                sysConfig.panelApiKeys.push(newKey);
+                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                ctx?.waitUntil(logActivity(env, "API Key Created", `Key "${newKey.name}" created`).catch(()=>{}));
+                return new Response(JSON.stringify({ success: true, key: newKey }), { status: 201, headers: { "Content-Type": "application/json" } });
+            }
+            if (body.action === "revoke") {
+                if (!body.id) return new Response(JSON.stringify({ success: false, error: "ID required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+                const idx = (sysConfig.panelApiKeys || []).findIndex(k => k.id === body.id);
+                if (idx === -1) return new Response(JSON.stringify({ success: false, error: "Key not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+                const revoked = sysConfig.panelApiKeys.splice(idx, 1)[0];
+                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                ctx?.waitUntil(logActivity(env, "API Key Revoked", `Key "${revoked.name}" revoked`).catch(()=>{}));
+                return new Response(JSON.stringify({ success: true, revoked: revoked.id }), { headers: { "Content-Type": "application/json" } });
+            }
+        }
+
+        return new Response(JSON.stringify({ success: false, error: "Invalid request" }), { status: 400, headers: { "Content-Type": "application/json" } });
+    } catch(e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
+}
+
 async function handleAuth(request, hostName, ctx, env) {
     try {
         const data = await request.json();
         const ip = request.headers.get("cf-connecting-ip") || "Unknown";
-        if (data.key === sysConfig.masterKey) {
-            ctx?.waitUntil(logActivity(env, "Auth Success", `Successful panel login from ${ip}`));
+        const loginKey = data.key || "";
+        const isKeyAuth = loginKey === sysConfig.masterKey || isPanelApiKey(loginKey);
+        if (isKeyAuth) {
+            if (isPanelApiKey(loginKey)) {
+                const apiKeyEntry = (sysConfig.panelApiKeys || []).find(k => k.key === loginKey);
+                if (apiKeyEntry) apiKeyEntry.lastUsed = Date.now();
+            }
+            ctx?.waitUntil(logActivity(env, "Auth Success", `Successful panel login from ${ip} (via ${isPanelApiKey(loginKey) ? 'API Key' : 'Master Key'})`));
             if (!sysConfig.silentAlerts && ctx) ctx.waitUntil(sendTelegramMessage(request, "ورود به پنل (موفق)", hostName));
 
             // Store login signal for Telegram bot
@@ -2175,11 +2423,10 @@ async function handleAuth(request, hostName, ctx, env) {
                 } catch(e) {}
             }
             return new Response(JSON.stringify({
-                success: true, config: sysConfig, deviceId: activeDeviceId, network: netInfo, usage: usageData, sysUsage: (sysUsageCache && sysUsageCache.users) ? sysUsageCache.users : {},
+                success: true, config: isPanelApiKey(loginKey) ? { ...sysConfig, masterKey: "[PROTECTED]", panelApiKeys: "[PROTECTED]" } : sysConfig, deviceId: activeDeviceId, network: netInfo, usage: usageData, sysUsage: (sysUsageCache && sysUsageCache.users) ? sysUsageCache.users : {},
                 version: CURRENT_VERSION,
                 profiles: getAllProfiles().map(p => {
-                let subHashField = p.subHash || generateSubHash(p.id);
-                return { name: p.name, id: p.id, subHash: subHashField, sync: `${protocol}://${baseHost}/${encodeURI(sysConfig.subRoute || "sub")}/${subHashField}` };
+                    let subSuffix = p.name === 'Default' ? '' : '?sub=' + encodeURIComponent(p.name);
                     return {
                         name: p.name,
                         id: p.id,
@@ -2197,18 +2444,21 @@ async function handleAuth(request, hostName, ctx, env) {
 async function handleConfigSync(request, env, ctx) {
     try {
         const data = await request.json();
-        const isAuthorized = (data.key === sysConfig.masterKey) || 
+        const isAuthSync = (data.key === sysConfig.masterKey) || 
                              (data.oldKey && data.oldKey === sysConfig.masterKey) || 
-                             (sysConfig.masterKey === "admin");
-        if (!isAuthorized) return new Response(JSON.stringify({ success: false }), { status: 401 });
-        if (data.fromMaster && !sysConfig.allowSyncWorker) {
-    return new Response(JSON.stringify({ success: false, error: "Sync not allowed" }), { status: 403 });
-}
+                             (sysConfig.masterKey === "admin") ||
+                             isPanelApiKey(data.key) || isPanelApiKey(data.oldKey) ||
+                             (data.fromMaster && data.config && data.config.masterKey && data.config.masterKey === sysConfig.masterKey);
+        if (!isAuthSync) return new Response(JSON.stringify({ success: false, error: "Auth failed. Generate the API key on THIS panel, not the main panel." }), { status: 401 });
         if (!env.IOT_DB) return new Response(JSON.stringify({ success: false, msg: "DB Error" }), { status: 400 });
         
         let nextConfig = sysConfig;
         if (data.config) {
+            const preserveApiKeys = sysConfig.panelApiKeys || [];
             nextConfig = { ...sysConfig, ...data.config };
+            if (preserveApiKeys.length > 0 && (!data.config.panelApiKeys || data.config.panelApiKeys.length === 0)) {
+                nextConfig.panelApiKeys = preserveApiKeys;
+            }
             if (Array.isArray(nextConfig.users) && nextConfig.users.length > 0) {
                 const geoPromises = nextConfig.users.map(async (u) => {
                     if (u.proxyIp) {
@@ -2242,16 +2492,20 @@ async function handleConfigSync(request, env, ctx) {
             await cachedD1Put(env, "sys_usage", JSON.stringify(sysUsageCache));
         }
 
-        const oldMasterKey = sysConfig.masterKey;
         if (data.config && !data.fromMaster && nextConfig.slaveNodes && nextConfig.slaveNodes.trim().length > 0) {
             let nodes = nextConfig.slaveNodes.split(/[\r\n,;]+/).map(s=>s.trim()).filter(Boolean);
+            let syncKey = nextConfig.syncApiKey || '';
             let currentHost = new URL(request.url).hostname;
+            // Strip master-only secrets so they never leave this panel. Slave nodes keep their
+            // own values (slave merges via { ...sysConfig, ...data.config }, so omitted keys are untouched).
+            let slaveConfig = { ...nextConfig };
+            ['cfAccountId', 'cfApiToken', 'cfWorkerName', 'tgToken', 'tgChatId', 'tgAdminId'].forEach(k => delete slaveConfig[k]);
             nodes.forEach(node => {
                 if(node !== currentHost) {
                      ctx?.waitUntil(fetch(`https://${node}/${encodeURI(nextConfig.apiRoute)}/api/sync`, {
                          method: 'POST',
                          headers: { 'Content-Type': 'application/json' },
-                         body: JSON.stringify({ key: nextConfig.masterKey, oldKey: oldMasterKey, config: nextConfig, fromMaster: true })
+                         body: JSON.stringify({ key: syncKey, config: slaveConfig, fromMaster: true })
                      }).catch(() => {}));
                 }
             });
@@ -2303,7 +2557,7 @@ async function handleSyncPanel(request, env, ctx) {
 
 const botI18n = {
     en: {
-        welcome: "🤖 **Welcome to Nahan Gateway**\n━━━━━━━━━━━━━━━━━━━━\nSelect an option below:",
+        welcome: "🤖 **Welcome to Nahan Gateway Bot**\nSelect your option below to manage your system:",
         status: "System Status",
         users: "Subscribers",
         metrics: "Gateway Health",
@@ -2314,8 +2568,8 @@ const botI18n = {
         paused: "🔴 Paused",
         uptime: "Uptime",
         streams: "📡 Active Streams",
-        no_users: "📭 No Users Found\n━━━━━━━━━━━━━━━━\nNo users match your criteria.",
-        sub_info: "👤 User Details\n━━━━━━━━━━━━━━━━",
+        no_users: "No subscribers found.",
+        sub_info: "👤 Subscriber Details:",
         name: "Name",
         total: "Total Reqs",
         daily: "Daily Reqs",
@@ -2325,24 +2579,24 @@ const botI18n = {
         unlimited: "Unlimited",
         btn_back: "◀️ Back",
         btn_next: "▶️ Next",
-        btn_del: "🗑️ Remove",
-        btn_pause: "⏸️ Suspend",
-        btn_resume: "▶️ Activate",
-        btn_edit_name: "✏️ Rename",
-        btn_edit_limits: "⚙️ Plan",
-        btn_add: "➕ New User",
-        btn_confirm: "✅ Confirm",
-        btn_cancel: "❌ Cancel",
+        btn_del: "Delete",
+        btn_pause: "Pause",
+        btn_resume: "Resume",
+        btn_edit_name: "Change Name",
+        btn_edit_limits: "Limits",
+        btn_add: "+ Add Subscriber",
+        btn_confirm: "Confirm",
+        btn_cancel: "Cancel",
         msg_enter_name: "Please send a name for the subscriber:",
-        msg_added: "✅ User added successfully!",
-        msg_deleted: "🗑️ User removed successfully!",
+        msg_added: "Sub added successfully! 🎉",
+        msg_deleted: "Sub deleted successfully! 🗑️",
         msg_panic: "🚨 PANIC MODE ACTIVATED 🚨\nRoute randomized & System Paused.",
-        msg_invalid: "❌ Invalid input. Please try again.",
+        msg_invalid: "Invalid input. Please try again.",
         msg_enter_limits: "Enter limits format:\n`[totalReqs] [dailyReqs] [days_limit]`\n(Use 0 for unlimited)\n\nExample:\n`10000 500 30`",
-        msg_confirm_del: "⚠️ Remove User?\n━━━━━━━━━━━━━━━━\nThis action cannot be undone.",
+        msg_confirm_del: "⚠️ Are you sure you want to delete this subscriber?",
         msg_confirm_panic: "⚠️ Are you absolutely sure you want to trigger PANIC mode? This will randomize API routes and pause all connections!",
-        status_updated: "✅ Status updated!",
-        access_denied: "🔒 Access Denied\nYou are not authorized to manage this panel.",
+        status_updated: "Status updated!",
+        access_denied: "Access Denied. You are not authorized to manage this panel.",
         dashboard: "Dashboard",
         search: "Search User",
         statistics: "Statistics",
@@ -2352,36 +2606,36 @@ const botI18n = {
         extend_expiry: "Extend Expiry",
         notes: "Notes",
         device_limit: "Config Limit",
-        msg_enter_search: "🔍 Send a username, UUID, or name to search:",
-        msg_enter_notes: "📝 Send a note for this user:",
-        msg_enter_extend_days: "📅 Enter days to extend expiration:",
-        msg_traffic_reset: "✅ Traffic has been reset for this user!",
-        msg_expiry_extended: "✅ Expiration extended by {days} days!",
-        msg_no_disabled: "✅ No Disabled Users\n━━━━━━━━━━━━━━━━\nAll users are active.",
-        msg_enter_device_limit: "⚙️ Enter config limit (0 = unlimited):",
-        config_limit_updated: "✅ Config limit updated!",
-        stats_title: "📊 Panel Statistics",
+        msg_enter_search: "🔍 Send a username, UUID, or subscription to search:",
+        msg_enter_notes: "📝 Send notes for this user:",
+        msg_enter_extend_days: "📅 Enter number of days to extend expiration:",
+        msg_traffic_reset: "Traffic has been reset successfully!",
+        msg_expiry_extended: "Expiration extended by {days} days!",
+        msg_no_disabled: "No disabled users found.",
+        msg_enter_device_limit: "Enter config limit (0 for unlimited):",
+        config_limit_updated: "Config limit updated!",
+        stats_title: "Panel Statistics",
         count_active: "active",
         count_paused: "paused",
         count_disabled: "auto-disabled",
-        dash_total: "👥 Total Users",
-        dash_active: "🟢 Active",
-        dash_paused: "⏸️ Paused",
-        dash_expired: "🔴 Expired",
-        dash_auto_disabled: "⛔ Auto-Disabled",
+        dash_total: "Total Users",
+        dash_active: "Active",
+        dash_paused: "Paused",
+        dash_expired: "Expired",
+        dash_auto_disabled: "Auto-Disabled",
         btn_main_menu: "Main Menu",
         btn_back_to_list: "Back to List",
-        total_traffic: "📦 Total Traffic",
-        daily_traffic: "📅 Daily Traffic",
+        total_traffic: "Total Traffic",
+        daily_traffic: "Daily Traffic",
         lbl_status: "Status",
         lbl_subscription: "Subscription Connection",
-        lbl_user_not_found: "❌ User Not Found",
+        lbl_user_not_found: "⚠️ User not found",
         lbl_none: "None",
         lbl_page: "Page",
-        select_panel: "🔌 Select a panel to manage:",
-        current_panel: "📌 Current Panel",
+        select_panel: "🔌 Which panel do you want to manage?",
+        current_panel: "Current Panel",
         switch_panel: "🔄 Switch Panel",
-        panel_local: "🏠 Current Panel",
+        panel_local: "🏠 This Panel",
         panel_remote: "🌐",
         msg_panel_selected: "Panel selected! ✅",
         msg_panel_error: "❌ Failed to connect to the selected panel.",
@@ -2403,80 +2657,10 @@ const botI18n = {
         tg_saved: "Saved!", tg_cancelled: "Cancelled",
         tg_log_entry: "", tg_log_empty: "No logs found",
         tg_u_custom_name: "Custom Name", tg_u_clean_ips: "Clean IPs", tg_u_proxy_ips: "Proxy IPs",
-        tg_u_nodes: "Nodes", tg_u_nat64: "NAT64", tg_u_mode: "Protocol Mode", tg_u_ports: "Ports",
+        tg_u_nodes: "Nodes", tg_u_nat64: "NAT64", tg_u_mode: "Protocol Mode", tg_u_ports: "Ports", tg_u_conn_limit: "Conn Limit", tg_u_panel_url: "Panel URL",
         tg_u_max_cfg: "Max Configs", tg_u_all: "All Settings",
         tg_network: "Network", tg_uptime: "Uptime", tg_conns: "Active Connections",
         tg_version: "Version", tg_cf_usage: "CF Usage",
-        // User-side bot strings
-        user_welcome: "👋 Welcome to **Nahan** subscription bot!\n\nSend your subscription link to check your status, or use the buttons below.",
-        user_send_link: "📎 Check Status\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nSend your subscription link or User ID:",
-        user_not_found: "❌ Not Found\n━━━━━━━━━━━━━━━━\nNo subscription found with this ID.\n\n💡 Please check and try again.",
-        user_status: "📊 Subscription Status\n━━━━━━━━━━━━━━━━",
-        user_trial_disabled: "🎁 Free Trial\n━━━━━━━━━━━━━━━━\n❌ Free trial is currently unavailable.",
-        user_trial_used: "🎁 Free Trial\n━━━━━━━━━━━━━━━━\n⚠️ You have already used your free trial.\n\n💡 Upgrade your plan from the shop!",
-        user_trial_created: "🎉 Your free trial has been activated!\n\n⏱ Duration: {days} days\n📦 Traffic: {gb} GB",
-        user_buy_disabled: "🛒 Shop\n━━━━━━━━━━━━━━━━\n❌ Online purchase is currently unavailable.\n\n💡 Contact support for manual purchase.",
-        user_buy_packages: "🛒 Choose Your Plan\n━━━━━━━━━━━━━━━━\nSelect a plan below to get started:",
-        user_buy_selected: "📦 Plan Selected\n━━━━━━━━━━━━━━━━\n{name}\n\n💳 Payment Info:\nCard: `{card}`\nHolder: {owner}\n\n📸 Send a photo of your receipt after payment.",
-        user_receipt_received: "📨 Receipt Received!\n━━━━━━━━━━━━━━━━\nYour purchase is being reviewed.\nWe\'ll notify you once it\'s approved.\n\n⏳ Please wait...",
-        user_approved: "🎉 Purchase Approved!\n━━━━━━━━━━━━━━━━\nYour subscription is now active!\n\n🔗 Your subscription link:\n`{link}`\n\n🚀 Welcome to Nahan!",
-        user_rejected: "❌ Purchase Rejected\n━━━━━━━━━━━━━━━━\nYour receipt could not be verified.\n\n💡 Please contact support for assistance.",
-        user_no_packages: "📭 No Plans Available\n━━━━━━━━━━━━━━━━\nNo plans are currently available.\n\n💡 Contact support for more info.",
-        user_status_guide: "📊 Check Status\n━━━━━━━━━━━━━━━━\nSend your subscription link or User ID:",
-        admin_pending_title: "📋 Pending Purchases\n━━━━━━━━━━━━━━━━",
-        admin_pending_empty: "✅ No pending purchases.",
-        admin_pending_entry: "👤 {username}\n📦 {package}\n🕒 {time}",
-        admin_approve: "✅ Approve",
-        admin_reject: "❌ Reject",
-        admin_approved_ok: "✅ Purchase approved. User notified.",
-        admin_rejected_ok: "🗑 Purchase rejected. User notified.",
-        admin_pending_purchases: "📋 Pending Purchases",
-        // Shop management strings
-        shop_settings: "🛍️ Shop & Bot Settings",
-        shop_purchase_on: "✅ Purchase: ON",
-        shop_purchase_off: "❌ Purchase: OFF",
-        shop_trial_on: "✅ Trial: ON",
-        shop_trial_off: "❌ Trial: OFF",
-        shop_card_num: "💳 Card Number",
-        shop_card_owner: "👤 Card Owner",
-        shop_trial_days: "⏱ Trial Duration (days)",
-        shop_trial_gb: "📦 Trial Traffic (GB)",
-        shop_plans: "📋 Manage Plans",
-        shop_add_plan: "➕ Add New Plan",
-        shop_no_plans: "No plans defined yet.",
-        shop_plan_name_prompt: "📦 Send plan name (e.g. 1 Month 20GB):",
-        shop_plan_price_prompt: "💰 Send plan price (e.g. 150000 تومان):",
-        shop_plan_days_prompt: "⏱ Send plan duration in days (e.g. 30):",
-        shop_plan_gb_prompt: "📦 Send plan traffic in GB (e.g. 20):",
-        shop_plan_added: "✅ Plan added successfully!",
-        shop_plan_deleted: "🗑 Plan deleted.",
-        shop_saved: "✅ Saved!",
-        shop_welcome_prompt: "📝 Send new welcome message for the bot (use {name} for user name):",
-        shop_welcome_set: "✅ Bot welcome message updated!",
-        shop_bot_welcome: "💬 Bot Welcome Message",
-        // v5.4.0: Wallet & Account translations
-        user_wallet_title: "💳 Wallet\n━━━━━━━━━━━━━━━━",
-        user_wallet_balance: "💰 Balance: {amount} T",
-        user_wallet_charge: "💳 Charge Wallet",
-        user_wallet_history: "📜 Transaction History",
-        user_wallet_title: "💳 Wallet\n━━━━━━━━━━━━━━━━",
-        user_wallet_empty: "📭 No transactions found.",
-        user_wallet_referral: "🔗 Referral code: {code}",
-        user_profile_title: "👤 Profile\n━━━━━━━━━━━━━━━━",
-        user_profile_name: "Name",
-        user_profile_id: "User ID",
-        user_profile_since: "Member Since",
-        user_referral_title: "🔗 Referral Program\n━━━━━━━━━━━━━━━━",
-        user_referral_link: "Share this link with friends:",
-        user_referral_commission: "💰 Commission: {percent}%",
-        user_help_title: "❓ Help & Support\n━━━━━━━━━━━━━━━━",
-        user_help_faq: "📖 FAQ",
-        user_help_contact: "💬 Contact Support",
-        user_services_title: "📋 My Services\n━━━━━━━━━━━━━━━━",
-        user_services_empty: "📭 No active services found.",
-        user_service_active: "🟢 Active",
-        user_service_expired: "🔴 Expired",
-        user_service_paused: "⏸️ Paused",
     },
     fa: {
         welcome: "🤖 **به ربات ترانزیت نهان خوش آمدید**\nجهت مدیریت سیستم نظارتی خود یکی از گزینه‌های زیر را انتخاب نمایید:",
@@ -2579,83 +2763,10 @@ const botI18n = {
         tg_saved: "ذخیره شد!", tg_cancelled: "لغو شد",
         tg_log_entry: "", tg_log_empty: "گزارشی ثبت نشده",
         tg_u_custom_name: "نام سفارشی", tg_u_clean_ips: "آی‌پی تمیز", tg_u_proxy_ips: "آی‌پی پروکسی",
-        tg_u_nodes: "نودها", tg_u_nat64: "NAT64", tg_u_mode: "پروتکل", tg_u_ports: "پورت‌ها",
+        tg_u_nodes: "نودها", tg_u_nat64: "NAT64", tg_u_mode: "پروتکل", tg_u_ports: "پورت‌ها", tg_u_conn_limit: "محدودیت اتصال", tg_u_panel_url: "آدرس پنل",
         tg_u_max_cfg: "حداکثر کانفیگ", tg_u_all: "همه تنظیمات",
         tg_network: "شبکه", tg_uptime: "زمان کارکرد", tg_conns: "اتصالات فعال",
         tg_version: "نسخه", tg_cf_usage: "مصرف کلودفلر",
-        // User-side bot strings
-        user_welcome: "👋 سلام {name} عزیز!\n\n🔐 به ربات اشتراک **نهان** خوش آمدید.\n\nلینک اشتراک خود را ارسال کنید یا از منوی زیر استفاده نمایید:",
-        user_send_link: "📎 لطفاً لینک اشتراک یا شناسه کاربری خود را ارسال کنید:",
-        user_not_found: "❌ کاربری با این شناسه یافت نشد.",
-        user_status: "📊 وضعیت اشتراک",
-        user_trial_disabled: "❌ سرویس تست رایگان در حال حاضر غیرفعال است.",
-        user_trial_used: "⚠️ شما قبلاً از تست رایگان استفاده کرده‌اید.",
-        user_trial_created: "🎉 تست رایگان شما فعال شد!\n\n⏱ مدت: {days} روز\n📦 حجم: {gb} گیگابایت",
-        user_buy_disabled: "❌ خرید آنلاین در حال حاضر غیرفعال است.",
-        user_buy_packages: "🛒 **پکیج‌های موجود**\n\nیکی از پکیج‌های زیر را انتخاب کنید:",
-        user_buy_selected: "✅ پکیج انتخابی:\n📦 {name}\n\n💳 اطلاعات پرداخت:\nشماره کارت: `{card}`\nصاحب حساب: {owner}\n\nپس از پرداخت، عکس رسید را ارسال کنید:",
-        user_receipt_received: "📨 رسید شما دریافت شد و در حال بررسی است.\n\nپس از تأیید، لینک اشتراک برای شما ارسال می‌شود. ممنون از اعتماد شما! 🙏",
-        user_approved: "🎉 خرید شما تأیید شد!\n\nلینک اشتراک شما:\n`{link}`\n\nبه سرویس نهان خوش آمدید! 🔑",
-        user_rejected: "❌ رسید پرداخت شما رد شد.\n\nدر صورت بروز مشکل با پشتیبانی تماس بگیرید.",
-        user_no_packages: "❌ هیچ پکیجی تعریف نشده. با ادمین تماس بگیرید.",
-        user_status_guide: "📎 لینک اشتراک یا شناسه کاربری خود را ارسال کنید:",
-        admin_pending_title: "📋 **درخواست‌های خرید در انتظار**",
-        admin_pending_empty: "✅ درخواست خریدی در انتظار بررسی وجود ندارد.",
-        admin_pending_entry: "👤 {username}\n📦 {package}\n🕒 {time}",
-        admin_approve: "✅ تأیید خرید",
-        admin_reject: "❌ رد خرید",
-        admin_approved_ok: "✅ خرید تأیید شد و به کاربر اطلاع داده شد.",
-        admin_rejected_ok: "🗑 خرید رد شد و به کاربر اطلاع داده شد.",
-        admin_pending_purchases: "📋 درخواست‌های خرید",
-        // Shop management strings
-        shop_settings: "🛍️ تنظیمات فروشگاه و ربات",
-        shop_purchase_on: "✅ خرید: فعال",
-        shop_purchase_off: "❌ خرید: غیرفعال",
-        shop_trial_on: "✅ تست رایگان: فعال",
-        shop_trial_off: "❌ تست رایگان: غیرفعال",
-        shop_card_num: "💳 شماره کارت",
-        shop_card_owner: "👤 صاحب حساب",
-        shop_trial_days: "⏱ مدت تست (روز)",
-        shop_trial_gb: "📦 حجم تست (گیگابایت)",
-        shop_plans: "📋 مدیریت پلن‌ها",
-        shop_add_plan: "➕ افزودن پلن جدید",
-        shop_no_plans: "هیچ پلنی تعریف نشده.",
-        shop_plan_name_prompt: "📦 نام پلن را ارسال کنید (مثال: ۱ ماهه ۲۰ گیگ):",
-        shop_plan_price_prompt: "💰 قیمت پلن را ارسال کنید (مثال: 150000 تومان):",
-        shop_plan_days_prompt: "⏱ مدت پلن (روز) را ارسال کنید (مثال: 30):",
-        shop_plan_gb_prompt: "📦 حجم پلن (گیگابایت) را ارسال کنید (مثال: 20):",
-        shop_plan_added: "✅ پلن با موفقیت اضافه شد!",
-        shop_plan_deleted: "🗑 پلن حذف شد.",
-        shop_saved: "✅ ذخیره شد!",
-        shop_welcome_prompt: "📝 پیام خوش‌آمد جدید ربات را ارسال کنید ({name} = نام کاربر):",
-        shop_welcome_set: "✅ پیام خوش‌آمد ربات به‌روزرسانی شد!",
-        shop_bot_welcome: "💬 پیام خوش‌آمد ربات",
-        // Wallet
-        user_wallet_title: "💳 کیف پول\n━━━━━━━━━━━━━━━━",
-        user_wallet_balance: "💰 موجودی: {amount} تومان",
-        user_wallet_charge: "💳 شارژ کیف پول",
-        user_wallet_history: "📜 تاریخچه تراکنش‌ها",
-        user_wallet_empty: "📭 هیچ تراکنشی یافت نشد.",
-        user_wallet_referral: "🔗 کد معرف: {code}",
-        // Profile
-        user_profile_title: "👤 پروفایل کاربری\n━━━━━━━━━━━━━━━━",
-        user_profile_name: "👤 نام: {name}",
-        user_profile_id: "🆔 شناسه کاربری: {uuid}",
-        user_profile_since: "📅 عضویت از: {date}",
-        // Referral
-        user_referral_title: "🔗 برنامه معرف\n━━━━━━━━━━━━━━━━",
-        user_referral_link: "🔗 لینک معرف شما: {link}",
-        user_referral_commission: "💰 کمیسیون: {percent}%",
-        // Help & Support
-        user_help_title: "🛍 راهنما و پشتیبانی\n━━━━━━━━━━━━━━━━",
-        user_help_faq: "❓ سوالات متداول",
-        user_help_contact: "📞 ارتباط با پشتیبانی",
-        // Services
-        user_services_title: "📋 سرویس های من\n━━━━━━━━━━━━━━━━",
-        user_services_empty: "📭 هیچ سرویس فعالی یافت نشد.",
-        user_service_active: "🟢 فعال",
-        user_service_expired: "🔴 منقضی",
-        user_service_paused: "⏸ معلق",
     }
 };
 
@@ -2665,7 +2776,7 @@ function getPanelsList() {
         name: sysConfig.name || "Main Panel",
         host: null,
         apiRoute: sysConfig.apiRoute,
-        masterKey: null,
+        apiKey: null,
         isLocal: true
     });
     if (sysConfig.linkedPanels && Array.isArray(sysConfig.linkedPanels)) {
@@ -2675,7 +2786,7 @@ function getPanelsList() {
                     name: p.name || p.host,
                     host: p.host,
                     apiRoute: p.apiRoute || sysConfig.apiRoute,
-                    masterKey: p.masterKey,
+                    apiKey: p.apiKey || p.masterKey || null,
                     isLocal: false
                 });
             }
@@ -2700,34 +2811,34 @@ async function remotePanelFetch(panel, method, path, body = null) {
 }
 
 async function fetchRemotePanelUsers(panel) {
-    return await remotePanelFetch(panel, 'GET', `/api/users?key=${encodeURIComponent(panel.masterKey)}`);
+    return await remotePanelFetch(panel, 'GET', `/api/users?key=${encodeURIComponent(panel.apiKey)}`);
 }
 
 async function fetchRemotePanelUser(panel, userId) {
-    return await remotePanelFetch(panel, 'GET', `/api/users?id=${encodeURIComponent(userId)}&key=${encodeURIComponent(panel.masterKey)}`);
+    return await remotePanelFetch(panel, 'GET', `/api/users?id=${encodeURIComponent(userId)}&key=${encodeURIComponent(panel.apiKey)}`);
 }
 
 async function fetchRemotePanelStats(panel) {
-    return await remotePanelFetch(panel, 'GET', `/api/stats?key=${encodeURIComponent(panel.masterKey)}`);
+    return await remotePanelFetch(panel, 'GET', `/api/stats?key=${encodeURIComponent(panel.apiKey)}`);
 }
 
 async function fetchRemotePanelConfig(panel) {
-    return await remotePanelFetch(panel, 'POST', '/api/auth', { key: panel.masterKey });
+    return await remotePanelFetch(panel, 'POST', '/api/auth', { key: panel.apiKey });
 }
 
 async function remotePanelWriteAction(panel, method, userId, body = null) {
     let path = '/api/users';
-    if (userId) path += `?id=${encodeURIComponent(userId)}&key=${encodeURIComponent(panel.masterKey)}`;
-    else path += `?key=${encodeURIComponent(panel.masterKey)}`;
-    return await remotePanelFetch(panel, method, path, body || { key: panel.masterKey });
+    if (userId) path += `?id=${encodeURIComponent(userId)}&key=${encodeURIComponent(panel.apiKey)}`;
+    else path += `?key=${encodeURIComponent(panel.apiKey)}`;
+    return await remotePanelFetch(panel, method, path, body || { key: panel.apiKey });
 }
 
 async function remotePanelToggleUser(panel, userId) {
-    return await remotePanelFetch(panel, 'POST', `/api/users?id=${encodeURIComponent(userId)}&action=toggle&key=${encodeURIComponent(panel.masterKey)}`);
+    return await remotePanelFetch(panel, 'POST', `/api/users?id=${encodeURIComponent(userId)}&action=toggle&key=${encodeURIComponent(panel.apiKey)}`);
 }
 
 async function remotePanelResetTraffic(panel, userId) {
-    return await remotePanelFetch(panel, 'POST', `/api/users?id=${encodeURIComponent(userId)}&action=reset&key=${encodeURIComponent(panel.masterKey)}`);
+    return await remotePanelFetch(panel, 'POST', `/api/users?id=${encodeURIComponent(userId)}&action=reset&key=${encodeURIComponent(panel.apiKey)}`);
 }
 
 async function handleTelegramWebhook(request, env, hostName, ctx) {
@@ -2741,6 +2852,31 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
         const callerId = update.callback_query?.from?.id?.toString() || update.message?.from?.id?.toString();
         const adminId = sysConfig.tgAdminId || sysConfig.tgChatId;
         const isAuthorized = adminId && callerId === adminId.toString();
+
+        if (!isAuthorized) {
+            const chatId = update.callback_query?.message?.chat?.id || update.message?.chat?.id;
+            if (chatId && sysConfig.tgBotUserEnabled) {
+                // Check if this is a registered user with a linked Telegram account
+                const linkedUser = (sysConfig.users || []).find(u => u.telegramId && u.telegramId.toString() === callerId);
+                if (linkedUser) {
+                    const cbData = update.callback_query?.data;
+                    const msgId = update.callback_query?.message?.message_id;
+                    const msgText = update.message?.text;
+                    return await handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText, cbData, linkedUser, env, ctx, t, langCode, hostName, update, tgState);
+                }
+                // Unknown user — show registration prompt
+                const cbQId = update.callback_query?.id;
+                if (cbQId) {
+                    await fetch(`${tgApi}/answerCallbackQuery`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ callback_query_id: cbQId, text: 'ابتدا ثبت‌نام کنید.', show_alert: true }) });
+                } else {
+                    await fetch(`${tgApi}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, parse_mode: 'Markdown', text: `👋 خوش آمدید!\n\n🆔 Telegram ID شما: \`${callerId || 'Unknown'}\`\n\nبرای استفاده از ربات ابتدا از طریق پنل ثبت‌نام کنید و Telegram ID خود را لینک نمایید.` }) });
+                }
+                return new Response('OK', { status: 200 });
+            } else if (chatId) {
+                await fetch(`${tgApi}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, parse_mode: 'Markdown', text: "❌ *شما دسترسی به این ربات را ندارید.*\n\nیوزر آیدی شما: `" + (callerId || "Unknown") + "`" }) });
+            }
+            return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 200 });
+        }
 
         let tgState = {};
         try {
@@ -2767,7 +2903,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                     name: lastLoginPanel.name || lastLoginPanel.host,
                     host: lastLoginPanel.host,
                     apiRoute: lastLoginPanel.apiRoute || sysConfig.apiRoute,
-                    masterKey: lastLoginPanel.masterKey,
+                    apiKey: lastLoginPanel.apiKey || lastLoginPanel.masterKey || null,
                     isLocal: false
                 };
             }
@@ -2776,44 +2912,35 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
 
         // Custom sendOrEdit message helper
         const sendOrEdit = async (chatId, text, replyMarkup = null, messageId = null) => {
-            const plainText = text.replace(/\*\*/g, '').replace(/(?<![\\])[*_`\[\]]/g, '');
             let res;
             if (messageId) {
                 res = await fetch(`${tgApi}/editMessageText`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: 'Markdown', reply_markup: replyMarkup })
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text: text,
+                        parse_mode: 'Markdown',
+                        reply_markup: replyMarkup
+                    })
                 });
                 if (res.ok) return res;
                 try {
                     const errBody = await res.json();
                     if (errBody?.description?.includes("message is not modified")) return res;
-                    if (errBody?.description?.includes("parse") || errBody?.description?.includes("entities")) {
-                        const r2 = await fetch(`${tgApi}/editMessageText`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ chat_id: chatId, message_id: messageId, text: plainText, reply_markup: replyMarkup })
-                        });
-                        if (r2.ok) return r2;
-                    }
                 } catch (e) {}
             }
             res = await fetch(`${tgApi}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', reply_markup: replyMarkup })
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: text,
+                    parse_mode: 'Markdown',
+                    reply_markup: replyMarkup
+                })
             });
-            if (res.ok) return res;
-            try {
-                const errBody = await res.json();
-                if (errBody?.description?.includes("parse") || errBody?.description?.includes("entities")) {
-                    return fetch(`${tgApi}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: chatId, text: plainText, reply_markup: replyMarkup })
-                    });
-                }
-            } catch(e) {}
             return res;
         };
 
@@ -2854,15 +2981,6 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
                 inline_keyboard.push([
                     { text: `🚫 ${t("disabled_users")}`, callback_data: "subs_disabled:0" }
                 ]);
-                inline_keyboard.push([
-                    { text: `🧪 ${t("trial_users") || "Trial Users"}`, callback_data: "admin_trial_users" }
-                ]);
-                const pendingCount = (sysConfig.pendingPurchases || []).length;
-                if (pendingCount > 0) {
-                    inline_keyboard.push([
-                        { text: `📋 ${t("admin_pending_purchases") || "درخواست‌های خرید"} (${pendingCount})`, callback_data: "admin_pending_list" }
-                    ]);
-                }
                 inline_keyboard.push([
                     { text: `⚙️ ${t("tg_settings")}`, callback_data: "tg_settings_menu" },
                     { text: `🔧 ${t("tg_advanced")}`, callback_data: "tg_advanced_menu" }
@@ -2969,8 +3087,7 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
             
             const statusEmoji = u.isPaused ? "⏸️" : (isExp ? "🔴" : "🟢");
             const statusText = u.isPaused ? t("paused") : (isExp ? t("dash_expired") : t("active"));
-            const subHash = u.subHash || generateSubHash(u.id);
-            const subSync = `https://${hostName}/${encodeURI(sysConfig.subRoute || "sub")}/${subHash}`;
+            const subSync = `https://${hostName}/${sysConfig.apiRoute}?sub=${encodeURIComponent(u.name)}`;
             const maxCfgTxt = u.maxConfigs || t("unlimited");
             const notesTxt = u.notes || t("lbl_none");
             const modeTxt = u.userMode ? (u.userMode === 'alpha' ? 'Alpha (V)' : u.userMode === 'beta' ? 'Beta (T)' : 'Both') : t("unlimited");
@@ -2996,6 +3113,8 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
             text += `🔗 **${t("tg_u_proxy_ips")}**: ${proxyIpsTxt}\n`;
             text += `🖥️ **${t("tg_u_nodes")}**: ${nodesTxt}\n`;
             text += `🌐 **${t("tg_u_nat64")}**: ${nat64Txt}\n`;
+            text += `🔗 **${t("tg_u_conn_limit")}**: ${u.connLimit || t("unlimited")}\n`;
+            text += `🎛 **${t("tg_u_panel_url")}**: ${u.userPanelUrl || t("unlimited")}\n`;
             text += `📝 **${t("notes")}**: ${notesTxt}\n`;
             text += `━━━━━━━━━━━━━━━━\n`;
             text += `🔗 **${t("lbl_subscription")}:**\n\`${subSync}\``;
@@ -3033,407 +3152,12 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
             const data = cb.data;
 
             if (chatId) {
-                // Route non-admin users to user callback handler
-                const userCallbackPrefixes = ['user_', 'user_free_trial', 'user_buy', 'user_main_menu', 'user_status_guide', 'user_get_link:', 'user_renew_service:', 'user_delete_service:', 'user_pause_service:', 'user_support', 'user_rename_service:', 'user_referral'];
-const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 'admin_broadcast', 'admin_broadcast_send'];
-                const isUserCallback = !isAuthorized || userCallbackPrefixes.some(p => data && data.startsWith(p));
-                if (!isAuthorized && !userCallbackPrefixes.some(p => data && data.startsWith(p))) {
+                if (!isAuthorized) {
                     await fetch(`${tgApi}/answerCallbackQuery`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ callback_query_id: cb.id, text: t("access_denied"), show_alert: true })
                     });
-                    return new Response("OK", { status: 200 });
-                }
-
-                if (isUserCallback) {
-                    // User callback handler (non-admin users + user_* callbacks for admins)
-                    const fa3 = langCode === 'fa';
-                    // Escape Markdown special chars in dynamic content (prevents parse_entities errors)
-                    const esc = (s) => String(s || '').replace(/[_*`[\]]/g, '\\$&');
-                    let userAnswerText = "";
-                    if (data === "user_free_trial") {
-                        if (!sysConfig.freeTrial) {
-                            await sendOrEdit(chatId, t("user_trial_disabled") || "❌ Free trial disabled.", null, messageId);
-                        } else {
-                            const usedTrials = sysConfig.usedTrials || [];
-                            const userTgId2 = String(cb.from?.id || chatId);
-                            if (usedTrials.includes(userTgId2)) {
-                                await sendOrEdit(chatId, fa3
-                                    ? "⚠️ شما قبلاً از تست رایگان استفاده کرده‌اید.\n\n💡 دکمه ریست را بزنید تا دوباره تست بگیرید."
-                                    : "⚠️ You have already used your free trial.\n\n💡 Press reset to take the trial again.",
-                                    { inline_keyboard: [
-                                        [{ text: fa3 ? '🔄 ریست تست رایگان' : '🔄 Reset Free Trial', callback_data: 'user_reset_trial' }],
-                                        ...(sysConfig.purchaseEnabled ? [[{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy', callback_data: 'user_buy' }]] : []),
-                                        [{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]
-                                    ]}, messageId);
-                            } else {
-                                const trialId = crypto.randomUUID();
-                                const trialUser = {
-                                    id: trialId,
-                                    name: `trial_${cb.from?.username || cb.from?.first_name || userTgId2}_${Math.floor(Math.random() * 9000) + 1000}`,
-                                    subHash: generateSubHash(trialId), ownerTgId: String(cb.from?.id || chatId),
-                                    totalTrafficLimit: (sysConfig.freeTrialGB || 1) * 1073741824,
-                                    limitTotalReq: Math.round((sysConfig.freeTrialGB || 1) * 6000),
-                                    expiryMs: Date.now() + (sysConfig.freeTrialDays || 3) * 86400000,
-                                    isPaused: false, isExpired: false, upLink: 0, downLink: 0
-                                };
-                                if (!sysConfig.users) sysConfig.users = [];
-                                sysConfig.users.push(trialUser);
-                                usedTrials.push(userTgId2);
-                                sysConfig.usedTrials = usedTrials;
-                                // Save to user accounts
-                                if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
-                                const existingAcc = sysConfig.userAccounts.find(a => a.tgId === userTgId2);
-                                if (existingAcc) {
-                                    existingAcc.subId = trialId;
-                                    existingAcc.lastActivity = Date.now();
-                                } else {
-                                    sysConfig.userAccounts.push({ tgId: userTgId2, tgName: cb.from?.username || '', firstName: cb.from?.first_name || '', subId: trialId, subHash: generateSubHash(trialId), savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
-                                }
-                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                const trialLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${trialUser.subHash || generateSubHash(trialUser.id)}`;
-                                const trialMsg = fa3
-                                    ? `🎉 **تست رایگان شما فعال شد!**\n━━━━━━━━━━━━━━\n⏱ مدت: **${sysConfig.freeTrialDays || 3}** روز\n📦 حجم: **${sysConfig.freeTrialGB || 1}** گیگابایت\n━━━━━━━━━━━━━━\n\n🔗 لینک اشتراک شما:\n\`${trialLink}\`\n\n💡 این لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
-                                    : `🎉 **Free trial activated!**\n━━━━━━━━━━━━━━\n⏱ Duration: **${sysConfig.freeTrialDays || 3}** days\n📦 Traffic: **${sysConfig.freeTrialGB || 1}** GB\n━━━━━━━━━━━━━━\n\n🔗 Your subscription link:\n\`${trialLink}\`\n\n💡 Copy this link and add it to your app.`;
-                                await sendOrEdit(chatId, trialMsg, { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                            }
-                        }
-                    } else if (data === "user_buy") {
-                        if (!sysConfig.purchaseEnabled) {
-                            await sendOrEdit(chatId, fa3
-                                ? "❌ خرید آنلاین در حال حاضر غیرفعال است.\n\n💬 برای خرید مستقیم با پشتیبانی تماس بگیرید."
-                                : "❌ Online purchase is currently disabled.\n\n💬 Contact support for manual purchase.",
-                                { inline_keyboard: [
-                                    ...(sysConfig.botSupportMsg ? [[{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]] : []),
-                                    [{ text: fa3 ? '🔄 لینک جدید' : '🔄 Regenerate Link', callback_data: `user_regenerate_link:${u.id}` }],
-                                    [{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]
-                                ]}, messageId);
-                        } else {
-                            const pkgs = sysConfig.purchaseOptions || [];
-                            if (pkgs.length === 0) {
-                                await sendOrEdit(chatId, fa3
-                                    ? "❌ هیچ پکیجی تعریف نشده.\n\n💬 به‌زودی پکیج‌ها اضافه می‌شوند."
-                                    : "❌ No packages available yet.",
-                                    { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                            } else {
-                                let buyText = fa3
-                                    ? "🛒 **پکیج‌های موجود**\n━━━━━━━━━━━━━━\nیکی از پکیج‌های زیر را انتخاب کنید:\n"
-                                    : "🛒 **Available Packages**\n━━━━━━━━━━━━━━\nSelect a package:\n";
-                                pkgs.forEach((p, i) => {
-                                    buyText += `\n${i+1}. 📦 **${p.name}**\n   💰 ${p.price || '—'} | ⏱ ${p.days} ${fa3 ? 'روز' : 'days'} | 📦 ${p.gb} GB\n`;
-                                });
-                                const rows2 = pkgs.map(p => [{ text: `📦 ${p.name} — ${p.price || ''}`, callback_data: `user_buy_package:${p.id}` }]);
-                                rows2.push([{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_main_menu' }]);
-                                await sendOrEdit(chatId, buyText, { inline_keyboard: rows2 }, messageId);
-                            }
-                        }
-                    } else if (data.startsWith("user_buy_package:")) {
-                        const pkgId2 = data.replace("user_buy_package:", "");
-                        const pkg2 = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId2);
-                        if (pkg2) {
-                            const now2 = Date.now();
-                            const hasActiveCodes = (sysConfig.promoCodes || []).some(c => c.isActive && (!c.validUntil || now2 <= c.validUntil) && (c.maxUses === 0 || c.usedCount < c.maxUses));
-                            const pkgSummary = fa3
-                                ? `✅ **پکیج انتخابی:**\n━━━━━━━━━━━━━━\n📦 نام: **${pkg2.name}**\n💰 قیمت: **${pkg2.price || '—'}**\n⏱ مدت: **${pkg2.days}** روز\n📦 حجم: **${pkg2.gb}** GB\n━━━━━━━━━━━━━━`
-                                : `✅ **Selected Package:**\n━━━━━━━━━━━━━━\n📦 Name: **${pkg2.name}**\n💰 Price: **${pkg2.price || '—'}**\n⏱ Duration: **${pkg2.days}** days\n📦 Traffic: **${pkg2.gb}** GB\n━━━━━━━━━━━━━━`;
-                            if (hasActiveCodes) {
-                                const promoMsg = pkgSummary + (fa3 ? '\n\n🏷️ آیا کد تخفیف دارید؟' : '\n\n🏷️ Do you have a promo code?');
-                                const promoKb = { inline_keyboard: [
-                                    [{ text: fa3 ? '🏷️ وارد کردن کد تخفیف' : '🏷️ Apply Promo Code', callback_data: `user_apply_promo:${pkgId2}` }],
-                                    [{ text: fa3 ? '💳 ادامه بدون کد تخفیف' : '💳 Continue Without Code', callback_data: `user_skip_promo:${pkgId2}` }],
-                                    [{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_buy' }]
-                                ]};
-                                await sendOrEdit(chatId, promoMsg, promoKb, messageId);
-                            } else {
-                                tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgId2 };
-                                ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                                const payMsg = pkgSummary + (fa3
-                                    ? `\n\n💳 **اطلاعات پرداخت:**\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
-                                    : `\n\n💳 **Payment Info:**\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`);
-                                await sendOrEdit(chatId, payMsg, { inline_keyboard: [[{ text: fa3 ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] }, messageId);
-                            }
-                        }
-                    } else if (data.startsWith("user_apply_promo:")) {
-                        const pkgId3 = data.replace("user_apply_promo:", "");
-                        const pkg3ap = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId3);
-                        tgState[chatId] = { step: 'promo_code', pkgId: pkgId3 };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, fa3
-                            ? `🏷️ **کد تخفیف**\n━━━━━━━━━━━━━━\n📦 پکیج: **${pkg3ap?.name || pkgId3}**\n\nکد تخفیف خود را وارد کنید:`
-                            : `🏷️ **Promo Code**\n━━━━━━━━━━━━━━\n📦 Package: **${pkg3ap?.name || pkgId3}**\n\nEnter your promo code:`,
-                            { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_buy_package:${pkgId3}` }]] }, messageId);
-                    } else if (data.startsWith("user_skip_promo:")) {
-                        const pkgId3 = data.replace("user_skip_promo:", "");
-                        const pkg3sp = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId3);
-                        if (pkg3sp) {
-                            tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgId3 };
-                            ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                            const payMsg3 = fa3
-                                ? `💳 **اطلاعات پرداخت:**\n━━━━━━━━━━━━━━\n📦 پکیج: **${pkg3sp.name}**\n💰 قیمت: **${pkg3sp.price || '—'}**\n━━━━━━━━━━━━━━\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
-                                : `💳 **Payment Info:**\n━━━━━━━━━━━━━━\n📦 Package: **${pkg3sp.name}**\n💰 Price: **${pkg3sp.price || '—'}**\n━━━━━━━━━━━━━━\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`;
-                            await sendOrEdit(chatId, payMsg3, { inline_keyboard: [[{ text: fa3 ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] }, messageId);
-                        }
-                    } else if (data === "user_status_guide") {
-                        tgState[chatId] = { step: 'user_awaiting_link' };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, fa3
-                            ? "📎 **بررسی وضعیت اشتراک**\n━━━━━━━━━━━━━━\nلینک اشتراک یا شناسه کاربری خود را ارسال کنید:"
-                            : "📎 **Check Subscription Status**\n━━━━━━━━━━━━━━\nSend your subscription link or User ID:",
-                            { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_main_menu' }]] }, messageId);
-                } else if (data === "user_referral") {
-                    let refText = '';
-                    let refKb = [];
-                    const hasRef = sysConfig.referralEnabled;
-                    if (hasRef) {
-                        const botUname = tgBotUsername || 'bot';
-                        const myTgId = String(cb.from?.id || chatId);
-                        const refLink = 'https://t.me/' + botUname + '?start=ref_' + myTgId;
-                        const referredUsers = (sysConfig.users || []).filter(function(uu) { return String(uu.referredBy) === myTgId; });
-                        const commission = sysConfig.referralCommission || 10;
-                        const faRef = '🎯 <b>برنامه معرفی</b>\n\n' + '👤 <b>تعداد دعوت‌شده‌ها:</b> ' + referredUsers.length + '\n' + '💰 <b>پورسانت هر فروش:</b> ' + commission + '%\n' + '🔗 <b>لینک دعوت شما:</b>\n<code>' + refLink + '</code>\n\n📌 لینک را با دوستان خود به اشتراک بگذارید.';
-                        const enRef = '🎯 <b>Referral Program</b>\n\n' + '👤 <b>Invited Users:</b> ' + referredUsers.length + '\n' + '💰 <b>Commission:</b> ' + commission + '%\n' + '🔗 <b>Your Referral Link:</b>\n<code>' + refLink + '</code>\n\n📌 Share with your friends.';
-                        refText = fa3 ? faRef : enRef;
-                        refKb = [[{ text: fa3 ? '📊 آمار دعوت‌ها' : '📊 Referral Stats', callback_data: 'user_referral_stats' }],[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]];
-                    } else {
-                        refText = fa3 ? '❌ سیستم معرفی فعال نیست.' : '❌ Referral system is not enabled.';
-                        refKb = [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]];
-                    }
-                    await sendOrEdit(chatId, messageId, refText, { inline_keyboard: refKb });
-                } else if (data === "user_referral_stats") {
-                    const myTgId2 = String(cb.from?.id || chatId);
-                    const referredUsers2 = (sysConfig.users || []).filter(function(uu2) { return String(uu2.referredBy) === myTgId2; });
-                    let statsText = '';
-                    if (referredUsers2.length === 0) {
-                        statsText = fa3 ? '📭 شما هنوز کسی را دعوت نکرده‌اید.' : '📭 You have not invited anyone yet.';
-                    } else {
-                        let listStr = '';
-                        for (let ri = 0; ri < referredUsers2.length; ri++) {
-                            listStr += (ri + 1) + '. ' + referredUsers2[ri].name + '\n';
-                        }
-                        statsText = fa3 ? '📊 <b>آمار دعوت‌ها</b>\n\n👤 <b>تعداد:</b> ' + referredUsers2.length + '\n\n' + listStr : '📊 <b>Referral Stats</b>\n\n👤 <b>Total:</b> ' + referredUsers2.length + '\n\n' + listStr;
-                    }
-                    await sendOrEdit(chatId, messageId, statsText, { inline_keyboard: [[{ text: fa3 ? '🔙 برگشت' : '🔙 Back', callback_data: 'user_referral' }]] });
-                    } else if (data === "user_main_menu") {
-                        const firstName2 = cb.from?.first_name || (fa3 ? "کاربر" : "User");
-                        const customWelcome = sysConfig.botWelcomeMsg;
-                        const welcomeMsg = customWelcome
-                            ? customWelcome.replace('{name}', firstName2)
-                            : fa3
-                                ? `👋 سلام **${firstName2}** عزیز!\n\n🔐 به سرویس **نهان** خوش آمدید.\n━━━━━━━━━━━━━━\n\n💡 از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`
-                                : `👋 Hello **${firstName2}**!\n\n🔐 Welcome to **Nahan** service.\n━━━━━━━━━━━━━━\n\n💡 Select an option from the menu below:`;
-                        const menuRows = [];
-                        menuRows.push([{ text: fa3 ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }]);
-                        if (sysConfig.freeTrial) menuRows.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
-                        if (sysConfig.purchaseEnabled) menuRows.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
-                        menuRows.push([{ text: fa3 ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
-                        if (sysConfig.botSupportMsg) menuRows.push([{ text: fa3 ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
-                        await sendOrEdit(chatId, welcomeMsg, { inline_keyboard: menuRows }, messageId);
-                    } else if (data === "user_reset_trial") {
-                            // Only admin can reset free trials
-                            const isAdminReset = String(cb.from?.id || chatId) === String(sysConfig.tgAdminId || "");
-                            if (!isAdminReset) {
-                                answerText = fa3 ? "⛔ فقط ادمین میتواند تست رایگان را ریست کند" : "⛔ Only admin can reset free trials";
-                                await sendOrEdit(chatId, fa3
-                                    ? "⛔ **دسترسی محدود**\n\nفقط ادمین میتواند تست رایگان را ریست کند."
-                                    : "⛔ **Access Denied**\n\nOnly admin can reset free trials.",
-                                    { inline_keyboard: [[{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]] }, messageId);
-                            } else {
-                            // Admin resetting trial
-
-                            // Reset user's trial status so they can take free trial again
-                            const usedTrials = sysConfig.usedTrials || [];
-                            const userTgId3 = String(cb.from?.id || chatId);
-                            const resetIdx = usedTrials.indexOf(userTgId3);
-                            if (resetIdx !== -1) {
-                                usedTrials.splice(resetIdx, 1);
-                                sysConfig.usedTrials = usedTrials;
-                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                await sendOrEdit(chatId, fa3
-                                    ? "✅ **تست رایگان ریست شد!**\n\nاکنون می‌توانید دوباره تست رایگان بگیرید."
-                                    : "✅ **Free trial reset!**\n\nYou can now take the free trial again.",
-                                    { inline_keyboard: [
-                                        [{ text: fa3 ? "🎮 شروع تست رایگان" : "🎮 Start Free Trial", callback_data: "user_free_trial" }],
-                                        [{ text: fa3 ? "🏠 منوی اصلی" : "🏠 Menu", callback_data: "user_main_menu" }]
-                                    ]}, messageId);
-                            } else {
-                                await sendOrEdit(chatId, fa3
-                                    ? "❌ شما تست رایگان ثبت نکرده‌اید.\n\nبرای شروع تست رایگان دکمه زیر را بزنید."
-                                    : "❌ You haven't taken the free trial yet.\n\nClick below to start:",
-                                    { inline_keyboard: [
-                                        [{ text: fa3 ? "🎮 شروع تست رایگان" : "🎮 Start Free Trial", callback_data: "user_free_trial" }],
-                                        [{ text: fa3 ? "🏠 منوی اصلی" : "🏠 Menu", callback_data: "user_main_menu" }]
-                                    ]}, messageId);
-                            }
-                            }
-                        } else if (data.startsWith("user_get_link:")) {
-                } else if (data.startsWith("user_regenerate_link:")) {
-                    const uid = data.substring("user_regenerate_link:".length);
-                    const regenUser = (sysConfig.users || []).find(u => u.id === uid);
-                    if (regenUser) {
-                        // Generate new deterministic subHash
-                        const newSubHash = generateSubHash(regenUser.id);
-                        regenUser.subHash = newSubHash;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        const regenSubLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${newSubHash}`;
-                        const regenMsg = fa3 ? `🔗 لینک جدید شما:
-
-<code>${regenSubLink}</code>
-
-⚠️ لینک قبلی غیرفعال شد.` : `🔗 Your new link:
-
-<code>${regenSubLink}</code>
-
-⚠️ The old link has been deactivated.`;
-                        await sendOrEdit(chatId, messageId, regenMsg, [[{ text: fa3 ? '🔙 بازگشت' : '🔙 Back', callback_data: `user_get_link:${uid}` }]], "HTML");
-}
-                } else if (data.startsWith("user_get_link:")) {
-                    const uid = data.replace("user_get_link:", "");
-                        const linkUser = (sysConfig.users || []).find(u => u.id === uid);
-                        const linkUrl = linkUser
-                            ? `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${linkUser.subHash || generateSubHash(linkUser.id)}`
-                            : `${new URL(request.url).origin}/${sysConfig.apiRoute}?sub=${encodeURIComponent(uid)}`;
-                        await sendOrEdit(chatId, fa3
-                            ? `🔗 **لینک اشتراک شما:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 لینک را کپی کرده و در اپلیکیشن خود وارد نمایید.`
-                            : `🔗 **Your Subscription Link:**\n━━━━━━━━━━━━━━\n\`${linkUrl}\`\n━━━━━━━━━━━━━━\n\n💡 Copy and add to your app.`,
-                            { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                    } else if (data === "user_my_account") {
-                        const userTgId2 = String(cb.from?.id || chatId);
-                        const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2);
-                        const username = cb.from?.username || (fa3 ? 'ندارد' : 'N/A');
-                        const firstName2 = cb.from?.first_name || (fa3 ? 'کاربر' : 'User');
-                        const joinDate = acc?.joinedAt ? new Date(acc.joinedAt).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : (fa3 ? 'جدید' : 'New');
-                        const hasSub = acc?.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
-                        let accountText = fa3
-                            ? `👤 *حساب کاربری*\n━━━━━━━━━━━━━━\n👤 نام: ${esc(firstName2)}\n🆔 یوزرنیم: @${esc(username)}\n📅 تاریخ عضویت: ${joinDate}\n📊 وضعیت اشتراک: ${hasSub ? '✅ فعال' : '❌ ندارد'}\n━━━━━━━━━━━━━━`
-                            : `👤 *My Account*\n━━━━━━━━━━━━━━\n👤 Name: ${esc(firstName2)}\n🆔 Username: @${esc(username)}\n📅 Joined: ${joinDate}\n📊 Subscription: ${hasSub ? '✅ Active' : '❌ None'}\n━━━━━━━━━━━━━━`;
-                        const accRows = [];
-                        if (hasSub) accRows.push([{ text: fa3 ? '🔗 مشاهده لینک' : '🔗 View Link', callback_data: `user_get_link:${acc.subId}` }]);
-                        accRows.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]);
-                        await sendOrEdit(chatId, accountText, { inline_keyboard: accRows }, messageId);
-                    } else if (data === "user_my_services") {
-                        const userTgId2 = String(cb.from?.id || chatId);
-                        const userAccs = (sysConfig.userAccounts || []).filter(a => a.tgId === userTgId2);
-                        const svcRows2 = [];
-                        let svcText;
-                        if (userAccs.length > 0) {
-                            svcText = fa3
-                                ? "📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n\n📋 روی هر سرویس کلیک کنید:\n"
-                                : "📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n📋 Tap a service below:\n";
-                            for (const acc of userAccs) {
-                                const linkedUser = acc.subId ? (sysConfig.users || []).find(u => u.id === acc.subId) : null;
-                                if (linkedUser && linkedUser.isDeleted) continue;
-                                if (linkedUser) {
-                                    const u = linkedUser;
-                                    const safeName = esc(u.name);
-                                    const isExp = u.expiryMs && Date.now() > u.expiryMs;
-                                    const stEmoji = u.isPaused ? '⏸️' : isExp ? '❌' : '✅';
-                                    const idClean = u.id.replace(/-/g,'').toLowerCase();
-                                    const sysU = sysUsageCache?.users?.[idClean] || { reqs: 0 };
-                                    const totalReqs = sysU.reqs || 0;
-                                    const limitTotal = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
-                                    const usedGB = (totalReqs / 6000).toFixed(2);
-                                    const limitGB = limitTotal ? (limitTotal / 6000).toFixed(2) : '∞';
-                                    const pct = limitTotal ? Math.min(100, Math.round(totalReqs / limitTotal * 100)) : 0;
-                                    const dLeft = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
-                                    svcText += `\n${stEmoji} *${safeName}* | 📊 ${usedGB}/${limitGB} GB | ⏱ ${dLeft < 0 ? '∞' : dLeft}${fa3 ? ' روز' : 'd'}`;
-                                    const subHash = u.subHash || generateSubHash(u.id);
-                                    svcRows2.push([
-                                        { text: `📋 ${safeName}`, callback_data: `user_get_link:${subHash}` },
-                                        { text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${subHash}` }
-                                    ]);
-                                } else {
-                                    const safeName = esc(acc.tgName || acc.subId || "Unknown");
-                                    svcText += `\n📛 ${safeName} ${fa3 ? "(سرویس یافت نشد)" : "(Service not found)"}`;
-                                }
-                            }
-                            svcRows2.push([{ text: fa3 ? '➕ افزودن سرویس' : '➕ Add Service', callback_data: 'user_add_sub' }]);
-                        } else {
-                            svcText = fa3
-                                ? "📱 *سرویس‌های من*\n━━━━━━━━━━━━━━━━\n\n📭 هنوز سرویسی ندارید.\n\n💡 ساب لینک خود را اضافه کنید یا یک پکیج خریداری کنید."
-                                : "📱 *My Services*\n━━━━━━━━━━━━━━━━\n\n📭 No active service.\n\n💡 Add your subscription link or purchase a package.";
-                            svcRows2.push([{ text: fa3 ? '➕ افزودن ساب لینک' : '➕ Add Subscription Link', callback_data: 'user_add_sub' }]);
-                            if (sysConfig.purchaseEnabled) svcRows2.push([{ text: fa3 ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
-                            if (sysConfig.freeTrial) svcRows2.push([{ text: fa3 ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
-                        }
-                        svcRows2.push([{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]);
-                        await sendOrEdit(chatId, svcText, { inline_keyboard: svcRows2 }, messageId);
-                    } else if (data.startsWith("user_rename_service:")) {
-                        const targetHash = data.split(":")[1];
-                        const adminLang = fa3;
-                        if (!targetHash) {
-                            await sendOrEdit(chatId, adminLang ? "❌ خطا: شناسه سرویس نامعتبر." : "❌ Error: Invalid service ID.", null, messageId);
-                        } else {
-                            const targetUser = (sysConfig.users || []).find(u => (u.subHash || generateSubHash(u.id)) === targetHash);
-                            if (!targetUser) {
-                                await sendOrEdit(chatId, adminLang ? "❌ سرویس یافت نشد." : "❌ Service not found.", null, messageId);
-                            } else {
-                                const userTgId2 = String(cb.from?.id || chatId);
-                                const acc = (sysConfig.userAccounts || []).find(a => a.tgId === userTgId2 && a.subId === targetUser.id);
-                                userStates = userStates || {};
-                                userStates[userTgId2] = { state: "awaiting_rename", targetUserId: targetUser.id, targetSubHash: targetHash };
-                                await sendOrEdit(chatId, adminLang
-                                    ? `✏️ *تغییر نام سرویس*\n━━━━━━━━━━━━━━━━\n\nنام فعلی: *${esc(targetUser.name)}*\n\nلطفاً نام جدید سرویس را ارسال کنید:`
-                                    : `✏️ *Rename Service*\n━━━━━━━━━━━━━━━━\n\nCurrent name: *${esc(targetUser.name)}*\n\nPlease send the new service name:`,
-                                    { inline_keyboard: [[{ text: adminLang ? "🔙 انصراف" : "🔙 Cancel", callback_data: "user_my_services" }]] },
-                                messageId);
-                            }
-                        }
-                    } else if (data.startsWith("user_get_link:")) {
-                        const targetHash = data.split(":")[1];
-                        const adminLang = fa3;
-                        if (!targetHash) {
-                            await sendOrEdit(chatId, adminLang ? "❌ خطا: شناسه سرویس نامعتبر." : "❌ Error: Invalid service ID.", null, messageId);
-                        } else {
-                            const u = (sysConfig.users || []).find(usr => (usr.subHash || generateSubHash(usr.id)) === targetHash);
-                            if (!u) {
-                                await sendOrEdit(chatId, adminLang ? "❌ سرویس یافت نشد." : "❌ Service not found.", null, messageId);
-                            } else {
-                                const idClean2 = u.id.replace(/-/g,'').toLowerCase();
-                                const sysU2 = sysUsageCache?.users?.[idClean2] || { reqs: 0 };
-                                const totalReqs2 = sysU2.reqs || 0;
-                                const limitTotal2 = u.limitTotalReq || (u.totalTrafficLimit ? Math.round(u.totalTrafficLimit / (1073741824 / 6000)) : 0);
-                                const usedGB2 = (totalReqs2 / 6000).toFixed(2);
-                                const limitGB2 = limitTotal2 ? (limitTotal2 / 6000).toFixed(2) : '∞';
-                                const pct2 = limitTotal2 ? Math.min(100, Math.round(totalReqs2 / limitTotal2 * 100)) : 0;
-                                const bar2 = limitTotal2 ? ('█'.repeat(Math.round(pct2 / 10)) + '░'.repeat(10 - Math.round(pct2 / 10))) : '──────────';
-                                const isExp2 = u.expiryMs && Date.now() > u.expiryMs;
-                                const dLeft2 = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
-                                const expiryDate2 = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString(fa3 ? 'fa-IR' : 'en-US') : '∞';
-                                const stEmoji2 = u.isPaused ? '⏸️' : isExp2 ? '❌' : '✅';
-                                const stText2 = u.isPaused ? (fa3 ? 'متوقف' : 'Paused') : isExp2 ? (fa3 ? 'منقضی' : 'Expired') : (fa3 ? 'فعال' : 'Active');
-                                const subLink2 = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${u.subHash || generateSubHash(u.id)}`;
-                                const safeName2 = esc(u.name);
-                                const svcDetailText = fa3
-                                    ? `📱 *جزئیات سرویس*\n━━━━━━━━━━━━━━━━\n📛 نام: ${safeName2}\n🚦 وضعیت: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 مصرف: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ روز مانده: *${dLeft2 < 0 ? '∞' : dLeft2}* روز\n📅 انقضا: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 لینک:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`
-                                    : `📱 *Service Details*\n━━━━━━━━━━━━━━━━\n📛 Name: ${safeName2}\n🚦 Status: ${stEmoji2} ${stText2}\n━━━━━━━━━━━━━━━━\n📊 Usage: *${usedGB2}* / ${limitGB2} GB\n${bar2} ${pct2}%\n⏱ Days Left: *${dLeft2 < 0 ? '∞' : dLeft2}*\n📅 Expiry: ${expiryDate2}\n━━━━━━━━━━━━━━━━\n🔗 Link:\n\`${subLink2}\`\n━━━━━━━━━━━━━━━━`;
-                                const detailRows = [
-                                    [{ text: fa3 ? '🔄 تمدید' : '🔄 Renew', callback_data: `user_renew_service:${u.id}` }, { text: fa3 ? '⏸️ توقف' : '⏸️ Pause', callback_data: `user_pause_service:${u.id}` }],
-                                    [{ text: `✏️ ${fa3 ? "تغییر نام" : "Rename"}`, callback_data: `user_rename_service:${targetHash}` }, { text: fa3 ? '🗑️ حذف' : '🗑️ Delete', callback_data: `user_delete_service:${u.id}` }],
-                                    [{ text: fa3 ? '🎧 پشتیبانی' : '🎧 Support', callback_data: 'user_support' }],
-                                    [{ text: fa3 ? '🔙 خدمات من' : '🔙 My Services', callback_data: 'user_my_services' }, { text: fa3 ? '🏠 منو' : '🏠 Menu', callback_data: 'user_main_menu' }]
-                                ];
-                                await sendOrEdit(chatId, svcDetailText, { inline_keyboard: detailRows }, messageId);
-                            }
-                        }
-                    } else if (data === "user_add_sub") {
-                        tgState[chatId] = { step: 'user_awaiting_add_sub' };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, fa3
-                            ? "📎 **افزودن ساب لینک**\n━━━━━━━━━━━━━━\nلینک اشتراک خود را ارسال کنید:"
-                            : "📎 **Add Subscription Link**\n━━━━━━━━━━━━━━\nSend your subscription link:",
-                            { inline_keyboard: [[{ text: fa3 ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
-                    } else if (data === "user_support") {
-                        const supportMsg = sysConfig.botSupportMsg || (fa3 ? '💬 برای پشتیبانی با ادمین تماس بگیرید.' : '💬 Contact admin for support.');
-                        await sendOrEdit(chatId, fa3
-                            ? `💬 **پشتیبانی**\n━━━━━━━━━━━━━━\n\n${supportMsg}`
-                            : `💬 **Support**\n━━━━━━━━━━━━━━\n\n${supportMsg}`,
-                            { inline_keyboard: [[{ text: fa3 ? '🏠 منوی اصلی' : '🏠 Menu', callback_data: 'user_main_menu' }]] }, messageId);
-                    }
-                    ctx?.waitUntil(fetch(`${tgApi}/answerCallbackQuery`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ callback_query_id: cb.id, text: userAnswerText || "" })
-                    }).catch(()=>{}));
                     return new Response("OK", { status: 200 });
                 }
 
@@ -3455,6 +3179,27 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                 ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
 
                 let answerText = null;
+
+                if (data.startsWith("wallet_approve:") || data.startsWith("wallet_reject:")) {
+                    const isApprove = data.startsWith("wallet_approve:");
+                    const receiptId = data.replace(isApprove ? "wallet_approve:" : "wallet_reject:", "");
+                    const receipt = (sysConfig.pendingPurchases || []).find(p => p.id === receiptId);
+                    if (!receipt) { await fetch(`${tgApi}/answerCallbackQuery`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ callback_query_id: cb.id, text: 'رسید یافت نشد', show_alert: true }) }); return new Response("OK", { status: 200 }); }
+                    if (receipt.status !== 'pending') { await fetch(`${tgApi}/answerCallbackQuery`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ callback_query_id: cb.id, text: receipt.status === 'approved' ? '✅ قبلاً تایید شده' : '❌ قبلاً رد شده', show_alert: true }) }); return new Response("OK", { status: 200 }); }
+                    receipt.status = isApprove ? 'approved' : 'rejected';
+                    receipt[isApprove ? 'approvedAt' : 'rejectedAt'] = Date.now();
+                    const wUser = (sysConfig.users || []).find(u => u.id === receipt.userId);
+                    if (isApprove && wUser) {
+                        wUser.walletBalance = (wUser.walletBalance || 0) + receipt.amount;
+                        if (!wUser.walletTransactions) wUser.walletTransactions = [];
+                        wUser.walletTransactions.push({ type: 'deposit', amount: receipt.amount, detail: 'Admin approved deposit', ts: Date.now() });
+                    }
+                    await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
+                    if (wUser?.telegramId) ctx?.waitUntil(fetch(`${tgApi}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: wUser.telegramId, parse_mode: 'HTML', text: isApprove ? `✅ <b>شارژ کیف پول تایید شد</b>\n💰 <b>${receipt.amount.toLocaleString()}</b> تومان اضافه شد.\n💳 موجودی: <b>${(wUser.walletBalance || 0).toLocaleString()}</b> تومان` : `❌ <b>درخواست شارژ رد شد</b>\n💰 مبلغ <b>${receipt.amount.toLocaleString()}</b> تومان تایید نشد.` }) }).catch(() => {}));
+                    await fetch(`${tgApi}/answerCallbackQuery`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ callback_query_id: cb.id, text: isApprove ? '✅ تایید شد' : '❌ رد شد', show_alert: false }) });
+                    await fetch(`${tgApi}/editMessageReplyMarkup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }) }).catch(() => {});
+                    return new Response("OK", { status: 200 });
+                }
 
                 if (data === "main_menu") {
                     const menu = getMainMenu(activePanel, isAuthorized);
@@ -3577,7 +3322,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                 } else if (data.startsWith("sub_unlimit_cb:")) {
                     const uuid = data.replace("sub_unlimit_cb:", "");
                     if (isRemotePanel) {
-                        await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.masterKey, trafficLimit: 0, dailyLimit: 0, expiryDays: 0 });
+                        await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.apiKey, trafficLimit: 0, dailyLimit: 0, expiryDays: 0 });
                     } else if (sysConfig.users) {
                         const u = sysConfig.users.find(usr => usr.id === uuid);
                         if (u) {
@@ -3604,7 +3349,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     
                     const newUuid = crypto.randomUUID();
                     if (isRemotePanel) {
-                        const res = await remotePanelWriteAction(activePanel, 'POST', null, { key: activePanel.masterKey, name: stateName });
+                        const res = await remotePanelWriteAction(activePanel, 'POST', null, { key: activePanel.apiKey, name: stateName });
                         if (res.success && res.user) {
                             const detail = getSubDetail(res.user.id, [res.user]);
                             await sendOrEdit(chatId, `✅ ${t("msg_added")}\n\n${detail.text}`, detail.kb, messageId);
@@ -3613,9 +3358,18 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         }
                     } else {
                         if (!sysConfig.users) sysConfig.users = [];
+                        const tgSubHash1 = await generateSubHash(newUuid);
+                        const tgRefCode1 = Math.random().toString(36).slice(2,10).toUpperCase();
                         sysConfig.users.push({
                             id: newUuid,
                             name: stateName,
+                            subHash: tgSubHash1,
+                            referralCode: tgRefCode1,
+                            walletBalance: 0,
+                            walletTransactions: [],
+                            services: [],
+                            freeTrialUsed: false,
+                            telegramId: null,
                             limitTotalReq: null,
                             limitDailyReq: null,
                             expiryMs: null,
@@ -3842,7 +3596,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                 } else if (data.startsWith("sub_device_unlimited:")) {
                     const uuid = data.replace("sub_device_unlimited:", "");
                     if (isRemotePanel) {
-                        await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.masterKey, maxConfigs: null });
+                        await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.apiKey, maxConfigs: null });
                     } else if (sysConfig.users) {
                         const u = sysConfig.users.find(usr => usr.id === uuid);
                         if (u) {
@@ -3892,13 +3646,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         [{ text: `🔑 ${t("tg_pass")}`, callback_data: "tg_edit_pass" }, { text: `🌐 ${t("tg_dns")}`, callback_data: "tg_edit_dns" }],
                         [{ text: `🔗 ${t("tg_relay")}`, callback_data: "tg_edit_relay" }],
                         [{ text: `⚡ ${t("tg_tfo")}`, callback_data: "tg_toggle_tfo" }, { text: `ECH`, callback_data: "tg_toggle_ech" }],
-                        [{ text: `${t("tg_silent")}`, callback_data: "tg_toggle_silent" }, { text: `${t("tg_pause")}
-                } else if (data === "admin_broadcast") {
-                    const bMsg = fa3 ? '📢 <b>ارسال پیام گروهی</b>\n\nلطفاً متن پیام خود را ارسال کنید. این پیام برای همه کاربران ارسال خواهد شد.\n\n❗️ برای لغو، /cancel را ارسال کنید.' : '📢 <b>Broadcast Message</b>\n\nPlease send your message text. This will be sent to all users.\n\n❗️ Send /cancel to cancel.';
-                    sysConfig.botBroadcastMode = true;
-                    await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                    await sendOrEdit(chatId, messageId, bMsg, { inline_keyboard: [[{ text: fa3 ? '❌ لغو' : '❌ Cancel', callback_data: 'admin_main_menu' }]] });
-`, callback_data: "tg_toggle_pause2" }],
+                        [{ text: `${t("tg_silent")}`, callback_data: "tg_toggle_silent" }, { text: `${t("tg_pause")}`, callback_data: "tg_toggle_pause2" }],
                         [{ text: `🔄 ${t("tg_auto_update")}`, callback_data: "tg_toggle_auto_update" }, { text: `🔀 ${t("tg_direct")}`, callback_data: "tg_toggle_direct" }],
                         [{ text: `🌐 ${t("tg_nat64")}`, callback_data: "tg_edit_nat64" }],
                         [{ text: t("btn_main_menu"), callback_data: "main_menu" }]
@@ -3910,169 +3658,23 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     const strategyTxt = sysConfig.nameStrategy || 'default';
                     const prefixTxt = sysConfig.namePrefix || 'Core';
                     const maintenanceTxt = sysConfig.maintenanceHost ? sysConfig.maintenanceHost.substring(0, 30) + '...' : '—';
-                    const rateTxt = sysConfig.dataRate || 'نامحدود';
                     let text = `🔧 **${t("tg_adv_settings")}**\n━━━━━━━━━━━━━━━━\n`;
                     text += `🧹 ${t("tg_clean_ips")}: \`${cleanTxt}\`\n`;
                     text += `🖥️ ${t("tg_nodes")}: \`${nodesTxt}\`\n`;
                     text += `📝 ${t("tg_strategy")}: \`${strategyTxt}\`\n`;
                     text += `🏷️ ${t("tg_prefix")}: \`${prefixTxt}\`\n`;
                     text += `🎭 ${t("tg_maintenance")}: \`${maintenanceTxt}\`\n`;
-                    text += `⚡ Rate: \`${rateTxt}\`\n`;
                     text += `━━━━━━━━━━━━━━━━`;
                     const kb = { inline_keyboard: [
                         [{ text: `🧹 ${t("tg_clean_ips")}`, callback_data: "tg_edit_clean_ips" }],
                         [{ text: `🖥️ ${t("tg_nodes")}`, callback_data: "tg_edit_nodes" }],
                         [{ text: `📝 ${t("tg_strategy")}`, callback_data: "tg_edit_strategy" }, { text: `🏷️ ${t("tg_prefix")}`, callback_data: "tg_edit_prefix" }],
                         [{ text: `🎭 ${t("tg_maintenance")}`, callback_data: "tg_edit_maintenance" }],
-                        [{ text: `⚡ تنظیم Rate`, callback_data: "tg_edit_rate" }],
                         [{ text: `🤖 ${t("tg_tg_settings")}`, callback_data: "tg_edit_tg_settings" }],
                         [{ text: `☁️ ${t("tg_cf_settings")}`, callback_data: "tg_edit_cf_settings" }],
-                        [{ text: `🛍️ ${t("shop_settings") || "Shop & Bot Settings"}`, callback_data: "shop_settings_menu" }],
                         [{ text: t("btn_main_menu"), callback_data: "main_menu" }]
                     ] };
                     await sendOrEdit(chatId, text, kb, messageId);
-                } else if (data === "shop_settings_menu") {
-                    const purchaseSt = sysConfig.purchaseEnabled ? `✅ ${t("shop_purchase_on")||"ON"}` : `❌ ${t("shop_purchase_off")||"OFF"}`;
-                    const trialSt = sysConfig.freeTrial ? `✅ ${t("shop_trial_on")||"ON"}` : `❌ ${t("shop_trial_off")||"OFF"}`;
-                    const plans = sysConfig.purchaseOptions || [];
-                    let shopText = `🛍️ **${t("shop_settings")||"Shop & Bot Settings"}**\n━━━━━━━━━━━━━━━━\n`;
-                    shopText += `💳 ${t("shop_purchase_on")||"Purchase"}: ${sysConfig.purchaseEnabled ? '✅ ON' : '❌ OFF'}\n`;
-                    shopText += `🎁 ${t("shop_trial_on")||"Trial"}: ${sysConfig.freeTrial ? '✅ ON' : '❌ OFF'}\n`;
-                    shopText += `⏱ ${t("shop_trial_days")||"Trial Days"}: **${sysConfig.freeTrialDays || 3}**\n`;
-                    shopText += `📦 ${t("shop_trial_gb")||"Trial GB"}: **${sysConfig.freeTrialGB || 3} GB**\n`;
-                    shopText += `💳 ${t("shop_card_num")||"Card"}: \`${sysConfig.adminCardNumber || '—'}\`\n`;
-                    shopText += `👤 ${t("shop_card_owner")||"Owner"}: ${sysConfig.adminCardOwner || '—'}\n`;
-                    shopText += `📋 ${t("shop_plans")||"Plans"}: **${plans.length}** plan(s)\n`;
-                    shopText += `🔧 Services: **${(sysConfig.customServices || []).length}** service(s)\n`;
-                    shopText += `💬 Welcome: ${sysConfig.botWelcomeMsg ? '✅ Custom' : '📄 Default'}\n`;
-                    shopText += `💬 Support: ${sysConfig.botSupportMsg ? '✅ Custom' : '📄 Default'}\n`;
-                    shopText += `🎨 Theme: \`${sysConfig.botThemeColor || '#6366f1'}\`\n`;
-                    shopText += `━━━━━━━━━━━━━━━━`;
-                    const shopKb = { inline_keyboard: [
-                        [{ text: `💳 ${t("shop_purchase_on")||"Purchase"}: ${sysConfig.purchaseEnabled?'✅':'❌'}`, callback_data: "shop_toggle_purchase" }, { text: `🎁 ${t("shop_trial_on")||"Trial"}: ${sysConfig.freeTrial?'✅':'❌'}`, callback_data: "shop_toggle_trial" }],
-                        [{ text: `⏱ ${t("shop_trial_days")||"Trial Days"}`, callback_data: "shop_edit_trial_days" }, { text: `📦 ${t("shop_trial_gb")||"Trial GB"}`, callback_data: "shop_edit_trial_gb" }],
-                        [{ text: `💳 ${t("shop_card_num")||"Card Number"}`, callback_data: "shop_edit_card" }, { text: `👤 ${t("shop_card_owner")||"Card Owner"}`, callback_data: "shop_edit_card_owner" }],
-                        [{ text: `📋 ${t("shop_plans")||"Manage Plans"}`, callback_data: "shop_plans_menu" }],
-                        [{ text: `🔧 مدیریت سرویس‌ها`, callback_data: "shop_services_menu" }],
-                        [{ text: `💬 ${t("shop_bot_welcome")||"Bot Welcome Msg"}`, callback_data: "shop_edit_welcome" }],
-                        [{ text: `💬 پیام پشتیبانی`, callback_data: "shop_edit_support" }, { text: `🎨 رنگ تم`, callback_data: "shop_edit_theme" }],
-                        [{ text: `◀️ ${t("btn_back")}`, callback_data: "tg_advanced_menu" }]
-                    ] };
-                    await sendOrEdit(chatId, shopText, shopKb, messageId);
-                } else if (data === "shop_toggle_purchase") {
-                    sysConfig.purchaseEnabled = !sysConfig.purchaseEnabled;
-                    await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                    answerText = t("shop_saved") || "✅ Saved!";
-                    // re-show shop menu
-                    const plans2 = sysConfig.purchaseOptions || [];
-                    let shopText2 = `🛍️ **${t("shop_settings")||"Shop Settings"}**\n━━━━━━━━━━━━━━━━\n💳 Purchase: ${sysConfig.purchaseEnabled?'✅ ON':'❌ OFF'}\n🎁 Trial: ${sysConfig.freeTrial?'✅ ON':'❌ OFF'}\n⏱ Trial Days: **${sysConfig.freeTrialDays||3}**\n📦 Trial GB: **${sysConfig.freeTrialGB||3} GB**\n💳 Card: \`${sysConfig.adminCardNumber||'—'}\`\n👤 Owner: ${sysConfig.adminCardOwner||'—'}\n📋 Plans: **${plans2.length}**\n━━━━━━━━━━━━━━━━`;
-                    const shopKb2 = { inline_keyboard: [[{ text: `💳 Purchase: ${sysConfig.purchaseEnabled?'✅':'❌'}`, callback_data: "shop_toggle_purchase" }, { text: `🎁 Trial: ${sysConfig.freeTrial?'✅':'❌'}`, callback_data: "shop_toggle_trial" }],[{ text: `⏱ Trial Days`, callback_data: "shop_edit_trial_days" }, { text: `📦 Trial GB`, callback_data: "shop_edit_trial_gb" }],[{ text: `💳 Card Number`, callback_data: "shop_edit_card" }, { text: `👤 Card Owner`, callback_data: "shop_edit_card_owner" }],[{ text: `📋 Manage Plans`, callback_data: "shop_plans_menu" }],[{ text: `💬 Bot Welcome`, callback_data: "shop_edit_welcome" }],[{ text: `◀️ ${t("btn_back")}`, callback_data: "tg_advanced_menu" }]] };
-                    await sendOrEdit(chatId, shopText2, shopKb2, messageId);
-                } else if (data === "shop_toggle_trial") {
-                    sysConfig.freeTrial = !sysConfig.freeTrial;
-                    await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                    answerText = t("shop_saved") || "✅ Saved!";
-                    const plans2b = sysConfig.purchaseOptions || [];
-                    let shopText2b = `🛍️ **${t("shop_settings")||"Shop Settings"}**\n━━━━━━━━━━━━━━━━\n💳 Purchase: ${sysConfig.purchaseEnabled?'✅ ON':'❌ OFF'}\n🎁 Trial: ${sysConfig.freeTrial?'✅ ON':'❌ OFF'}\n⏱ Trial Days: **${sysConfig.freeTrialDays||3}**\n📦 Trial GB: **${sysConfig.freeTrialGB||3} GB**\n💳 Card: \`${sysConfig.adminCardNumber||'—'}\`\n👤 Owner: ${sysConfig.adminCardOwner||'—'}\n📋 Plans: **${plans2b.length}**\n━━━━━━━━━━━━━━━━`;
-                    const shopKb2b = { inline_keyboard: [[{ text: `💳 Purchase: ${sysConfig.purchaseEnabled?'✅':'❌'}`, callback_data: "shop_toggle_purchase" }, { text: `🎁 Trial: ${sysConfig.freeTrial?'✅':'❌'}`, callback_data: "shop_toggle_trial" }],[{ text: `⏱ Trial Days`, callback_data: "shop_edit_trial_days" }, { text: `📦 Trial GB`, callback_data: "shop_edit_trial_gb" }],[{ text: `💳 Card Number`, callback_data: "shop_edit_card" }, { text: `👤 Card Owner`, callback_data: "shop_edit_card_owner" }],[{ text: `📋 Manage Plans`, callback_data: "shop_plans_menu" }],[{ text: `💬 Bot Welcome`, callback_data: "shop_edit_welcome" }],[{ text: `◀️ ${t("btn_back")}`, callback_data: "tg_advanced_menu" }]] };
-                    await sendOrEdit(chatId, shopText2b, shopKb2b, messageId);
-                } else if (data === "shop_edit_trial_days") {
-                    tgState[chatId] = { step: "shop_edit_trial_days" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `⏱ **${t("shop_trial_days")||"Trial Days"}**\n${t("tg_current_val")||"Current"}: \`${sysConfig.freeTrialDays || 3}\`\n\n${t("tg_new_val")||"Send new value:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_edit_trial_gb") {
-                    tgState[chatId] = { step: "shop_edit_trial_gb" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `📦 **${t("shop_trial_gb")||"Trial GB"}**\n${t("tg_current_val")||"Current"}: \`${sysConfig.freeTrialGB || 3} GB\`\n\n${t("tg_new_val")||"Send new value:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_edit_card") {
-                    tgState[chatId] = { step: "shop_edit_card" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `💳 **${t("shop_card_num")||"Card Number"}**\n${t("tg_current_val")||"Current"}: \`${sysConfig.adminCardNumber || '—'}\`\n\n${t("tg_new_val")||"Send new value:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_edit_card_owner") {
-                    tgState[chatId] = { step: "shop_edit_card_owner" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `👤 **${t("shop_card_owner")||"Card Owner"}**\n${t("tg_current_val")||"Current"}: \`${sysConfig.adminCardOwner || '—'}\`\n\n${t("tg_new_val")||"Send new value:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_edit_welcome") {
-                    tgState[chatId] = { step: "shop_edit_welcome" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `💬 **${t("shop_bot_welcome")||"Bot Welcome Message"}**\n${t("tg_current_val")||"Current"}:\n\`${sysConfig.botWelcomeMsg || t("user_welcome") || "Default"}\`\n\n${t("shop_welcome_prompt")||"Send new welcome message:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_edit_support") {
-                    tgState[chatId] = { step: "shop_edit_support" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `💬 **پیام پشتیبانی**\nفعلی:\n\`${sysConfig.botSupportMsg || 'ندارد'}\`\n\nپیام جدید را ارسال کنید (مثلاً آیدی تلگرام پشتیبانی):`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_edit_theme") {
-                    tgState[chatId] = { step: "shop_edit_theme" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `🎨 **رنگ تم ربات**\nفعلی: \`${sysConfig.botThemeColor || '#6366f1'}\`\n\nکد رنگ جدید را ارسال کنید (مثلاً #6366f1):`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_settings_menu" }]] }, messageId);
-                } else if (data === "shop_plans_menu") {
-                    const plans3 = sysConfig.purchaseOptions || [];
-                    let plansText = `📋 **${t("shop_plans")||"Plans"}**\n━━━━━━━━━━━━━━━━\n`;
-                    if (plans3.length === 0) {
-                        plansText += `_${t("shop_no_plans")||"No plans defined."}_\n`;
-                    } else {
-                        plans3.forEach((p, i) => {
-                            plansText += `${i+1}. 📦 **${p.name}**\n   💰 ${p.price || '—'} | ⏱ ${p.days || '?'} days | 📦 ${p.gb || '?'} GB\n`;
-                        });
-                    }
-                    plansText += `━━━━━━━━━━━━━━━━`;
-                    const delRows = plans3.map((p, i) => [{ text: `🗑 حذف: ${p.name}`, callback_data: `shop_del_plan:${p.id}` }]);
-                    const plansKb = { inline_keyboard: [
-                        [{ text: `➕ ${t("shop_add_plan")||"Add Plan"}`, callback_data: "shop_add_plan" }],
-                        ...delRows,
-                        [{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]
-                    ] };
-                    await sendOrEdit(chatId, plansText, plansKb, messageId);
-                } else if (data === "shop_add_plan") {
-                    tgState[chatId] = { step: "shop_plan_name" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `➕ **${t("shop_add_plan")||"Add New Plan"} — Step 1/4**\n\n${t("shop_plan_name_prompt")||"Send plan name:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_plans_menu" }]] }, messageId);
-                } else if (data.startsWith("shop_del_plan:")) {
-                    const delId = data.replace("shop_del_plan:", "");
-                    const plans4 = sysConfig.purchaseOptions || [];
-                    const delIdx = plans4.findIndex(p => p.id === delId);
-                    if (delIdx >= 0) {
-                        const delName = plans4[delIdx].name;
-                        plans4.splice(delIdx, 1);
-                        sysConfig.purchaseOptions = plans4;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        answerText = t("shop_plan_deleted") || "🗑 Deleted";
-                        await sendOrEdit(chatId, `🗑 **${delName}** ${t("shop_plan_deleted")||"deleted."}`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_plans_menu" }]] }, messageId);
-                    } else {
-                        answerText = "❌ Not found";
-                    }
-                } else if (data === "shop_services_menu") {
-                    const svcs = sysConfig.customServices || [];
-                    let svcText = `🔧 **مدیریت سرویس‌ها**\n━━━━━━━━━━━━━━━━\n`;
-                    if (svcs.length === 0) {
-                        svcText += `📭 هنوز سرویسی تعریف نشده.\n`;
-                    } else {
-                        svcs.forEach((s, i) => {
-                            svcText += `${i+1}. ${s.emoji || '▫️'} **${s.name}**\n   ${s.description || '—'}\n`;
-                        });
-                    }
-                    svcText += `━━━━━━━━━━━━━━━━\n💡 سرویس‌ها به کاربران در بخش "سرویس‌ها و تعرفه‌ها" نمایش داده می‌شوند.`;
-                    const delSvcRows = svcs.map((s, i) => [{ text: `🗑 حذف: ${s.name}`, callback_data: `shop_del_svc:${i}` }]);
-                    const svcKb = { inline_keyboard: [
-                        [{ text: `➕ افزودن سرویس`, callback_data: "shop_add_svc" }],
-                        ...delSvcRows,
-                        [{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]
-                    ] };
-                    await sendOrEdit(chatId, svcText, svcKb, messageId);
-                } else if (data === "shop_add_svc") {
-                    tgState[chatId] = { step: "shop_svc_name" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `➕ **افزودن سرویس — مرحله 1/3**\n\nنام سرویس را ارسال کنید:`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_services_menu" }]] }, messageId);
-                } else if (data.startsWith("shop_del_svc:")) {
-                    const delIdx = parseInt(data.replace("shop_del_svc:", ""));
-                    const svcs2 = sysConfig.customServices || [];
-                    if (delIdx >= 0 && delIdx < svcs2.length) {
-                        const delName = svcs2[delIdx].name;
-                        svcs2.splice(delIdx, 1);
-                        sysConfig.customServices = svcs2;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        answerText = "🗑 حذف شد";
-                        await sendOrEdit(chatId, `🗑 **${delName}** حذف شد.`, { inline_keyboard: [[{ text: `◀️ بازگشت`, callback_data: "shop_services_menu" }]] }, messageId);
-                    }
                 } else if (data === "tg_logs_menu") {
                     let logs = [];
                     if (env.IOT_DB) {
@@ -4191,10 +3793,6 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     tgState[chatId] = { step: "tg_edit_prefix" };
                     ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
                     await sendOrEdit(chatId, `🏷️ **${t("tg_prefix")}**\n${t("tg_current_val")}: \`${sysConfig.namePrefix}\`\n\n${t("tg_new_val")}`, { inline_keyboard: [[{ text: "❌ " + t("btn_cancel"), callback_data: "tg_advanced_menu" }]] }, messageId);
-                } else if (data === "tg_edit_rate") {
-                    tgState[chatId] = { step: "tg_edit_rate" };
-                    ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                    await sendOrEdit(chatId, `⚡ **تنظیم Rate**\n━━━━━━━━━━━━━━━━\n${t("tg_current_val")}: \`${sysConfig.dataRate || 'نامحدود'}\`\n\n💡 مقدار Rate را ارسال کنید.\nمثال: \`100Mbps\` یا \`نامحدود\`\n\nاین مقدار در اطلاعات مشترکین نمایش داده می‌شود.`, { inline_keyboard: [[{ text: "❌ " + t("btn_cancel"), callback_data: "tg_advanced_menu" }]] }, messageId);
                 } else if (data === "tg_edit_pass") {
                     tgState[chatId] = { step: "tg_edit_pass" };
                     ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
@@ -4211,199 +3809,8 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     tgState[chatId] = { step: "tg_edit_cf_acc" };
                     ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
                     await sendOrEdit(chatId, `☁️ **${t("tg_cf_settings")}**\n\n1️⃣ CF Account ID: \`${sysConfig.cfAccountId || '—'}\`\n\n${t("tg_new_val")}\n_send /skip to keep current_`, { inline_keyboard: [[{ text: "❌ " + t("btn_cancel"), callback_data: "tg_advanced_menu" }]] }, messageId);
-                } else if (data === "admin_pending_list") {
-                    const pending = sysConfig.pendingPurchases || [];
-                    if (pending.length === 0) {
-                        await sendOrEdit(chatId, t("admin_pending_empty") || "✅ No pending purchases.", { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
-                    } else {
-                        let pendingText = `${t("admin_pending_title") || "📋 Pending Purchases"}\n━━━━━━━━━━━━━━\n`;
-                        const pendingRows = [];
-                        pending.forEach((p, i) => {
-                            pendingText += `${i+1}. @${p.tgName} — ${p.pkgName}\n`;
-                            pendingRows.push([
-                                { text: `✅ @${p.tgName}`, callback_data: `admin_approve_purchase:${p.id}` },
-                                { text: `❌ رد`, callback_data: `admin_reject_purchase:${p.id}` }
-                            ]);
-                        });
-                        pendingRows.push([{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]);
-                        await sendOrEdit(chatId, pendingText, { inline_keyboard: pendingRows }, messageId);
-                    }
-                } else if (data.startsWith("admin_approve_purchase:")) {
-                    const purchaseId = data.replace("admin_approve_purchase:", "");
-                        // Check 20-service limit per user
-                            const purchaseTgId = String(purchase.tgId);
-                            const ownedServices = (sysConfig.users || []).filter(u => u.ownerTgId === purchaseTgId && !u.isDeleted);
-                            if (buyerOwnedCount >= 20) {
-                                answerText = fa3 ? "⚠️ محدودیت ۲۰ سرویس" : "⚠️ 20 Service Limit";
-                                await sendOrEdit(chatId, fa3
-                                    ? "⚠️ **محدودیت سرویس**\n\nهر کاربر حداکثر ۲۰ سرویس میتواند داشته باشد.\n\nتعداد سرویس‌های فعلی: " + ownedServices.length
-                                    : "⚠️ **Service Limit**\n\nEach user can have max 20 services.\n\nCurrent services: " + ownedServices.length,
-                                    { inline_keyboard: [[{ text: "🔙 بازگشت", callback_data: "admin_pending_list" }]] }, messageId);
-                            } else {
-                    const idx = (sysConfig.pendingPurchases || []).findIndex(p => p.id === purchaseId);
-                    if (idx >= 0) {
-                        const purchase = sysConfig.pendingPurchases[idx];
-                        sysConfig.pendingPurchases.splice(idx, 1);
-                        const newUserId = crypto.randomUUID();
-                        const randomSuffix = Math.floor(Math.random() * 90000) + 10000;
-                        const baseName = purchase.tgName || purchase.tgId;
-                        const newUser = {
-                            id: newUserId,
-                            name: `${baseName}_${randomSuffix}`,
-                            subHash: generateSubHash(newUserId),
-                            ownerTgId: String(cb.from?.id || chatId),
-                            totalTrafficLimit: (purchase.gb || 10) * 1073741824,
-                            limitTotalReq: Math.round((purchase.gb || 10) * 6000),
-                            expiryMs: Date.now() + (purchase.days || 30) * 86400000,
-                            isPaused: false, isExpired: false, upLink: 0, downLink: 0
-                        };
-                        if (!sysConfig.users) sysConfig.users = [];
-                        sysConfig.users.push(newUser);
-                        // Link to user account
-                        if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
-                        const existingAcc = sysConfig.userAccounts.find(a => a.tgId === String(purchase.tgId));
-                        if (existingAcc) {
-                            existingAcc.subId = newUserId;
-                            existingAcc.lastActivity = Date.now();
-                        } else {
-                            sysConfig.userAccounts.push({ tgId: String(purchase.tgId), tgName: purchase.tgName || '', firstName: '', subId: newUserId, subHash: generateSubHash(newUserId), savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() });
-                        }
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        answerText = t("admin_approved_ok") || "✅ Approved";
-                        const subLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${newUser.subHash}`;
-                        const fa3 = langCode === 'fa';
-                        await sendOrEdit(chatId, fa3
-                            ? `✅ **خرید تأیید شد**\n━━━━━━━━━━━━━━\n👤 کاربر: **${newUser.name}**\n📦 پکیج: ${purchase.pkgName || '—'}\n⏱ مدت: ${purchase.days || 30} روز\n📦 حجم: ${purchase.gb || 10} GB\n🔑 لینک: \`${subLink}\`\n━━━━━━━━━━━━━━`
-                            : `✅ **Purchase Approved**\n━━━━━━━━━━━━━━\n👤 User: **${newUser.name}**\n📦 Plan: ${purchase.pkgName || '—'}\n⏱ Days: ${purchase.days || 30}\n📦 Traffic: ${purchase.gb || 10} GB\n🔑 Link: \`${subLink}\`\n━━━━━━━━━━━━━━`,
-                            { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
-                        const approvedMsg = fa3
-                            ? `🎉 **خرید شما تأیید شد!**\n━━━━━━━━━━━━━━\n📦 پکیج: **${purchase.pkgName || '—'}**\n⏱ مدت: **${purchase.days || 30}** روز\n📦 حجم: **${purchase.gb || 10}** GB\n━━━━━━━━━━━━━━\n\n🔗 لینک اشتراک شما:\n\`${subLink}\`\n\n💡 لینک را کپی کرده و در اپلیکیشن وارد نمایید.\n\n🙏 از خرید شما متشکریم!`
-                            : `🎉 **Purchase Approved!**\n━━━━━━━━━━━━━━\n📦 Plan: **${purchase.pkgName || '—'}**\n⏱ Duration: **${purchase.days || 30}** days\n📦 Traffic: **${purchase.gb || 10}** GB\n━━━━━━━━━━━━━━\n\n🔗 Your subscription link:\n\`${subLink}\`\n\n💡 Copy this link and add it to your app.\n\n🙏 Thank you for your purchase!`;
-                        await fetch(`${tgApi}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: purchase.chatId, text: approvedMsg, parse_mode: 'Markdown' }) }).catch(()=>{});
-                    } else {
-                        answerText = "❌ Not found";
-                    }
-                    }
-                } else if (data.startsWith("admin_reject_purchase:")) {
-                    const purchaseId = data.replace("admin_reject_purchase:", "");
-                    const idx = (sysConfig.pendingPurchases || []).findIndex(p => p.id === purchaseId);
-                    if (idx >= 0) {
-                        const purchase = sysConfig.pendingPurchases[idx];
-                        sysConfig.pendingPurchases.splice(idx, 1);
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        answerText = t("admin_rejected_ok") || "❌ Rejected";
-                        await sendOrEdit(chatId, `${t("admin_rejected_ok") || "🗑 Rejected."}\n👤 @${purchase.tgName}`, { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
-                        const rejectedMsg = t("user_rejected") || "❌ Your purchase receipt was rejected.";
-                        await fetch(`${tgApi}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: purchase.chatId, text: rejectedMsg, parse_mode: 'Markdown' }) }).catch(()=>{});
-                    } else {
-                        answerText = "❌ Not found";
-                    }
                 }
-
-                // v5.1.0: Admin trial users management
-                if (data === "admin_trial_users") {
-                    const usedTrials = sysConfig.usedTrials || [];
-                    const userAccounts = sysConfig.userAccounts || [];
-                    if (usedTrials.length === 0) {
-                        await sendOrEdit(chatId, t("admin_trial_empty") || "🧪 No trial users yet.", { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
-                    } else {
-                        let trialText = (t("admin_trial_title") || "🧪 Trial Users") + "\n━━━━━━━━━━━━━━\n";
-                        const keyboard = [];
-                        for (const tUser of usedTrials) {
-                            const u = (sysConfig.users || []).find(usr => usr.id === tUser.userId || usr.name === tUser.name);
-                            const uName = u ? u.name : (tUser.name || tUser.userId);
-                            trialText += `👤 ${uName}\n🆔 ${tUser.userId}\n📅 ${new Date(tUser.createdAt || tUser.date || Date.now()).toLocaleDateString()}\n━━━━━━━━━━━━━━\n`;
-                            keyboard.push([{ text: "🗑 " + uName, callback_data: "admin_delete_trial_user:" + tUser.userId }]);
-                        }
-                        keyboard.push([{ text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]);
-                        await sendOrEdit(chatId, trialText, { inline_keyboard: keyboard }, messageId);
-                    }
-                    answerText = "✅ Done";
-
-                    // ---- NEW SERVICE MANAGEMENT CALLBACKS ----
-                    } else if (data.startsWith("user_renew_service:")) {
-                            // Service renewal - start renewal/purchase flow for this service
-                            const renewServiceId = data.split(":")[1];
-                            const renewUser = (sysConfig.users || []).find(u => u.id === renewServiceId);
-                            if (renewUser) {
-                                await sendOrEdit(chatId, fa3
-                                    ? `🔄 **تمدید سرویس**\
-\
-📋 <b>سرویس:</b> ${esc(renewUser.name)}\n🆔 <b>شناسه:</b> <code>${renewUser.id}</code>\n\nبرای تمدید این سرویس، یکی از پکیج‌های زیر را انتخاب کنید:`
-                                    : `🔄 **Renew Service**\
-\
-📋 <b>Service:</b> ${esc(renewUser.name)}\n🆔 <b>ID:</b> <code>${renewUser.id}</code>\n\nChoose a package to renew:`,
-                                    { inline_keyboard: [
-                                        [{ text: fa3 ? "📦 پکیج‌های موجود" : "📦 View Packages", callback_data: "user_buy" }],
-                                        [{ text: fa3 ? "🔙 بازگشت" : "🔙 Back", callback_data: "user_get_link:" + renewUser.subHash }],
-                                        [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]
-                                    ]}, messageId);
-                            }
-                    } else if (data.startsWith("user_pause_service:")) {
-                            const pauseServiceId = data.split(":")[1];
-                            const pauseUser = (sysConfig.users || []).find(u => u.id === pauseServiceId);
-                            if (pauseUser) {
-                                pauseUser.isPaused = !pauseUser.isPaused;
-                                if (!pauseUser.isPaused) { pauseUser.disabledReason = null; pauseUser.disabledAt = null; }
-                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                answerText = fa3 ? (pauseUser.isPaused ? "⏸️ سرویس متوقف شد" : "▶️ سرویس فعال شد") : (pauseUser.isPaused ? "⏸️ Service paused" : "▶️ Service resumed");
-                                await sendOrEdit(chatId, fa3
-                                    ? `\${pauseUser.isPaused ? '⏸️' : '✅'} **${pauseUser.isPaused ? 'سرویس متوقف شد' : 'سرویس فعال شد'}**\
-\
-📋 <b>سرویس:</b> ${esc(pauseUser.name)}`
-                                    : `\${pauseUser.isPaused ? '⏸️' : '✅'} **${pauseUser.isPaused ? 'Service Paused' : 'Service Active'}**\
-\
-📋 <b>Service:</b> ${esc(pauseUser.name)}`,
-                                    { inline_keyboard: [
-                                        [{ text: fa3 ? "🔙 جزئیات" : "🔙 Details", callback_data: "user_get_link:" + pauseUser.subHash }],
-                                        [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]
-                                    ]}, messageId);
-                            }
-                    } else if (data.startsWith("user_delete_service:")) {
-                            const delServiceId = data.split(":")[1];
-                            const delUser = (sysConfig.users || []).find(u => u.id === delServiceId);
-                            if (delUser) {
-                                // Soft delete - mark as deleted
-                                delUser.isDeleted = true;
-                                delUser.deletedAt = Date.now();
-                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                answerText = fa3 ? "🗑️ سرویس حذف شد" : "🗑️ Service deleted";
-                                await sendOrEdit(chatId, fa3
-                                    ? `🗑️ **سرویس حذف شد**\
-\
-📋 <b>سرویس:</b> ${esc(delUser.name)}\n🆔 <b>شناسه:</b> <code>${delUser.id}</code>\n\nاین سرویس غیرفعال و از لیست شما حذف شد.`
-                                    : `🗑️ **Service Deleted**\
-\
-📋 <b>Service:</b> ${esc(delUser.name)}\n🆔 <b>ID:</b> <code>${delUser.id}</code>\n\nThis service has been deactivated and removed.`,
-                                    { inline_keyboard: [[{ text: fa3 ? "🔙 خدمات من" : "🔙 My Services", callback_data: "user_my_services" }], [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]] }, messageId);
-                            }
-                    } else if (data === "user_support") {
-                            // Support contact
-                            const supportText = sysConfig.botSupportUsername 
-                                ? (fa3 ? `\n\n👤 <b>پشتیبانی:</b> @${sysConfig.botSupportUsername}` : `\n\n👤 <b>Support:</b> @${sysConfig.botSupportUsername}`)
-                                : (fa3 ? `\n\n📧 لطفا با ادمین تماس بگیرید.` : `\n\n📧 Please contact the admin.`);
-                            await sendOrEdit(chatId, fa3
-                                ? `🎧 **پشتیبانی**\
-\
-━━━━━━━━━━━━━━━${supportText}`
-                                : `🎧 **Support**\
-\
-━━━━━━━━━━━━━━━${supportText}`,
-                                { inline_keyboard: [[{ text: fa3 ? "🔙 بازگشت" : "🔙 Back", callback_data: "user_my_services" }], [{ text: fa3 ? "🏠 منو" : "🏠 Menu", callback_data: "user_main_menu" }]] }, messageId);
-                } else if (data.startsWith("admin_delete_trial_user:")) {
-                    const delUserId = data.replace("admin_delete_trial_user:", "");
-                    const usedTrials = sysConfig.usedTrials || [];
-                    const idx = usedTrials.findIndex(t => t.userId === delUserId);
-                    if (idx !== -1) {
-                        const removed = usedTrials.splice(idx, 1)[0];
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        await sendOrEdit(chatId, t("admin_trial_deleted") || "✅ Trial user removed.", { inline_keyboard: [[{ text: "🧪 " + (t("trial_users") || "Trial Users"), callback_data: "admin_trial_users" }, { text: "◀️ " + t("btn_back"), callback_data: "main_menu" }]] }, messageId);
-                        ctx?.waitUntil(logActivity(env, "Trial User Deleted", `Trial user ${removed.userId || removed.name} removed by admin`).catch(()=>{}));
-                    } else {
-                        answerText = "❌ Not found";
-                    }
-                }
-
+                
                 ctx?.waitUntil(fetch(`${tgApi}/answerCallbackQuery`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4479,7 +3886,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         const newUuid = crypto.randomUUID();
                         if (isRemotePanel) {
                             const res = await remotePanelWriteAction(activePanel, 'POST', null, {
-                                key: activePanel.masterKey,
+                                key: activePanel.apiKey,
                                 name: name,
                                 trafficLimit: tReq ? tReq / 6000 : 0,
                                 dailyLimit: dReq ? dReq / 6000 : 0,
@@ -4493,9 +3900,18 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                             }
                         } else {
                             if (!sysConfig.users) sysConfig.users = [];
+                            const tgSubHash2 = await generateSubHash(newUuid);
+                            const tgRefCode2 = Math.random().toString(36).slice(2,10).toUpperCase();
                             sysConfig.users.push({
                                 id: newUuid,
                                 name: name,
+                                subHash: tgSubHash2,
+                                referralCode: tgRefCode2,
+                                walletBalance: 0,
+                                walletTransactions: [],
+                                services: [],
+                                freeTrialUsed: false,
+                                telegramId: null,
                                 limitTotalReq: tReq,
                                 limitDailyReq: dReq,
                                 expiryMs: days ? Date.now() + days * 86400000 : null,
@@ -4514,7 +3930,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     if (state.step.startsWith("sub_edit_name:")) {
                         const uuid = state.step.replace("sub_edit_name:", "");
                         if (isRemotePanel) {
-                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.masterKey, name: text });
+                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.apiKey, name: text });
                         } else if (sysConfig.users) {
                             const u = sysConfig.users.find(usr => usr.id === uuid);
                             if (u) {
@@ -4544,7 +3960,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         
                         if (isRemotePanel) {
                             await remotePanelWriteAction(activePanel, 'PUT', uuid, {
-                                key: activePanel.masterKey,
+                                key: activePanel.apiKey,
                                 trafficLimit: tReq ? tReq / 6000 : 0,
                                 dailyLimit: dReq ? dReq / 6000 : 0,
                                 expiryDays: days || 0
@@ -4599,7 +4015,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                             return new Response("OK", { status: 200 });
                         }
                         if (isRemotePanel) {
-                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.masterKey, expiryDays: days });
+                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.apiKey, expiryDays: days });
                         } else if (sysConfig.users) {
                             const u = sysConfig.users.find(usr => usr.id === uuid);
                             if (u) {
@@ -4628,7 +4044,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     if (state.step.startsWith("sub_edit_notes:")) {
                         const uuid = state.step.replace("sub_edit_notes:", "");
                         if (isRemotePanel) {
-                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.masterKey, notes: text });
+                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.apiKey, notes: text });
                         } else if (sysConfig.users) {
                             const u = sysConfig.users.find(usr => usr.id === uuid);
                             if (u) {
@@ -4652,7 +4068,7 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                             return new Response("OK", { status: 200 });
                         }
                         if (isRemotePanel) {
-                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.masterKey, maxConfigs: limit > 0 ? limit : null });
+                            await remotePanelWriteAction(activePanel, 'PUT', uuid, { key: activePanel.apiKey, maxConfigs: limit > 0 ? limit : null });
                         } else if (sysConfig.users) {
                             const u = sysConfig.users.find(usr => usr.id === uuid);
                             if (u) {
@@ -4700,14 +4116,6 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         await sendOrEdit(chatId, `✅ ${t("tg_maintenance")}: \`${text}\``, { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "tg_advanced_menu" }]] });
                         return new Response("OK", { status: 200 });
                     }
-                    if (state.step === "tg_edit_rate") {
-                        sysConfig.dataRate = text || 'نامحدود';
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ Rate: \`${sysConfig.dataRate}\``, { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "tg_advanced_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
                     if (state.step === "tg_edit_clean_ips") {
                         sysConfig.cleanIps = text || '';
                         await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
@@ -4746,112 +4154,6 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                         tgState[chatId] = null;
                         ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
                         await sendOrEdit(chatId, `✅ ${t("tg_strategy")}: \`${text}\``, { inline_keyboard: [[{ text: "◀️ " + t("btn_back"), callback_data: "tg_advanced_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    // Shop settings state handlers
-                    if (state.step === "shop_edit_trial_days") {
-                        const days = parseInt(text);
-                        if (!isNaN(days) && days > 0) { sysConfig.freeTrialDays = days; await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ ${t("shop_trial_days")||"Trial Days"}: **${sysConfig.freeTrialDays}**`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_edit_trial_gb") {
-                        const gb = parseFloat(text);
-                        if (!isNaN(gb) && gb > 0) { sysConfig.freeTrialGB = gb; await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig)); }
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ ${t("shop_trial_gb")||"Trial GB"}: **${sysConfig.freeTrialGB} GB**`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_edit_card") {
-                        sysConfig.adminCardNumber = text;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ ${t("shop_card_num")||"Card Number"}: \`${text}\``, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_edit_card_owner") {
-                        sysConfig.adminCardOwner = text;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ ${t("shop_card_owner")||"Card Owner"}: **${text}**`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_edit_welcome") {
-                        sysConfig.botWelcomeMsg = text;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ ${t("shop_welcome_set")||"Bot welcome message updated!"}`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_edit_support") {
-                        sysConfig.botSupportMsg = text;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ پیام پشتیبانی ذخیره شد!`, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_edit_theme") {
-                        sysConfig.botThemeColor = text;
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ رنگ تم ربات: \`${text}\``, { inline_keyboard: [[{ text: `◀️ ${t("btn_back")}`, callback_data: "shop_settings_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_plan_name") {
-                        tgState[chatId] = { step: "shop_plan_price", planName: text };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `➕ **${t("shop_add_plan")||"Add Plan"} — Step 2/4**\n📦 Name: **${text}**\n\n${t("shop_plan_price_prompt")||"Send plan price:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_plans_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_plan_price") {
-                        tgState[chatId] = { step: "shop_plan_days", planName: state.planName, planPrice: text };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `➕ **${t("shop_add_plan")||"Add Plan"} — Step 3/4**\n📦 Name: **${state.planName}**\n💰 Price: **${text}**\n\n${t("shop_plan_days_prompt")||"Send plan days:"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_plans_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_plan_days") {
-                        tgState[chatId] = { step: "shop_plan_gb", planName: state.planName, planPrice: state.planPrice, planDays: parseInt(text) || 30 };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `➕ **${t("shop_add_plan")||"Add Plan"} — Step 4/4**\n📦 Name: **${state.planName}**\n💰 Price: **${state.planPrice}**\n⏱ Days: **${text}**\n\n${t("shop_plan_gb_prompt")||"Send plan traffic (GB):"}`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_plans_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_plan_gb") {
-                        const newPlan = { id: crypto.randomUUID().slice(0,8), name: state.planName, price: state.planPrice, days: state.planDays, gb: parseFloat(text) || 10 };
-                        if (!sysConfig.purchaseOptions) sysConfig.purchaseOptions = [];
-                        sysConfig.purchaseOptions.push(newPlan);
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `${t("shop_plan_added")||"✅ Plan added!"}\n\n📦 **${newPlan.name}**\n💰 ${newPlan.price} | ⏱ ${newPlan.days} days | 📦 ${newPlan.gb} GB`, { inline_keyboard: [[{ text: `📋 ${t("shop_plans")||"Plans"}`, callback_data: "shop_plans_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_svc_name") {
-                        tgState[chatId] = { step: "shop_svc_emoji", svcName: text };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `➕ **افزودن سرویس — مرحله 2/3**\n📦 نام: **${text}**\n\nیک ایموجی برای سرویس ارسال کنید (مثلاً 🌐):`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_services_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_svc_emoji") {
-                        tgState[chatId] = { step: "shop_svc_desc", svcName: state.svcName, svcEmoji: text };
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `➕ **افزودن سرویس — مرحله 3/3**\n${text} نام: **${state.svcName}**\n\nتوضیحات سرویس را ارسال کنید:`, { inline_keyboard: [[{ text: `❌ ${t("btn_cancel")}`, callback_data: "shop_services_menu" }]] });
-                        return new Response("OK", { status: 200 });
-                    }
-                    if (state.step === "shop_svc_desc") {
-                        if (!sysConfig.customServices) sysConfig.customServices = [];
-                        sysConfig.customServices.push({ name: state.svcName, emoji: state.svcEmoji, description: text });
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        tgState[chatId] = null;
-                        ctx?.waitUntil(d1Put(env, "tg_bot_state", JSON.stringify(tgState)).catch(()=>{}));
-                        await sendOrEdit(chatId, `✅ سرویس اضافه شد!\n\n${state.svcEmoji} **${state.svcName}**\n${text}`, { inline_keyboard: [[{ text: `🔧 سرویس‌ها`, callback_data: "shop_services_menu" }]] });
                         return new Response("OK", { status: 200 });
                     }
                     if (state.step === "tg_edit_tg_token") {
@@ -4908,360 +4210,42 @@ const adminCallbackPrefixes = ['admin_trial_users', 'admin_delete_trial_user:', 
                     }
                 }
                 
-                // Handle user_* states even for admin users (admin testing as user)
-                const adminAsUserState = tgState[chatId];
-                if (adminAsUserState && adminAsUserState.step === 'user_awaiting_add_sub') {
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                    const faA = langCode === 'fa';
-                    let addId = text.trim();
-                    try {
-                        if (addId.startsWith('http')) {
-                            const addUrl = new URL(addId);
-                            const subParam = addUrl.searchParams.get('sub');
-                            addId = subParam ? decodeURIComponent(subParam) : addUrl.pathname.split('/').filter(Boolean).pop() || '';
-                        }
-                    } catch(e) {}
-                    addId = addId.replace(/^https?:\/\//, '').split('?')[0].split('/').pop() || addId;
-                    const addedUserA = addId && addId.length >= 3 ? (sysConfig.users || []).find(u =>
-                        u.id === addId ||
-                        u.id.replace(/-/g,'').toLowerCase() === addId.replace(/-/g,'').toLowerCase() ||
-                        u.name.toLowerCase() === addId.toLowerCase()
-                    ) : null;
-                    const adminTgId = String(chatId);
-                    if (addedUserA) {
-                        if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
-                        let uAccA = sysConfig.userAccounts.find(a => a.tgId === adminTgId);
-                        if (!uAccA) {
-                            uAccA = { tgId: adminTgId, tgName: '', firstName: 'Admin', subId: '', savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() };
-                            sysConfig.userAccounts.push(uAccA);
-                        }
-                        uAccA.subId = addedUserA.id;
-                        uAccA.lastActivity = Date.now();
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        const escA = (s) => String(s || '').replace(/[_*`[\]]/g, '\\$&');
-                        await sendOrEdit(chatId, faA
-                            ? `✅ *سرویس با موفقیت اضافه شد!*\n━━━━━━━━━━━━━━\n📛 نام: ${escA(addedUserA.name)}\n━━━━━━━━━━━━━━`
-                            : `✅ *Service added successfully!*\n━━━━━━━━━━━━━━\n📛 Name: ${escA(addedUserA.name)}\n━━━━━━━━━━━━━━`,
-                            { inline_keyboard: [[{ text: faA ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }], [{ text: faA ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
-                    } else {
-                        await sendOrEdit(chatId, faA
-                            ? "❌ **سرویس یافت نشد**\n━━━━━━━━━━━━━━\nلینک یا شناسه وارد‌شده معتبر نیست.\n\nدوباره ارسال کنید:"
-                            : "❌ **Service not found**\n━━━━━━━━━━━━━━\nThe subscription link or ID is not valid.\n\nTry again:",
-                            { inline_keyboard: [[{ text: faA ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] });
-                    }
-                    return new Response('OK', { status: 200 });
-                }
-
                 // Default message / fallback menu
                 const menu = getMainMenu(activePanel, isAuthorized);
                 await sendOrEdit(chatId, menu.text, menu.kb);
             } else {
-                // Non-admin user text message handler
-                const userTgId = String(update.message.from?.id || chatId);
-                const userTgName = update.message.from?.username || "";
-                const firstName = update.message.from?.first_name || "کاربر";
-                const fa = langCode === 'fa';
-
-                const buildUserWelcome = () => {
-                    const customWelcomeMsg = sysConfig.botWelcomeMsg;
-                    const msg = customWelcomeMsg
-                        ? customWelcomeMsg.replace('{name}', firstName)
-                        : fa
-                            ? `👋 سلام **${firstName}** عزیز!\n\n🔐 به سرویس **نهان** خوش آمدید.\n━━━━━━━━━━━━━━\n\n💡 از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`
-                            : `👋 Hello **${firstName}**!\n\n🔐 Welcome to **Nahan** service.\n━━━━━━━━━━━━━━\n\n💡 Select an option from the menu below:`;
-                    const rows = [];
-                    rows.push([{ text: fa ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }]);
-                    if (sysConfig.freeTrial) rows.push([{ text: fa ? '🎁 دریافت تست رایگان' : '🎁 Free Trial', callback_data: 'user_free_trial' }]);
-                    if (sysConfig.purchaseEnabled) rows.push([{ text: fa ? '🛒 خرید اشتراک' : '🛒 Buy Subscription', callback_data: 'user_buy' }]);
-                    rows.push([{ text: fa ? '👤 حساب کاربری من' : '👤 My Account', callback_data: 'user_my_account' }]);
-                    if (sysConfig.botSupportMsg) rows.push([{ text: fa ? '💬 پشتیبانی' : '💬 Support', callback_data: 'user_support' }]);
-                    return { msg, kb: { inline_keyboard: rows } };
-                };
-
-                if (text === '/start' || text === '/menu') {
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                    const { msg, kb } = buildUserWelcome();
-                    await sendOrEdit(chatId, msg, kb);
-                    return new Response('OK', { status: 200 });
+                if (text === "/start") {
+                    const userHint = langCode === 'fa'
+                        ? "لطفاً لینک اشتراک یا شناسه کاربری خود را ارسال کنید تا اطلاعات اشتراکتان نمایش داده شود."
+                        : "Please send your subscription link or User ID to view your subscription info.";
+                    await sendOrEdit(chatId, userHint);
+                    return new Response("OK", { status: 200 });
                 }
-
-                // Check if user is in a state (waiting for sub link input)
-                const userState = tgState[chatId];
-
-                // Handle promo code text input step
-                if (userState && userState.step === 'promo_code') {
-                    const code = text.trim().toUpperCase();
-                    const pkgIdPc = userState.pkgId;
-                    const pkgPc = (sysConfig.purchaseOptions || []).find(p => p.id === pkgIdPc) || { name: pkgIdPc, price: '—', days: 30, gb: 10 };
-                    const allCodes = sysConfig.promoCodes || [];
-                    const promoEntry = allCodes.find(c => c.code.toUpperCase() === code);
-                    const nowPc = Date.now();
-                    let promoError = null;
-                    if (!promoEntry) promoError = fa ? '❌ کد تخفیف یافت نشد.' : '❌ Promo code not found.';
-                    else if (!promoEntry.isActive) promoError = fa ? '❌ این کد تخفیف غیرفعال است.' : '❌ This promo code is inactive.';
-                    else if (promoEntry.validUntil && nowPc > promoEntry.validUntil) promoError = fa ? '❌ این کد تخفیف منقضی شده است.' : '❌ This promo code has expired.';
-                    else if (promoEntry.maxUses > 0 && promoEntry.usedCount >= promoEntry.maxUses) promoError = fa ? '❌ ظرفیت این کد تمام شده است.' : '❌ This code has reached its usage limit.';
-                    else if ((promoEntry.usedBy || []).includes(String(userTgId))) promoError = fa ? '❌ شما قبلاً از این کد استفاده کرده‌اید.' : '❌ You already used this code.';
-                    else if (promoEntry.applicablePlans && promoEntry.applicablePlans.length > 0 && !promoEntry.applicablePlans.includes(pkgIdPc)) promoError = fa ? '❌ این کد برای پکیج انتخابی معتبر نیست.' : '❌ This code is not valid for the selected package.';
-
-                    if (promoError) {
-                        await sendOrEdit(chatId, promoError + '\n\n' + (fa ? 'کد دیگری وارد کنید یا بازگشت بزنید:' : 'Try another code or go back:'),
-                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: `user_buy_package:${pkgIdPc}` }]] });
-                    } else {
-                        const dLabel = promoEntry.discountType === 'percentage'
-                            ? `${promoEntry.discountValue}%`
-                            : `${promoEntry.discountValue}`;
-                        tgState[chatId] = { step: 'user_awaiting_receipt', pkgId: pkgIdPc, promoCode: code, discountLabel: dLabel };
-                        ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                        const promoOkMsg = fa
-                            ? `✅ **کد تخفیف اعمال شد!**\n━━━━━━━━━━━━━━\n🏷️ کد: \`${code}\`\n💸 تخفیف: **${dLabel}**\n📦 پکیج: **${pkgPc.name}**\n💰 قیمت اصلی: **${pkgPc.price || '—'}**\n━━━━━━━━━━━━━━\n\n💳 **اطلاعات پرداخت:**\nشماره کارت: \`${sysConfig.adminCardNumber || '—'}\`\nصاحب حساب: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 پس از پرداخت، **عکس رسید** را ارسال کنید:`
-                            : `✅ **Promo code applied!**\n━━━━━━━━━━━━━━\n🏷️ Code: \`${code}\`\n💸 Discount: **${dLabel}**\n📦 Package: **${pkgPc.name}**\n💰 Original Price: **${pkgPc.price || '—'}**\n━━━━━━━━━━━━━━\n\n💳 **Payment Info:**\nCard: \`${sysConfig.adminCardNumber || '—'}\`\nOwner: **${sysConfig.adminCardOwner || '—'}**\n━━━━━━━━━━━━━━\n\n📸 Send a **photo of the receipt** after payment:`;
-                        await sendOrEdit(chatId, promoOkMsg, { inline_keyboard: [[{ text: fa ? '❌ انصراف' : '❌ Cancel', callback_data: 'user_buy' }]] });
-                    }
-                    return new Response('OK', { status: 200 });
+                let lookupId = text.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+                const subParamMatch = text.match(/[?&]sub=([^&]+)/);
+                if (subParamMatch) lookupId = decodeURIComponent(subParamMatch[1]);
+                if (!lookupId || lookupId.length < 3) {
+                    const userHint = langCode === 'fa'
+                        ? "لطفاً لینک اشتراک یا شناسه کاربری معتبر ارسال کنید."
+                        : "Please send a valid subscription link or User ID.";
+                    await sendOrEdit(chatId, userHint);
+                    return new Response("OK", { status: 200 });
                 }
-
-                                        // v5.3.0: Handle broadcast mode - admin sends message to all users
-                        if (sysConfig.botBroadcastMode) {
-                            const isAdminUser = String(cb.from?.id || chatId) === String(sysConfig.tgAdminId || "");
-                            if (isAdminUser && text && text !== '/cancel') {
-                                sysConfig.botBroadcastMode = false;
-                                const allUsers = sysConfig.userAccounts || [];
-                                let sentCount = 0;
-                                for (let bIdx = 0; bIdx < allUsers.length; bIdx++) {
-                                    if (allUsers[bIdx].tgId) {
-                                        try {
-                                            await fetch("https://api.telegram.org/bot"+sysConfig.tgToken+"/sendMessage", {
-                                                method: "POST", headers: {"Content-Type": "application/json"},
-                                                body: JSON.stringify({chat_id: allUsers[bIdx].tgId, text: "📢 <b>پیام ادمین</b>\n\n"+text, parse_mode: "HTML"})
-                                            });
-                                            sentCount++;
-                                        } catch(e) {}
-                                    }
-                                }
-                                const doneMsg = fa3 ? "✅ پیام به "+sentCount+" کاربر ارسال شد." : "✅ Message sent to "+sentCount+" users.";
-                                await sendOrEdit(chatId, messageId, doneMsg, { inline_keyboard: [[{ text: fa3 ? "🔙 برگشت" : "🔙 Back", callback_data: "admin_main_menu" }]] });
-                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                return;
-                            } else if (text === '/cancel') {
-                                sysConfig.botBroadcastMode = false;
-                                await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                                const cancelledMsg = fa3 ? "❌ ارسال پیام گروهی لغو شد." : "❌ Broadcast cancelled.";
-                                await sendOrEdit(chatId, messageId, cancelledMsg, { inline_keyboard: [[{ text: fa3 ? "🔙 برگشت" : "🔙 Back", callback_data: "admin_main_menu" }]] });
-                                return;
-                            }
-                        }
-if (userState && userState.step === 'user_awaiting_add_sub') {
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                    let addId = text.trim();
-                    try {
-                        if (addId.startsWith('http')) {
-                            const addUrl = new URL(addId);
-                            const subParam = addUrl.searchParams.get('sub');
-                            addId = subParam ? decodeURIComponent(subParam) : addUrl.pathname.split('/').filter(Boolean).pop() || '';
-                        }
-                    } catch(e) {}
-                    addId = addId.replace(/^https?:\/\//, '').split('?')[0].split('/').pop() || addId;
-                    const addedUser = addId && addId.length >= 3 ? (sysConfig.users || []).find(u =>
-                        u.id === addId ||
-                        u.id.replace(/-/g,'').toLowerCase() === addId.replace(/-/g,'').toLowerCase() ||
-                        u.name.toLowerCase() === addId.toLowerCase()
-                    ) : null;
-                    if (addedUser) {
-                        if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
-                        let uAcc = sysConfig.userAccounts.find(a => a.tgId === userTgId);
-                        if (!uAcc) {
-                            uAcc = { tgId: userTgId, tgName: userTgName, firstName: firstName, subId: '', savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() };
-                            sysConfig.userAccounts.push(uAcc);
-                        }
-                        uAcc.subId = addedUser.id;
-                        uAcc.lastActivity = Date.now();
-                        await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        const escU = (s) => String(s || '').replace(/[_*`[\]]/g, '\\$&');
-                        await sendOrEdit(chatId, fa
-                            ? `✅ *سرویس با موفقیت اضافه شد!*\n━━━━━━━━━━━━━━\n📛 نام: ${escU(addedUser.name)}\n━━━━━━━━━━━━━━`
-                            : `✅ *Service added successfully!*\n━━━━━━━━━━━━━━\n📛 Name: ${escU(addedUser.name)}\n━━━━━━━━━━━━━━`,
-                            { inline_keyboard: [[{ text: fa ? '📱 سرویس‌های من' : '📱 My Services', callback_data: 'user_my_services' }], [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
-                    } else {
-                        await sendOrEdit(chatId, fa
-                            ? "❌ **سرویس یافت نشد**\n━━━━━━━━━━━━━━\nلینک یا شناسه وارد‌شده معتبر نیست.\n\nدوباره ارسال کنید:"
-                            : "❌ **Service not found**\n━━━━━━━━━━━━━━\nThe subscription link or ID is not valid.\n\nTry again:",
-                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] });
-                    }
-                    return new Response('OK', { status: 200 });
-                }
-
-                // v5.1.0: User rename service handler
-                if (userState && userState.step === 'user_awaiting_rename') {
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                    const newName = text.trim().substring(0, 64);
-                    if (newName.length < 1) {
-                        await sendOrEdit(chatId, fa
-                            ? "❌ **نام نامعتبر است**\n━━━━━━━━━━━━━━\nنام سرویس باید حداقل ۱ کاراکتر باشد."
-                            : "❌ **Invalid name**\n━━━━━━━━━━━━━━\nService name must be at least 1 character.",
-                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
-                        return new Response('OK', { status: 200 });
-                    }
-                    const targetSubHash = userState.subHash || '';
-                    if (targetSubHash) {
-                        const targetUser = (sysConfig.users || []).find(u => u.subHash === targetSubHash);
-                        if (targetUser) {
-                            targetUser.name = newName;
-                            await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
-                            ctx?.waitUntil(logActivity(env, 'Service Renamed', `Service ${targetSubHash} renamed to "${newName}"`).catch(()=>{}));
-                            await sendOrEdit(chatId, fa
-                                ? `✅ **نام سرویس تغییر کرد**\n━━━━━━━━━━━━━━\nنام جدید: **${newName}**`
-                                : `✅ **Service renamed**\n━━━━━━━━━━━━━━\nNew name: **${newName}**`,
-                                { inline_keyboard: [[{ text: fa ? '📋 سرویس‌های من' : '📋 My Services', callback_data: 'user_my_services' }]] }, messageId);
-                        } else {
-                            await sendOrEdit(chatId, fa
-                                ? "❌ **سرویس یافت نشد**"
-                                : "❌ **Service not found**",
-                                { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }]] }, messageId);
-                        }
-                    } else {
-                        await sendOrEdit(chatId, fa
-                            ? "❌ **خطا**\n━━━━━━━━━━━━━━\nشناسه سرویس نامعتبر است."
-                            : "❌ **Error**\n━━━━━━━━━━━━━━\nInvalid service identifier.",
-                            { inline_keyboard: [[{ text: fa ? '◀️ بازگشت' : '◀️ Back', callback_data: 'user_my_services' }],
-                                [{ text: fa3 ? '🎯 معرفی' : '🎯 Referral', callback_data: 'user_referral' }]] }, messageId);
-                    }
-                    return new Response('OK', { status: 200 });
-                }
-
-                if (userState && userState.step === 'user_awaiting_link') {
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                }
-
-                // Try to look up subscription by sent text
-                let lookupId = text.trim();
-                // Strip URL down to sub ID
-                try {
-                    if (lookupId.startsWith('http')) {
-                        const u = new URL(lookupId);
-                        const subParam = u.searchParams.get('sub');
-                        lookupId = subParam ? decodeURIComponent(subParam) : u.pathname.split('/').filter(Boolean).pop() || '';
-                    }
-                } catch(e) {}
-                lookupId = lookupId.replace(/^https?:\/\//, '').split('?')[0].split('/').pop() || lookupId;
-
-                if (lookupId && lookupId.length >= 3) {
-                    const users = sysConfig.users || [];
-                    const matchedUser = users.find(u =>
-                        u.id === lookupId ||
-                        u.id.replace(/-/g,'').toLowerCase() === lookupId.replace(/-/g,'').toLowerCase() ||
-                        u.name.toLowerCase() === lookupId.toLowerCase()
-                    );
-                    if (matchedUser) {
-                        const u = matchedUser;
-                        const usedBytes = (u.upLink || 0) + (u.downLink || 0);
-                        const usedGB = (usedBytes / 1073741824).toFixed(2);
-                        const limitGB = u.totalTrafficLimit ? (u.totalTrafficLimit / 1073741824).toFixed(0) : '∞';
-                        const expiryDate = u.expiryMs ? new Date(u.expiryMs).toLocaleDateString('fa-IR') : '∞';
-                        const dLeft = u.expiryMs ? Math.max(0, Math.ceil((u.expiryMs - Date.now()) / 86400000)) : -1;
-                        const statusEmoji = u.isExpired ? '❌' : u.isPaused ? '⏸️' : '✅';
-                        const statusText = u.isExpired ? (fa ? 'منقضی' : 'Expired') : u.isPaused ? (fa ? 'متوقف' : 'Paused') : (fa ? 'فعال' : 'Active');
-                        const subLink = `${new URL(request.url).origin}/${encodeURI(sysConfig.subRoute || "sub")}/${u.subHash || generateSubHash(u.id)}`;
-                        // Save link to user account
-                        if (!sysConfig.userAccounts) sysConfig.userAccounts = [];
-                        let userAcc = sysConfig.userAccounts.find(a => a.tgId === userTgId);
-                        if (!userAcc) {
-                            userAcc = { tgId: userTgId, tgName: userTgName, firstName: firstName, subId: '', savedLinks: [], joinedAt: Date.now(), lastActivity: Date.now() };
-                            sysConfig.userAccounts.push(userAcc);
-                        }
-                        if (!userAcc.savedLinks) userAcc.savedLinks = [];
-                        if (!userAcc.savedLinks.includes(subLink)) {
-                            userAcc.savedLinks.push(subLink);
-                            userAcc.lastActivity = Date.now();
-                            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-                        }
-                        const pctUsed = u.totalTrafficLimit ? Math.round(usedBytes / u.totalTrafficLimit * 100) : 0;
-                        const progressBar = u.totalTrafficLimit ? ('█'.repeat(Math.round(pctUsed/10)) + '░'.repeat(10 - Math.round(pctUsed/10))) : '∞';
-                        const detailText = fa
-                            ? `📊 **وضعیت اشتراک**\n━━━━━━━━━━━━━━━━\n📛 نام: **${u.name}**\n🆔 UUID: \`${u.id}\`\n🚦 وضعیت: ${statusEmoji} ${statusText}\n━━━━━━━━━━━━━━━━\n📊 مصرف: **${usedGB}** / ${limitGB} GB\n${progressBar} ${pctUsed}%\n⏱ روز مانده: **${dLeft < 0 ? '∞' : dLeft}** روز\n📅 انقضا: ${expiryDate}\n📡 پروتکل: ${u.protocol || 'نامحدود'}\n📱 محدودیت کانفیگ: ${u.configLimit || 'نامحدود'}\n━━━━━━━━━━━━━━━━\n🔗 لینک اشتراک:\n\`${subLink}\`\n━━━━━━━━━━━━━━━━\n💾 لینک در حساب شما ذخیره شد.`
-                            : `📊 **Subscription Status**\n━━━━━━━━━━━━━━━━\n📛 Name: **${u.name}**\n🆔 UUID: \`${u.id}\`\n🚦 Status: ${statusEmoji} ${statusText}\n━━━━━━━━━━━━━━━━\n📊 Usage: **${usedGB}** / ${limitGB} GB\n${progressBar} ${pctUsed}%\n⏱ Days Left: **${dLeft < 0 ? '∞' : dLeft}** days\n📅 Expiry: ${expiryDate}\n📡 Protocol: ${u.protocol || 'Unlimited'}\n📱 Config Limit: ${u.configLimit || 'Unlimited'}\n━━━━━━━━━━━━━━━━\n🔗 Subscription Link:\n\`${subLink}\`\n━━━━━━━━━━━━━━━━\n💾 Link saved to your account.`;
-            const detailKb = { inline_keyboard: [
-                [{ text: fa ? '🔗 لینک اشتراک' : '🔗 Subscription Link', callback_data: `user_get_link:${u.id}` }],
-                [{ text: fa ? '🔄 تمدید' : '🔄 Renew', callback_data: `user_renew_service:${u.id}` }, { text: fa ? '⏸️ توقف' : '⏸️ Pause', callback_data: `user_pause_service:${u.id}` }],
-                [{ text: fa ? '✏️ تغییر نام' : '✏️ Rename', callback_data: `user_rename_service:${u.id}` }, { text: fa ? '🗑️ حذف' : '🗑️ Delete', callback_data: `user_delete_service:${u.id}` }],
-                [{ text: fa ? '🎧 پشتیبانی' : '🎧 Support', callback_data: 'user_support' }],
-                [{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]
-            ]};
-                        await sendOrEdit(chatId, detailText, detailKb);
-                        return new Response('OK', { status: 200 });
-                    }
-                }
-
-                // Default: show welcome
-                const { msg, kb } = buildUserWelcome();
-                await sendOrEdit(chatId, msg, kb);
-            }
-        } else if (update.message && update.message.photo && !isAuthorized) {
-            // Non-admin user sent a photo — treat as purchase receipt
-            const chatId = update.message.chat.id;
-            const userTgId = String(update.message.from?.id || chatId);
-            const userTgName = update.message.from?.username || String(userTgId);
-            const fa = langCode === 'fa';
-            const userState = tgState[chatId];
-
-            if (userState && userState.step === 'user_awaiting_receipt') {
-                const pkgId = userState.pkgId || '';
-                const pkg = (sysConfig.purchaseOptions || []).find(p => p.id === pkgId) || { name: pkgId, days: 30, gb: 10 };
-                const photoFileId = (update.message.photo || []).slice(-1)[0]?.file_id;
-                if (photoFileId) {
-                    if (!sysConfig.pendingPurchases) sysConfig.pendingPurchases = [];
-                    const purchaseId = crypto.randomUUID().slice(0, 8);
-                    // Mark promo code as used (before saving)
-                    if (userState.promoCode) {
-                        const usedPromo = (sysConfig.promoCodes || []).find(c => c.code.toUpperCase() === userState.promoCode.toUpperCase());
-                        if (usedPromo) {
-                            usedPromo.usedCount = (usedPromo.usedCount || 0) + 1;
-                            if (!usedPromo.usedBy) usedPromo.usedBy = [];
-                            if (!usedPromo.usedBy.includes(String(userTgId))) usedPromo.usedBy.push(String(userTgId));
-                        }
-                    }
-                    sysConfig.pendingPurchases.push({
-                        id: purchaseId,
-                        tgId: userTgId,
-                        tgName: userTgName,
-                        chatId: chatId,
-                        pkgId: pkgId,
-                        pkgName: pkg.name,
-                        days: pkg.days,
-                        gb: pkg.gb,
-                        photoFileId: photoFileId,
-                        ts: Date.now(),
-                        status: 'pending',
-                        promoCode: userState.promoCode || null,
-                        discountLabel: userState.discountLabel || null
-                    });
-                    await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
-                    tgState[chatId] = null;
-                    ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(()=>{}));
-                    const receiptConfirm = fa
-                        ? "✅ **رسید شما دریافت شد!**\n━━━━━━━━━━━━━━\n📦 پکیج: **" + pkg.name + "**\n⏳ در انتظار بررسی ادمین...\n━━━━━━━━━━━━━━\n\n💡 پس از تأیید، لینک اشتراک برای شما ارسال خواهد شد."
-                        : "✅ **Receipt Received!**\n━━━━━━━━━━━━━━\n📦 Package: **" + pkg.name + "**\n⏳ Pending admin review...\n━━━━━━━━━━━━━━\n\n💡 Your subscription link will be sent after approval.";
-                    await sendOrEdit(chatId, receiptConfirm, { inline_keyboard: [[{ text: fa ? '🏠 منوی اصلی' : '🏠 Main Menu', callback_data: 'user_main_menu' }]] });
-                    // Notify admin
-                    const adminId = sysConfig.tgAdminId || sysConfig.tgChatId;
-                    if (adminId) {
-                        const promoLine = userState.promoCode ? `\n🏷️ کد تخفیف: \`${userState.promoCode}\` (${userState.discountLabel || ''})` : '';
-                        const notifText = `📨 **درخواست خرید جدید**\n━━━━━━━━━━━━━━\n👤 کاربر: @${userTgName}\n📦 پکیج: ${pkg.name}${promoLine}\n🕒 زمان: ${new Date().toLocaleString('fa-IR')}\n━━━━━━━━━━━━━━`;
-                        const notifKb = { inline_keyboard: [
-                            [{ text: `✅ تأیید`, callback_data: `admin_approve_purchase:${purchaseId}` }, { text: `❌ رد`, callback_data: `admin_reject_purchase:${purchaseId}` }]
-                        ]};
-                        await fetch(`${tgApi}/sendPhoto`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: adminId, photo: photoFileId, caption: notifText, parse_mode: 'Markdown', reply_markup: notifKb }) }).catch(()=>{});
-                    }
+                const users = sysConfig.users || [];
+                const matchedUser = users.find(u =>
+                    u.id === lookupId ||
+                    u.id.replace(/-/g, '').toLowerCase() === lookupId.replace(/-/g, '').toLowerCase() ||
+                    u.name.toLowerCase() === lookupId.toLowerCase()
+                );
+                if (matchedUser) {
+                    const detail = getSubDetail(matchedUser.id);
+                    await sendOrEdit(chatId, detail.text, detail.kb);
                 } else {
-                    await sendOrEdit(chatId, fa ? 'لطفاً عکس واضح‌تری ارسال کنید.' : 'Please send a clear photo.');
+                    const notFound = langCode === 'fa'
+                        ? "کاربری با این شناسه یافت نشد."
+                        : "No user found with this ID.";
+                    await sendOrEdit(chatId, notFound);
                 }
-            } else {
-                await sendOrEdit(chatId, fa ? 'ابتدا از منوی خرید یک پکیج انتخاب کنید.' : 'Please select a package from the buy menu first.');
             }
         }
         return new Response("OK", { status: 200 });
@@ -5270,243 +4254,30 @@ if (userState && userState.step === 'user_awaiting_add_sub') {
     }
 }
 
-// ============================================================
-// v4.0.0: New API Handler Functions
-// ============================================================
-
-// POST /api/register
-async function handleRegisterApi(request, env, ctx) {
-    try {
-        const body = await request.json();
-        const { username, tg_id, full_name, phone, referrer_code } = body || {};
-        const validation = validateInput([
-            ["username", username, Validators.username],
-            ["tg_id", tg_id, Validators.telegramId],
-        ]);
-        if (!validation.valid) return new Response(JSON.stringify({ error: validation.error }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const userId = crypto.randomUUID();
-        const now = Date.now();
-        const existing = await env.IOT_DB.prepare("SELECT id FROM nahan_users WHERE username = ? OR tg_id = ?").bind(username, String(tg_id)).all();
-        if (existing.results && existing.results.length > 0) return new Response(JSON.stringify({ error: "Username or Telegram ID already registered" }), { status: 409, headers: { "Content-Type": "application/json" } });
-        await env.IOT_DB.prepare("INSERT INTO nahan_users (id, username, tg_id, full_name, phone, referrer_code, user_group, balance, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'normal', 0, ?, ?)")
-            .bind(userId, username, String(tg_id), full_name || "", phone || "", referrer_code || "", now, now).run();
-        const token = await signJwt({ sub: userId, username, tg_id: String(tg_id), group: "normal" }, env);
-        ctx?.waitUntil(logActivity(env, "User Registered", 'User "' + username + '" registered').catch(() => {}));
-        return new Response(JSON.stringify({ success: true, user_id: userId, token }), { status: 201, headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Registration failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// POST /api/login
-async function handleLoginApi(request, env, ctx) {
-    try {
-        const body = await request.json();
-        const { tg_id } = body || {};
-        if (!Validators.telegramId(tg_id)) return new Response(JSON.stringify({ error: "Invalid Telegram ID" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const { results } = await env.IOT_DB.prepare("SELECT * FROM nahan_users WHERE tg_id = ?").bind(String(tg_id)).all();
-        if (!results || results.length === 0) return new Response(JSON.stringify({ error: "User not found. Please register first." }), { status: 404, headers: { "Content-Type": "application/json" } });
-        const user = results[0];
-        const token = await signJwt({ sub: user.id, username: user.username, tg_id: user.tg_id, group: user.user_group }, env);
-        return new Response(JSON.stringify({ success: true, token, user: { id: user.id, username: user.username, group: user.user_group, balance: user.balance } }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Login failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET /api/profile (JWT required)
-async function handleProfileApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const { results } = await env.IOT_DB.prepare("SELECT * FROM nahan_users WHERE id = ?").bind(payload.sub).all();
-        if (!results || results.length === 0) return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
-        const user = results[0];
-        const subsResult = await env.IOT_DB.prepare("SELECT COUNT(*) as count FROM nahan_subscriptions WHERE user_id = ? AND status = 'active'").bind(user.id).all();
-        return new Response(JSON.stringify({
-            id: user.id, username: user.username, tg_id: user.tg_id, full_name: user.full_name,
-            phone: user.phone, user_group: user.user_group, balance: user.balance,
-            active_subscriptions: subsResult.results?.[0]?.count || 0, referrer_code: user.referrer_code, created_at: user.created_at
-        }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Failed to get profile" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// POST /api/wallet/charge (JWT required)
-async function handleWalletChargeApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        const body = await request.json();
-        const { amount } = body || {};
-        if (!Validators.amount(amount)) return new Response(JSON.stringify({ error: "Invalid amount" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const invoiceId = crypto.randomUUID();
-        const now = Date.now();
-        await env.IOT_DB.prepare("INSERT INTO nahan_invoices (id, user_id, amount, status, description, created_at) VALUES (?, ?, ?, 'pending', 'Wallet charge', ?)")
-            .bind(invoiceId, payload.sub, amount, now).run();
-        ctx?.waitUntil(logActivity(env, "Wallet Charge", 'User "' + payload.username + '" requested ' + amount + ' tomans').catch(() => {}));
-        return new Response(JSON.stringify({ success: true, invoice_id: invoiceId, amount, message: "Invoice created. Please complete payment." }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Charge request failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET /api/wallet/history (JWT required)
-async function handleWalletHistoryApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const { results } = await env.IOT_DB.prepare("SELECT * FROM nahan_invoices WHERE user_id = ? ORDER BY created_at DESC LIMIT 50").bind(payload.sub).all();
-        return new Response(JSON.stringify({ transactions: results || [] }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Failed to get history" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET/POST /api/subscriptions (JWT required)
-async function handleSubscriptionsApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        if (request.method === "GET") {
-            const { results } = await env.IOT_DB.prepare("SELECT * FROM nahan_subscriptions WHERE user_id = ? ORDER BY created_at DESC").bind(payload.sub).all();
-            return new Response(JSON.stringify({ subscriptions: results || [] }), { headers: { "Content-Type": "application/json" } });
-        }
-        const body = await request.json();
-        const { type, volume_gb, duration_days, price } = body || {};
-        if (!type || !["test", "premium"].includes(type)) return new Response(JSON.stringify({ error: "Invalid type" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        if (!Validators.volumeGb(volume_gb)) return new Response(JSON.stringify({ error: "Invalid volume" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        if (!Validators.days(duration_days)) return new Response(JSON.stringify({ error: "Invalid duration" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const subId = crypto.randomUUID();
-        const now = Date.now();
-        const expiresAt = now + (duration_days * 86400000);
-        await env.IOT_DB.prepare("INSERT INTO nahan_subscriptions (id, user_id, type, volume_gb, duration_days, price, status, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)")
-            .bind(subId, payload.sub, type, volume_gb, duration_days, price || 0, now, expiresAt).run();
-        ctx?.waitUntil(logActivity(env, "Subscription Created", 'User "' + payload.username + '" created ' + type + ' sub: ' + volume_gb + 'GB/' + duration_days + 'd').catch(() => {}));
-        return new Response(JSON.stringify({ success: true, subscription_id: subId, expires_at: expiresAt }), { status: 201, headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Subscription operation failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET /api/referral (JWT required)
-async function handleReferralApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const { results } = await env.IOT_DB.prepare("SELECT id, username, created_at FROM nahan_users WHERE referrer_code = (SELECT referrer_code FROM nahan_users WHERE id = ?)").bind(payload.sub).all();
-        const count = results ? results.length : 0;
-        const commission = sysConfig.referralCommission || 10;
-        return new Response(JSON.stringify({ referrals: results || [], count, commission_percent: commission }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Failed to get referrals" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// POST /api/agency (JWT required)
-async function handleAgencyApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        const body = await request.json();
-        const { description } = body || {};
-        if (!description || description.length < 10) return new Response(JSON.stringify({ error: "Description too short (min 10 chars)" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const reqId = crypto.randomUUID();
-        const now = Date.now();
-        await env.IOT_DB.prepare("INSERT INTO nahan_agency_requests (id, user_id, description, status, created_at) VALUES (?, ?, ?, 'pending', ?)")
-            .bind(reqId, payload.sub, description, now).run();
-        ctx?.waitUntil(logActivity(env, "Agency Request", 'User "' + payload.username + '" applied for agency').catch(() => {}));
-        return new Response(JSON.stringify({ success: true, request_id: reqId, message: "Agency request submitted" }), { status: 201, headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Agency request failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET /api/agency (JWT required)
-async function handleAgencyStatusApi(request, env, ctx) {
-    try {
-        const token = extractAuthJwt(request);
-        const payload = await verifyJwt(token, env);
-        if (!payload) return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const { results } = await env.IOT_DB.prepare("SELECT * FROM nahan_agency_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 10").bind(payload.sub).all();
-        return new Response(JSON.stringify({ requests: results || [] }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Failed to get agency status" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET /api/search (admin only)
-async function handleSearchApi(request, env, ctx) {
-    try {
-        const url = new URL(request.url);
-        const query = url.searchParams.get("q") || "";
-        if (!query || query.length < 2) return new Response(JSON.stringify({ error: "Query too short" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        // Check if authorized via master key or JWT admin
-        const authKey = extractAuthJwt(request) || url.searchParams.get("key") || "";
-        let isAdmin = (authKey === sysConfig.masterKey);
-        if (!isAdmin) {
-            const payload = await verifyJwt(authKey, env);
-            isAdmin = payload && payload.group === "admin";
-        }
-        if (!isAdmin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403, headers: { "Content-Type": "application/json" } });
-        await d1Init(env);
-        const { results } = await env.IOT_DB.prepare("SELECT id, username, tg_id, full_name, user_group, balance, created_at FROM nahan_users WHERE username LIKE ? OR full_name LIKE ? LIMIT 20")
-            .bind("%" + query + "%", "%" + query + "%").all();
-        return new Response(JSON.stringify({ users: results || [] }), { headers: { "Content-Type": "application/json" } });
-    } catch(e) { return new Response(JSON.stringify({ error: "Search failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-// GET/POST /api/keys (admin only) - API Key management
-async function handleApiKeys(request, env, ctx) {
-    try {
-        // Auth check
-        const url = new URL(request.url);
-        const authKey = extractAuthJwt(request) || url.searchParams.get("key") || "";
-        const data = await request.json().catch(() => ({}));
-        const bodyKey = data.key || "";
-        const finalKey = authKey || bodyKey;
-        if (finalKey !== sysConfig.masterKey && !isPanelApiKey(finalKey)) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403, headers: { "Content-Type": "application/json" } });
-        }
-        if (request.method === "GET") {
-            return new Response(JSON.stringify({ keys: sysConfig.panelApiKeys || [] }), { headers: { "Content-Type": "application/json" } });
-        }
-        if (request.method === "POST") {
-            const body = await request.json().catch(() => ({}));
-            const { name } = body || {};
-            if (!sysConfig.panelApiKeys) sysConfig.panelApiKeys = [];
-            const newKey = generateApiKey(name || "API Key " + (sysConfig.panelApiKeys.length + 1));
-            sysConfig.panelApiKeys.push(newKey);
-            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-            ctx?.waitUntil(logActivity(env, "API Key Created", 'Key "' + newKey.name + '" created').catch(() => {}));
-            return new Response(JSON.stringify({ success: true, key: newKey }), { status: 201, headers: { "Content-Type": "application/json" } });
-        }
-        if (request.method === "DELETE") {
-            const body = await request.json().catch(() => ({}));
-            const { id } = body || {};
-            if (!id) return new Response(JSON.stringify({ error: "Key ID required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-            if (!sysConfig.panelApiKeys) sysConfig.panelApiKeys = [];
-            const before = sysConfig.panelApiKeys.length;
-            sysConfig.panelApiKeys = sysConfig.panelApiKeys.filter(k => k.id !== id);
-            if (sysConfig.panelApiKeys.length === before) return new Response(JSON.stringify({ error: "Key not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
-            await cachedD1Put(env, "sys_config", JSON.stringify(sysConfig));
-            ctx?.waitUntil(logActivity(env, "API Key Deleted", 'Key deleted').catch(() => {}));
-            return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
-        }
-        return new Response("405", { status: 405 });
-    } catch(e) { return new Response(JSON.stringify({ error: "API key operation failed" }), { status: 500, headers: { "Content-Type": "application/json" } }); }
-}
-
-async function processTelemetryStream(env, ctx) {
+async function processTelemetryStream(env, ctx, wsRelayIdx) {
     const [client, webSocket] = Object.values(new WebSocketPair());
     webSocket.accept();
     webSocket.binaryType = "arraybuffer";
-    startDataPipe(webSocket, env, ctx);
+    startDataPipe(webSocket, env, ctx, wsRelayIdx);
     return new Response(null, { status: 101, webSocket: client });
 }
 
-async function startDataPipe(webSocket, env, ctx) {
+async function startDataPipe(webSocket, env, ctx, wsRelayIdx) {
     activeConnections++;
-    webSocket.addEventListener('close', () => activeConnections--);
-    webSocket.addEventListener('error', () => activeConnections--);
+    webSocket.addEventListener('close', () => {
+        activeConnections--;
+        if (activeClientHash) {
+            let cur = activeConns.get(activeClientHash) || 0;
+            if (cur > 0) activeConns.set(activeClientHash, cur - 1);
+        }
+    });
+    webSocket.addEventListener('error', () => {
+        activeConnections--;
+        if (activeClientHash) {
+            let cur = activeConns.get(activeClientHash) || 0;
+            if (cur > 0) activeConns.set(activeClientHash, cur - 1);
+        }
+    });
     let remoteSocket, dataWriter, isInit = true, queue = Promise.resolve();
     let activeClientHash = null;
     webSocket.addEventListener("message", (event) => {
@@ -5514,7 +4285,7 @@ async function startDataPipe(webSocket, env, ctx) {
             try {
                 if (isInit) {
                     isInit = false;
-                    const isModeAlpha = await parseSensorData(event.data);
+                    const isModeAlpha = await parseSensorData(event.data, wsRelayIdx);
                     if (isModeAlpha) webSocket.send(new Uint8Array([0, 0]));
                 } else if (dataWriter) {
                     await dataWriter.write(event.data);
@@ -5523,7 +4294,7 @@ async function startDataPipe(webSocket, env, ctx) {
         });
     });
 
-    async function parseSensorData(bufferData) {
+    async function parseSensorData(bufferData, wsRelayIdx) {
         const view = new Uint8Array(bufferData);
         let targetAddr = "", targetPort = 0, offset = 0, isModeAlpha = false, activeProfile = null;
 
@@ -5558,6 +4329,15 @@ async function startDataPipe(webSocket, env, ctx) {
             }
             trackUsage(activeClientHash, 0, env, ctx);
             
+            if (activeProfile && activeProfile.connLimit) {
+                let currentConns = activeConns.get(activeClientHash) || 0;
+                if (currentConns >= activeProfile.connLimit) {
+                    webSocket.close();
+                    return isModeAlpha;
+                }
+                activeConns.set(activeClientHash, currentConns + 1);
+            }
+            
             let uTrack = uuidUsage.get(activeClientHash) || { connects: 0, last: 0 };
             uTrack.connects++;
             uTrack.last = Date.now();
@@ -5589,14 +4369,28 @@ async function startDataPipe(webSocket, env, ctx) {
                 activeProfile = getAllProfiles().find(p => getTrojanHash(p.id) === clientHashHex);
                 if (!activeProfile) return false;
                 activeClientHash = activeProfile.id.replace(/-/g, '').toLowerCase();
+                if (wsRelayIdx >= 0) {
+                    const effectivePips = getEffectivePips(activeProfile);
+                    if (effectivePips.length > 0) {
+                        activeProfile = { ...activeProfile, proxyIp: effectivePips[wsRelayIdx % effectivePips.length] };
+                    }
+                }
             }
             trackUsage(activeClientHash, 0, env, ctx);
+            if (activeProfile && activeProfile.connLimit) {
+                let currentConns = activeConns.get(activeClientHash) || 0;
+                if (currentConns >= activeProfile.connLimit) {
+                    webSocket.close();
+                    return isModeAlpha;
+                }
+                activeConns.set(activeClientHash, currentConns + 1);
+            }
             let uTrack = uuidUsage.get(activeClientHash) || { connects: 0, last: 0 };
             uTrack.connects++;
             uTrack.last = Date.now();
             uuidUsage.set(activeClientHash, uTrack);
 
-            let hPos = ePos + 2; hPos++; hPos++;
+            let hPos = ePos + 2; hPos++;
             let aType = view[hPos]; hPos++; let aLen = 0;
 
             if (aType === 1) { aLen = 4; targetAddr = view.slice(hPos, hPos + aLen).join("."); }
@@ -5605,7 +4399,7 @@ async function startDataPipe(webSocket, env, ctx) {
 
             hPos += aLen;
             targetPort = new DataView(bufferData.slice(hPos, hPos + 2)).getUint16(0);
-            offset = hPos + 2;
+            offset = hPos + 4;
         }
 
         let isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(targetAddr) || /^[a-zA-Z0-9-]+$/.test(targetAddr);
@@ -5784,7 +4578,7 @@ function getAllProfiles(targetSub = null) {
                 if (usr.lastDay === new Date().toISOString().split('T')[0] && usr.dReqs >= u.limitDailyReq) skip = true;
             }
             if(!skip) {
-                list.push({ id: u.id, name: u.name, proxyIp: u.proxyIp, cleanIp: u.cleanIp || null, userMode: u.userMode || null, userPorts: u.userPorts || null, maxConfigs: u.maxConfigs || null, proxyIpGeo: u.proxyIpGeo || null, userNodes: u.userNodes || null, nat64: u.nat64 || null });
+                list.push({ id: u.id, name: u.name, proxyIp: u.proxyIp, cleanIp: u.cleanIp || null, userMode: u.userMode || null, userPorts: u.userPorts || null, maxConfigs: u.maxConfigs || null, proxyIpGeo: u.proxyIpGeo || null, userNodes: u.userNodes || null, nat64: u.nat64 || null, connLimit: u.connLimit || null, userPanelUrl: u.userPanelUrl || null });
                 registerConfigEntry(u.id, u.id, u.proxyIp || '');
             }
         });
@@ -5796,9 +4590,33 @@ function getAllProfiles(targetSub = null) {
     return list;
 }
 
+// Returns the hostname of a linked panel URL (strips scheme/path/port). The
+// linkedPanels API system (cross-panel sync) is untouched; here we only read
+// its URLs as extra parallel node hosts, restoring 2.6 "parallel node" behavior.
+function linkedPanelHost(p) {
+    let raw = (p && typeof p === 'object') ? (p.url || '') : (p || '');
+    raw = String(raw).trim();
+    if (!raw) return '';
+    raw = raw.replace(/^[a-zA-Z]+:\/\//, '');   // drop scheme
+    raw = raw.split('/')[0];                     // drop path
+    raw = raw.split('@').pop();                  // drop credentials
+    if (raw.startsWith('[')) {                    // [ipv6]:port
+        return raw.slice(0, raw.indexOf(']') + 1);
+    }
+    return raw.split(':')[0];                     // drop port
+}
+
+// Combined parallel-node host list = slaveNodes (legacy) + linkedPanels URLs (2.9 API).
+function getGlobalNodeHosts() {
+    let hosts = [];
+    if (sysConfig.slaveNodes) hosts.push(...sysConfig.slaveNodes.split(/[\r\n,;]+/).map(s=>s.trim()).filter(Boolean));
+    if (Array.isArray(sysConfig.linkedPanels)) hosts.push(...sysConfig.linkedPanels.map(linkedPanelHost).filter(Boolean));
+    return [...new Set(hosts)];
+}
+
 function buildSingleUri(hostName) {
     let allHostNames = [hostName];
-    if (sysConfig.slaveNodes) allHostNames.push(...sysConfig.slaveNodes.split(/[\r\n,;]+/).map(s=>s.trim()).filter(Boolean));
+    allHostNames.push(...getGlobalNodeHosts());
     let finalHost = allHostNames[0];
     let finalIP = getCleanIps(finalHost)[0];
     let ports = sysConfig.socketPorts ? sysConfig.socketPorts.split(',').map(s=>s.trim()).filter(Boolean) : ["443"];
@@ -6025,11 +4843,12 @@ function calcEffectiveIps(ips, maxCfg, effectiveMode, effectivePorts) {
 }
 
 function getProfileHostNames(hostName, profile) {
-    let names = [hostName];
+    let primaryHost = (profile && profile.userPanelUrl) ? profile.userPanelUrl : hostName;
+    let names = [primaryHost];
     if (profile && profile.userNodes) {
         names.push(...profile.userNodes.split(/[\r\n,;]+/).map(s=>s.trim()).filter(Boolean));
-    } else if (sysConfig.slaveNodes) {
-        names.push(...sysConfig.slaveNodes.split(/[\r\n,;]+/).map(s=>s.trim()).filter(Boolean));
+    } else {
+        names.push(...getGlobalNodeHosts());
     }
     return names;
 }
@@ -6102,9 +4921,13 @@ async function buildUriProfile(hostName, targetSub = null, allowInsecure = false
                         lines.push(`${getAlpha()}://${configUuid}@${ip}:${port}?${extBase}#${vName}`);
                     }
                     if (effectiveMode === "beta" || effectiveMode === "both") {
-                        let configUuid = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(configUuid, p.id, selectedProxyIp || '');
-                        lines.push(`${getBeta()}://${configUuid}@${ip}:${port}?${extBase}#${tName}`);
+                        let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
+                        let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
+                        let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
+                        let trojanExtBase = `encryption=none&security=${sec}&sni=${hName}&fp=${sysConfig.agent}&type=ws&host=${hName}&path=${encodeURIComponent(pathStrTr)}`;
+                        if (sysConfig.enableOpt2) trojanExtBase += `&pbk=enabled`;
+                        trojanExtBase += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
+                        lines.push(`${getBeta()}://${p.id}@${ip}:${port}?${trojanExtBase}#${tName}`);
                     }
                     if (sysConfig.enableDirectConfigs && pips.length > 0) {
                         configIndex++;
@@ -6116,9 +4939,13 @@ async function buildUriProfile(hostName, targetSub = null, allowInsecure = false
                             lines.push(`${getAlpha()}://${configUuid}@${ip}:${port}?${extBase}#${dvName}`);
                         }
                         if (effectiveMode === "beta" || effectiveMode === "both") {
-                            let configUuid = generateConfigUuid(p.id, configIndex);
-                            registerConfigEntry(configUuid, p.id, '');
-                            lines.push(`${getBeta()}://${configUuid}@${ip}:${port}?${extBase}#${dtName}`);
+                            let randomJunk2 = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
+                            let payloadTr2 = { junk: randomJunk2, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
+                            let pathStrTr2 = "/" + btoa(JSON.stringify(payloadTr2));
+                            let trojanExtBase2 = `encryption=none&security=${sec}&sni=${hName}&fp=${sysConfig.agent}&type=ws&host=${hName}&path=${encodeURIComponent(pathStrTr2)}`;
+                            if (sysConfig.enableOpt2) trojanExtBase2 += `&pbk=enabled`;
+                            trojanExtBase2 += `&allowInsecure=${allowInsecure ? "1" : "0"}`;
+                            lines.push(`${getBeta()}://${p.id}@${ip}:${port}?${trojanExtBase2}#${dtName}`);
                         }
                     }
                     configIndex++;
@@ -6131,6 +4958,7 @@ async function buildUriProfile(hostName, targetSub = null, allowInsecure = false
 
 async function buildYamlProfile(hostName, targetSub = null, allowInsecure = false) {
     let ports = sysConfig.socketPorts ? sysConfig.socketPorts.split(',').map(s=>s.trim()).filter(Boolean) : ["443"];
+    let reqPath = encodeURI(`/${sysConfig.apiRoute}`);
     let proxies = [];
     let proxyNames = [];
     let nameCounts = {}; // Track proxy names for deduplication
@@ -6200,12 +5028,10 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
                         let tName = getConfigName("beta", p.name, port, hName, ip, selectedProxyIp, configIndex, ipName);
                         tName = getUniqueName(tName);
                         proxyNames.push(`"${tName}"`);
-                        let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
-                        let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [] };
+                        let randomJunkTr = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
+                        let payloadTr = { junk: randomJunkTr, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                         let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-                        let configUuid2 = generateConfigUuid(p.id, configIndex);
-                        registerConfigEntry(configUuid2, p.id, selectedProxyIp || '');
-                        proxies.push(`- name: "${tName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: ${configUuid2}\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrTr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
+                        proxies.push(`- name: "${tName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrTr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
                     }
                     configIndex++;
                     if (sysConfig.enableDirectConfigs && pips.length > 0) {
@@ -6224,11 +5050,12 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
                             let dtName = getUniqueName(getConfigName("beta", p.name, port, hName, ip, null, dcIndex, ipName));
                             proxyNames.push(`"${dtName}"`);
                             let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
-                            let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [] };
+                            let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                             let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-                            let configUuid2 = generateConfigUuid(p.id, dcIndex);
-                            registerConfigEntry(configUuid2, p.id, '');
-                            proxies.push(`- name: "${dtName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: ${configUuid2}\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrTr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
+                            let randomJunkDt = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
+                            let payloadDt = { junk: randomJunkDt, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: dcIndex };
+                            let pathStrDt = "/" + btoa(JSON.stringify(payloadDt));
+                            proxies.push(`- name: "${dtName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrDt}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
                         }
                         configIndex++;
                     }
@@ -6464,7 +5291,7 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                         dynamicTags.push(tagStr);
 
                         let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
-                        let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [] };
+                        let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                         let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
 
                         let configUuid2 = generateConfigUuid(p.id, configIndex);
@@ -6478,7 +5305,7 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                             "ip-version": "ipv4-prefer",
                             "tfo": sysConfig.enableOpt1 || false,
                             "udp": true,
-                            "password": configUuid2,
+                            "password": p.id,
                             "packet-encoding": "xudp",
                             "tls": sec,
                             "sni": hName,
@@ -6521,11 +5348,11 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                             let tagStr = getUniqueName(getConfigName("beta", p.name, port, hName, ip, null, configIndex, ipName));
                             dynamicTags.push(tagStr);
                             let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
-                            let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [] };
+                            let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                             let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
                             let configUuid2 = generateConfigUuid(p.id, configIndex);
                             registerConfigEntry(configUuid2, p.id, '');
-                            let ob = { "name": tagStr, "type": k_tr_mode, "server": ip, "port": parseInt(port), "ip-version": "ipv4-prefer", "tfo": sysConfig.enableOpt1 || false, "udp": true, "password": configUuid2, "packet-encoding": "xudp", "tls": sec, "sni": hName, "client-fingerprint": sysConfig.agent || "random", "skip-cert-verify": allowInsecure, "alpn": ["http/1.1"], "network": "ws", "ws-opts": { "path": pathStrTr, "max-early-data": 2560, "early-data-header-name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
+                            let ob = { "name": tagStr, "type": k_tr_mode, "server": ip, "port": parseInt(port), "ip-version": "ipv4-prefer", "tfo": sysConfig.enableOpt1 || false, "udp": true, "password": p.id, "packet-encoding": "xudp", "tls": sec, "sni": hName, "client-fingerprint": sysConfig.agent || "random", "skip-cert-verify": allowInsecure, "alpn": ["http/1.1"], "network": "ws", "ws-opts": { "path": pathStrTr, "max-early-data": 2560, "early-data-header-name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
                             if (sysConfig.enableOpt2) ob["ech-opts"] = { "enable": true, "config": "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=" };
                             proxiesArr.push(ob);
                         }
@@ -6784,7 +5611,7 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                         dynamicTags.push(tagStr);
 
                         let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
-                        let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [] };
+                        let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                         let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
 
                         let configUuid2 = generateConfigUuid(p.id, configIndex);
@@ -6796,7 +5623,7 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                             "server": ip,
                             "server_port": parseInt(port),
                             "tcp_fast_open": sysConfig.enableOpt1 || false,
-                            "password": configUuid2,
+                            "password": p.id,
                             "network": "tcp",
                             "tls": {
                                 "enabled": sec,
@@ -6837,11 +5664,11 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                             let tagStr = getUniqueName(getConfigName("beta", p.name, port, hName, ip, null, configIndex, ipName));
                             dynamicTags.push(tagStr);
                             let randomJunk = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
-                            let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [] };
+                            let payloadTr = { junk: randomJunk, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                             let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
                             let configUuid2 = generateConfigUuid(p.id, configIndex);
                             registerConfigEntry(configUuid2, p.id, '');
-                            let ob = { "type": k_tr_mode, "tag": tagStr, "server": ip, "server_port": parseInt(port), "tcp_fast_open": sysConfig.enableOpt1 || false, "password": configUuid2, "network": "tcp", "tls": { "enabled": sec, "server_name": hName, "insecure": allowInsecure, "alpn": ["http/1.1"], "utls": { "enabled": true, "fingerprint": "randomized" } }, "transport": { "type": "ws", "path": pathStrTr, "max_early_data": 2560, "early_data_header_name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
+                            let ob = { "type": k_tr_mode, "tag": tagStr, "server": ip, "server_port": parseInt(port), "tcp_fast_open": sysConfig.enableOpt1 || false, "password": p.id, "network": "tcp", "tls": { "enabled": sec, "server_name": hName, "insecure": allowInsecure, "alpn": ["http/1.1"], "utls": { "enabled": true, "fingerprint": "randomized" } }, "transport": { "type": "ws", "path": pathStrTr, "max_early_data": 2560, "early_data_header_name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
                             outboundsArr.push(ob);
                         }
                         configIndex++;
@@ -7066,7 +5893,15 @@ function getDashboardUI(hasDB) {
   <html lang="en" class="dark">
   <head>
       <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+      <meta name="apple-mobile-web-app-capable" content="yes">
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+      <meta name="mobile-web-app-capable" content="yes">
+      <meta name="theme-color" content="#0d1117">
+      <meta name="apple-mobile-web-app-title" content="Nahan">
+      <meta name="format-detection" content="telephone=no">
+      <meta name="msapplication-tap-highlight" content="no">
+      <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%236366f1'/><text x='50' y='62' font-size='40' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>N</text></svg>">
       <title>Nahan Gateway</title>
       <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap" rel="stylesheet">
       <script src="https://cdn.tailwindcss.com"></script>
@@ -7111,6 +5946,10 @@ function getDashboardUI(hasDB) {
           .login-btn { transition: box-shadow 0.2s, transform 0.2s; }
           .login-btn:hover { box-shadow: 0 6px 32px rgba(99,102,241,0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important; transform: translateY(-1px); }
           .login-btn:not(:hover) { box-shadow: 0 4px 24px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.1); transform: translateY(0); }
+          @media (max-width: 767px) {
+              .login-btn { transition: transform 0.12s ease, box-shadow 0.2s; }
+              .login-btn:active { transform: scale(0.96) !important; box-shadow: 0 2px 12px rgba(99,102,241,0.3) !important; }
+          }
           .icon-btn { transition: color 0.15s, border-color 0.15s; }
           .icon-btn:hover { color: #818cf8 !important; }
           .eye-btn { transition: color 0.15s; }
@@ -7142,6 +5981,11 @@ function getDashboardUI(hasDB) {
               background: #f8fafc !important;
               background-color: #f8fafc !important;
               color: #0f172a !important;
+          }
+          @media (max-width: 767px) {
+              html:not(.dark) header {
+                  background: rgba(248, 250, 252, 0.85) !important;
+              }
           }
           html:not(.dark) #login-box, html:not(.dark) #dash-box {
               background: #f8fafc !important;
@@ -7279,14 +6123,129 @@ function getDashboardUI(hasDB) {
           .nav-item:hover { background: rgba(255, 255, 255, 0.02) !important; }
           .mobile-nav-item.active { color: #818cf8; }
           .dark .mobile-nav-item.active { color: #818cf8; }
+
+          /* ===== NATIVE MOBILE APP STYLES ===== */
+
+          /* Disable text selection and tap highlights for app-like feel */
+          @media (max-width: 767px) {
+              *, *::before, *::after {
+                  -webkit-tap-highlight-color: transparent;
+              }
+              html {
+                  overscroll-behavior: none;
+                  -webkit-text-size-adjust: 100%;
+              }
+              body {
+                  overscroll-behavior: none;
+                  -webkit-overflow-scrolling: touch;
+                  touch-action: manipulation;
+              }
+          }
+
+          /* Native bottom tab bar */
+          @media (max-width: 767px) {
+              .mobile-bottom-nav {
+                  background: rgba(13, 17, 23, 0.85) !important;
+                  backdrop-filter: saturate(180%) blur(20px) !important;
+                  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+                  border-top: 0.5px solid rgba(255, 255, 255, 0.08) !important;
+              }
+              html:not(.dark) .mobile-bottom-nav {
+                  background: rgba(255, 255, 255, 0.85) !important;
+                  backdrop-filter: saturate(180%) blur(20px) !important;
+                  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+                  border-top: 0.5px solid rgba(0, 0, 0, 0.1) !important;
+              }
+          }
+
+          /* Native tab bar item */
+          @media (max-width: 767px) {
+              .mobile-tab-item {
+                  position: relative;
+                  transition: color 0.15s ease;
+                  padding: 4px 0;
+              }
+              .mobile-tab-item.active {
+                  color: #818cf8;
+              }
+              .mobile-tab-item.active::before {
+                  content: '';
+                  position: absolute;
+                  top: -1px;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  width: 20px;
+                  height: 2px;
+                  background: #818cf8;
+                  border-radius: 1px;
+              }
+              .mobile-tab-item svg {
+                  width: 22px;
+                  height: 22px;
+                  transition: transform 0.15s ease;
+              }
+              .mobile-tab-item.active svg {
+                  transform: scale(1.08);
+              }
+              .mobile-tab-item span {
+                  font-size: 10px;
+                  font-weight: 600;
+                  letter-spacing: 0.01em;
+              }
+          }
+
+          /* Native save bar for mobile */
+          @media (max-width: 767px) {
+              .mobile-save-bar {
+                  background: rgba(13, 17, 23, 0.9) !important;
+                  backdrop-filter: saturate(180%) blur(20px) !important;
+                  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+                  border-top: 0.5px solid rgba(255, 255, 255, 0.08) !important;
+                  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+              }
+              html:not(.dark) .mobile-save-bar {
+                  background: rgba(255, 255, 255, 0.92) !important;
+                  backdrop-filter: saturate(180%) blur(20px) !important;
+                  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+                  border-top: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+              }
+          }
+
+          /* Smooth momentum scrolling for scroll containers */
+          @media (max-width: 767px) {
+              .scroll-content {
+                  -webkit-overflow-scrolling: touch;
+                  scroll-behavior: smooth;
+                  overscroll-behavior-y: contain;
+              }
+              .native-press {
+                  transition: transform 0.12s ease, opacity 0.12s ease;
+              }
+              .native-press:active {
+                  transform: scale(0.96);
+                  opacity: 0.85;
+              }
+          }
+
+          /* Native status bar padding at very top */
+          @media (max-width: 767px) {
+              .dash-box-native {
+                  padding-top: env(safe-area-inset-top, 0px) !important;
+              }
+          }
+
+          /* Remove scrollbar on mobile for cleaner look */
+          @media (max-width: 767px) {
+              ::-webkit-scrollbar { width: 0; height: 0; }
+          }
       </style>
   </head>
   <body class="text-slate-800 dark:text-slate-200 h-[100dvh] flex flex-col md:flex-row overflow-hidden selection:bg-primary selection:text-white transition-colors duration-300 bg-slate-50 dark:bg-darkbg">
 
       <!-- Global Controls -->
       <div class="fixed top-4 end-4 md:top-5 md:end-5 flex items-center gap-2 z-50">
-          <span id="top-version-badge" class="px-3 py-1.5 rounded-xl text-[11px] font-mono font-bold" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);color:#818cf8;">v${CURRENT_VERSION}</span>
-          <a href="https://github.com/itsyebekhe/nahan" id="github-link-btn" target="_blank" class="btn-top-bar p-2 rounded-xl transition-all" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;">
+          <span id="top-version-badge" class="hidden md:inline-block px-3 py-1.5 rounded-xl text-[11px] font-mono font-bold" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);color:#818cf8;">v${CURRENT_VERSION}</span>
+          <a href="https://github.com/itsyebekhe/nahan" id="github-link-btn" target="_blank" class="hidden md:inline-flex btn-top-bar p-2 rounded-xl transition-all" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
           </a>
           <button onclick="toggleLang()" id="lang-toggle" class="btn-top-bar px-3 py-1.5 rounded-xl text-sm font-bold transition-all" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">EN</button>
@@ -7351,7 +6310,7 @@ function getDashboardUI(hasDB) {
       </div>
 
       <!-- DASHBOARD CONTAINER -->
-      <div id="dash-box" class="hidden w-full h-full flex-col md:flex-row relative">
+      <div id="dash-box" class="hidden w-full h-full flex-col md:flex-row relative dash-box-native" style="padding-top: env(safe-area-inset-top, 0px);">
           
           <!-- SIDEBAR (Desktop) -->
           <aside class="hidden md:flex w-64 bg-white dark:bg-darkcard border-e border-slate-200 dark:border-darkborder flex-col z-20 shrink-0">
@@ -7391,10 +6350,6 @@ function getDashboardUI(hasDB) {
                       <svg class="w-6 h-6 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                       <span class="font-semibold" data-i18n="tab_users">Users</span>
                   </button>
-                  <button onclick="switchTab('shop')" id="tab-shop" class="nav-item flex items-center w-full px-4 py-3 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 group">
-                      <svg class="w-6 h-6 me-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-4H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                      <span class="font-semibold">Shop</span>
-                  </button>
               </nav>
               <div class="p-4 border-t border-slate-100 dark:border-darkborder/50">
                   <button onclick="logout()" class="flex items-center justify-center w-full px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors">
@@ -7406,8 +6361,8 @@ function getDashboardUI(hasDB) {
   
           <!-- MAIN CONTENT AREA -->
           <main class="flex-1 flex flex-col h-full overflow-hidden">
-              <header class="h-20 md:h-24 shrink-0 flex items-center px-6 md:px-10 z-10 pt-4 md:pt-0">
-                  <h2 id="view-title" class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white mt-2">Overview</h2>
+              <header class="h-14 md:h-24 shrink-0 flex items-center px-4 md:px-10 z-10 pt-[env(safe-area-inset-top,0px)] md:pt-0" style="background:rgba(13,17,23,0.75);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);">
+                  <h2 id="view-title" class="text-lg md:text-3xl font-black text-slate-800 dark:text-white mt-0 md:mt-2">Overview</h2>
               </header>
   
               <!-- Scrollable Content -->
@@ -7470,35 +6425,35 @@ function getDashboardUI(hasDB) {
                       <div id="view-overview" class="space-y-3 md:space-y-6 block">
                           <!-- User Summary Cards -->
                           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center justify-between mb-1 md:mb-2">
                                       <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="ov_total_users">Total Users</span>
                                       <div class="p-1.5 md:p-2 bg-primary/10 text-primary rounded-md md:rounded-lg"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656-.126-1.283-.356-1.857M12 4.354a4 4 0 110 5.292"></path></svg></div>
                                   </div>
                                   <p id="ov-total-users" class="text-xl md:text-2xl font-black text-slate-800 dark:text-white">-</p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center justify-between mb-1 md:mb-2">
                                       <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="ov_active_users">Active</span>
                                       <div class="p-1.5 md:p-2 bg-emerald-500/10 text-emerald-500 rounded-md md:rounded-lg"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
                                   </div>
                                   <p id="ov-active-users" class="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400">-</p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center justify-between mb-1 md:mb-2">
                                       <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="ov_paused_users">Paused</span>
                                       <div class="p-1.5 md:p-2 bg-amber-500/10 text-amber-500 rounded-md md:rounded-lg"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
                                   </div>
                                   <p id="ov-paused-users" class="text-xl md:text-2xl font-black text-amber-600 dark:text-amber-400">-</p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center justify-between mb-1 md:mb-2">
                                       <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="ov_auto_disabled">Auto-Disabled</span>
                                       <div class="p-1.5 md:p-2 bg-red-500/10 text-red-500 rounded-md md:rounded-lg"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg></div>
                                   </div>
                                   <p id="ov-auto-disabled" class="text-xl md:text-2xl font-black text-red-600 dark:text-red-400">-</p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center justify-between mb-1 md:mb-2">
                                       <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="ov_expired_users">Expired</span>
                                       <div class="p-1.5 md:p-2 bg-slate-500/10 text-slate-500 rounded-md md:rounded-lg"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
@@ -7509,33 +6464,33 @@ function getDashboardUI(hasDB) {
 
                           <!-- Traffic & System Cards -->
                           <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
                                       <div class="p-1.5 md:p-2.5 bg-violet-500/10 text-violet-500 rounded-lg md:rounded-xl"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg></div>
-                                      <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_total_traffic">Total Traffic</span>
+                                       <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_total_traffic">Total Traffic</span>
                                   </div>
                                    <p id="ov-total-traffic" class="text-base md:text-xl font-black text-slate-800 dark:text-white">- GB</p>
                                   <p class="text-[9px] md:text-[10px] text-slate-400 mt-0.5 md:mt-1"><span id="ov-total-reqs">-</span> <span data-i18n="ov_requests">requests</span></p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
                                       <div class="p-1.5 md:p-2.5 bg-cyan-500/10 text-cyan-500 rounded-lg md:rounded-xl"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
-                                      <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_today_traffic">Today's Traffic</span>
+                                       <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_today_traffic">Today's Traffic</span>
                                   </div>
                                   <p id="ov-today-traffic" class="text-base md:text-xl font-black text-slate-800 dark:text-white">- GB</p>
                                   <p class="text-[9px] md:text-[10px] text-slate-400 mt-0.5 md:mt-1"><span id="ov-today-reqs">-</span> <span data-i18n="ov_requests">requests</span></p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
                                       <div class="p-1.5 md:p-2.5 bg-blue-500/10 text-blue-500 rounded-lg md:rounded-xl"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"></path></svg></div>
-                                      <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_active_conns">Active Connections</span>
+                                       <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_active_conns">Active Connections</span>
                                   </div>
                                   <p id="ov-active-conns" class="text-base md:text-xl font-black text-slate-800 dark:text-white">-</p>
                               </div>
-                              <div class="bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
+                              <div class="native-press bg-white dark:bg-darkcard rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <div class="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
                                       <div class="p-1.5 md:p-2.5 bg-indigo-500/10 text-indigo-500 rounded-lg md:rounded-xl"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div>
-                                      <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_system">System</span>
+                                       <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="ov_system">System</span>
                                   </div>
                                   <p id="ov-version" class="text-base md:text-xl font-black text-slate-800 dark:text-white">-</p>
                               </div>
@@ -7557,21 +6512,21 @@ function getDashboardUI(hasDB) {
                               <div class="bg-white dark:bg-darkcard rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-darkborder">
                                   <h3 class="text-xs md:text-sm uppercase font-bold text-slate-500 tracking-wider mb-3 md:mb-4" data-i18n="ov_quick_actions">Quick Actions</h3>
                                   <div class="grid grid-cols-2 gap-2 md:grid-cols-1 md:gap-3">
-                                      <button onclick="openAddUserModal()" class="flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
-                                          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                          <span data-i18n="ov_add_user">Add User</span>
+                                       <button onclick="openAddUserPage()" class="native-press flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
+                                           <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                           <span data-i18n="ov_add_user">Add User</span>
+                                       </button>
+                                       <button onclick="switchTab('users')" class="native-press flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
+                                           <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                           <span data-i18n="ov_manage_users">Manage Users</span>
                                       </button>
-                                      <button onclick="switchTab('users')" class="flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
-                                          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                                          <span data-i18n="ov_manage_users">Manage Users</span>
-                                      </button>
-                                      <button onclick="exportConfig()" class="flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
-                                          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                          <span data-i18n="ov_backup_config">Backup Config</span>
-                                      </button>
-                                      <button onclick="loadDashboard()" class="flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
-                                          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                          <span data-i18n="ov_refresh">Refresh Statistics</span>
+                                       <button onclick="exportConfig()" class="native-press flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
+                                           <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                           <span data-i18n="ov_backup_config">Backup Config</span>
+                                       </button>
+                                       <button onclick="loadDashboard()" class="native-press flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors">
+                                           <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                           <span data-i18n="ov_refresh">Refresh Statistics</span>
                                       </button>
                                   </div>
                               </div>
@@ -7824,10 +6779,31 @@ function getDashboardUI(hasDB) {
                                            </label>
                                        </div>
                                    </div>
-                               </div>
+                                </div>
 
-                               <!-- Import/Export Config Area -->
-                              <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder md:col-span-2 space-y-4">
+                                <!-- API Keys Management -->
+                                <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder md:col-span-2 space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                                🔑 <span data-i18n="lbl_api_keys">Panel API Keys</span>
+                                            </h3>
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1" data-i18n="desc_api_keys">Generate API keys to securely connect remote panels. Remote panels use these keys instead of sharing your master key.</p>
+                                        </div>
+                                        <button onclick="generateApiKey()" class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:opacity-90 transition-opacity" data-i18n="btn_generate_key">Generate Key</button>
+                                    </div>
+                                    <div id="api-keys-list" class="space-y-2"></div>
+                                    <div id="api-key-new" class="hidden bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 space-y-2">
+                                        <p class="text-xs font-bold text-emerald-700 dark:text-emerald-400" data-i18n="api_key_created">API Key Created! Copy it now — it won't be shown again.</p>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="api-key-value" readonly class="flex-1 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg text-xs font-mono border border-emerald-300 dark:border-emerald-700 text-slate-700 dark:text-slate-300">
+                                            <button onclick="copyApiKey()" class="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700">Copy</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Import/Export Config Area -->
+                               <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder md:col-span-2 space-y-4">
                                   <h3 class="text-sm uppercase font-bold text-slate-400 tracking-wider" data-i18n="backup_restore_title">Backup & Restore</h3>
                                   <div class="flex flex-col sm:flex-row gap-4">
                                       <button onclick="exportConfig()" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-colors text-sm" data-i18n="export_btn">
@@ -7902,10 +6878,6 @@ function getDashboardUI(hasDB) {
                                       <div class="space-y-1">
                                           <label class="block text-sm font-bold text-slate-600 dark:text-slate-300" data-i18n="lbl_relay">Proxy IPs (Comma/Newline separated)</label>
                                           <textarea id="cfg-relay" rows="3" placeholder="104.20.0.1&#10;proxyip.cmliussss.net" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary focus:ring-1 outline-none font-mono text-sm resize-none"></textarea>
-                                      </div>
-                                      <div class="space-y-1">
-                                          <label class="block text-sm font-bold text-slate-600 dark:text-slate-300" data-i18n="lbl_fake">Maintenance Hosts (Camouflage)</label>
-                                          <input type="text" id="cfg-fake" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
                                       </div>
                                       <div class="space-y-1">
                                           <label class="block text-sm font-bold text-slate-600 dark:text-slate-300" data-i18n="lbl_nat64">NAT64 Prefix</label>
@@ -7998,32 +6970,48 @@ function getDashboardUI(hasDB) {
 
                           <!-- Section: Cluster -->
                           <div class="bg-indigo-50 dark:bg-indigo-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 overflow-hidden" data-accordion>
-                              <button onclick="toggleAccordion(this)" class="w-full flex items-center justify-between px-5 py-4 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-colors">
-                                  <div class="flex items-center gap-3">
-                                      <span class="text-lg">🔬</span>
-                                      <span class="text-sm font-bold text-indigo-700 dark:text-indigo-300" data-i18n="slave_title">Slave Worker Nodes</span>
+                               <button onclick="toggleAccordion(this)" class="w-full flex items-center justify-between px-5 py-4 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-colors">
+                                   <div class="flex items-center gap-3">
+                                       <span class="text-lg">🔬</span>
+                                       <span class="text-sm font-bold text-indigo-700 dark:text-indigo-300" data-i18n="other_nodes_title">Other Nodes</span>
+                                   </div>
+                                   <svg class="w-4 h-4 text-indigo-400 transform transition-transform duration-200 accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                               </button>
+                               <div data-accordion-content class="transition-all duration-300" style="max-height:0;overflow:hidden;visibility:hidden">
+                                   <div class="space-y-3 px-5 pb-5 pt-1">
+                                       <p class="text-xs text-indigo-600/80 dark:text-indigo-300/70 leading-relaxed" data-i18n="other_nodes_desc">External nodes (URL + API Key) for cross-panel management.</p>
+                                       <div class="flex items-center justify-between">
+                                           <div id="linked-nodes-list" class="space-y-2 flex-1"></div>
+                                       </div>
+                                       <button onclick="showAddNodeModal()" type="button" class="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 hover:border-indigo-500 dark:hover:border-indigo-500 text-indigo-500 dark:text-indigo-400 text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
+                                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                           <span data-i18n="add_node_confirm">Add Node</span>
+                                       </button>
+                                   </div>
+                               </div>
+                           </div>
+
+                          <!-- Modal: Add Other Node -->
+                           <div id="modal-add-node" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 pb-4 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+                               <div class="bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[calc(100vh-2rem)] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-darkborder">
+                                  <div class="px-6 pt-6 pb-4">
+                                      <h3 class="text-lg font-bold" data-i18n="add_node_title">Add External Node</h3>
+                                      <p class="text-xs text-slate-400 mt-1" data-i18n="add_node_desc">Enter the URL and API Key of the external panel.</p>
                                   </div>
-                                  <svg class="w-4 h-4 text-indigo-400 transform transition-transform duration-200 accordion-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                              </button>
-                              <div data-accordion-content class="transition-all duration-300" style="max-height:0;overflow:hidden;visibility:hidden">
-                                  <div class="space-y-3 px-5 pb-5 pt-1">
-                                      <p class="text-xs text-indigo-600/80 dark:text-indigo-300/70 leading-relaxed" data-i18n="slave_desc">Enter your other worker Domains (one per line). Master will push settings and users to them automatically, and include them in load-balanced subscriptions!</p>
-                                      <div class="relative">
-                                          <textarea id="cfg-nodes" rows="3" placeholder="node1.worker.dev&#10;node2.domain.com" class="w-full px-4 py-3 pb-12 rounded-xl border border-indigo-200 dark:border-indigo-800/50 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-1 outline-none font-mono text-sm resize-none text-slate-700 dark:text-slate-300 placeholder:text-indigo-300 dark:placeholder:text-indigo-800/50"></textarea>
-                                          <div class="absolute bottom-3 end-3">
-                                              <button onclick="forceSyncNodes()" type="button" class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center shadow-sm">
-                                                  <svg id="sync-icon" class="w-3.5 h-3.5 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                                  <span id="sync-btn-txt" data-i18n="force_sync">Force Sync Now</span>
-                                              </button>
-                                          </div>
+                                   <div class="px-6 pb-4 space-y-4 overflow-y-auto flex-1 min-h-0">
+                                      <div>
+                                          <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="add_node_url">Node URL</label>
+                                          <input type="text" id="add-node-url" placeholder="node.example.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono">
                                       </div>
-                                      <label class="flex items-center justify-between cursor-pointer bg-white dark:bg-slate-800/50 p-3 rounded-2xl">
-                                          <span class="text-sm font-bold text-slate-700 dark:text-slate-300" data-i18n="lbl_allow_sync">Allow Sync</span>
-                                          <div class="relative inline-flex items-center cursor-pointer">
-                                              <input type="checkbox" id="cfg-allow-sync" class="sr-only peer">
-                                              <div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-500 peer-checked:bg-primary"></div>
-                                          </div>
-                                      </label>
+                                      <div>
+                                          <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="add_node_apikey">API Key</label>
+                                          <input type="password" id="add-node-apikey" placeholder="nahan_..." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono pe-12">
+                                          <button type="button" onclick="const n=document.getElementById('add-node-apikey');n.type=n.type==='password'?'text':'password'" class="absolute end-14 mt-[-36px] px-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">👁️</button>
+                                      </div>
+                                  </div>
+                                  <div class="px-6 py-4 border-t border-slate-200 dark:border-darkborder flex justify-end gap-2">
+                                      <button onclick="document.getElementById('modal-add-node').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm" data-i18n="btn_cancel">Cancel</button>
+                                      <button onclick="commitAddNode()" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-sm" data-i18n="add_node_confirm">Add Node</button>
                                   </div>
                               </div>
                           </div>
@@ -8158,388 +7146,243 @@ function getDashboardUI(hasDB) {
                               </div>
                           </div>
 
-                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder relative overflow-hidden">
-                              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-6 gap-4">
-                                  <div>
-                                       <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider" data-i18n="sub_directory_title">Subscriber Directory</h3>
-                                       <p class="text-xs text-slate-400 mt-1" data-i18n="sub_directory_desc">Search, modify bounds, toggle traffic limits or clear billing sessions.</p>
-                                  </div>
-                                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                                      <select id="user-status-filter" onchange="renderUsersTable()" class="bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder px-4 py-2.5 rounded-xl text-xs outline-none font-sans text-slate-600 dark:text-slate-400 focus:border-primary">
-                                          <option value="all" data-i18n="filter_all">All Users</option>
-                                          <option value="active" data-i18n="filter_active">Active</option>
-                                          <option value="paused" data-i18n="filter_paused">Paused</option>
-                                          <option value="auto-disabled" data-i18n="filter_auto_disabled">Auto-Disabled</option>
-                                      </select>
-                                      <input type="text" id="user-search-input" onkeyup="renderUsersTable()" placeholder="🔍 Find by Name or UUID..." data-i18n="user_search_placeholder" class="bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder px-4 py-2.5 rounded-xl text-xs outline-none font-sans text-slate-600 dark:text-slate-400 focus:border-primary">
-                                      <button onclick="openAddUserModal()" class="px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors shadow-sm" data-i18n="btn_add_user">+ Add New User</button>
-                                  </div>
-                              </div>
+                          <div class="bg-white dark:bg-darkcard rounded-3xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-darkborder relative overflow-hidden">
+                              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                                   <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider" data-i18n="sub_directory_title">Subscriber Directory</h3>
+                                   <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                       <select id="user-status-filter" onchange="renderUsersTable()" class="bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder px-3 py-2.5 rounded-xl text-xs outline-none font-sans text-slate-600 dark:text-slate-400 focus:border-primary">
+                                           <option value="all" data-i18n="filter_all">All Users</option>
+                                           <option value="active" data-i18n="filter_active">Active</option>
+                                           <option value="paused" data-i18n="filter_paused">Paused</option>
+                                           <option value="auto-disabled" data-i18n="filter_auto_disabled">Auto-Disabled</option>
+                                       </select>
+                                       <input type="text" id="user-search-input" onkeyup="renderUsersTable()" placeholder="🔍 Find by Name or UUID..." data-i18n="user_search_placeholder" class="bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder px-3 py-2.5 rounded-xl text-xs outline-none font-sans text-slate-600 dark:text-slate-400 focus:border-primary">
+                                       <button onclick="openAddUserPage()" class="native-press px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors shadow-sm whitespace-nowrap" data-i18n="btn_add_user">+ Add New User</button>
+                                   </div>
+                               </div>
                               <div class="overflow-x-auto">
                                   <div id="tbl-users" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                   </div>
                               </div>
                           </div>
-                      </div>
+                       </div>
 
-                      <!-- Modal: Add User -->
-                      <div id="modal-add-user" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-                          <div class="bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-darkborder">
-                              <div class="px-6 pt-6 pb-4 shrink-0">
-                                  <h3 class="text-xl font-bold" data-i18n="modal_add_title">Add User</h3>
-                              </div>
-                              <div class="overflow-y-auto flex-1 min-h-0 px-6 pb-4">
-                                  <div class="space-y-3">
-                                      <details open class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_basic_info">Basic Info</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_u_name">Name / Identifier</label>
-                                                  <input type="text" id="add-user-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_custom_config_name">Custom Config Name / Prefix</label>
-                                                  <input type="text" id="add-user-custom-name" placeholder="Leave empty to use user name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
-                                              </div>
-                                          </div>
-                                      </details>
-                                      <details open class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_limits">Limits</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div class="grid grid-cols-2 gap-3">
-                                                  <div>
-                                                      <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_traffic_limit_gb">Traffic (GB) Limit</label>
-                                                      <input type="number" id="add-user-total-reqs" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                                  </div>
-                                                  <div>
-                                                      <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_daily_limit_gb">Daily Limit (GB)</label>
-                                                      <input type="number" id="add-user-daily-reqs" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                                  </div>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_expiration_days">Expiration (Days)</label>
-                                                  <input type="number" id="add-user-days" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                              </div>
-                                          </div>
-                                      </details>
-                                      <details class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_network">Network</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_clean_ips">Clean IPs</label>
-                                                  <div id="add-user-clean-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
-                                                  <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_clean_ips_modal">Custom Clean IPs (comma/newline)</label>
-                                                  <textarea id="add-user-custom-clean" rows="1" placeholder="e.g. 1.2.3.4, 5.6.7.8" class="w-full mt-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_proxy_ips">Proxy IPs</label>
-                                                  <div id="add-user-proxy-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
-                                                  <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_proxy_ips">Custom Proxy IPs (comma/newline)</label>
-                                                  <textarea id="add-user-custom-proxy" rows="1" placeholder="e.g. proxy1.com:443" class="w-full mt-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_assigned_nodes">Assigned Nodes</label>
-                                                  <div id="add-user-nodes-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
-                                                  <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_assigned_nodes">Custom Nodes (comma/newline, empty = all nodes)</label>
-                                                  <textarea id="add-user-custom-nodes" rows="1" placeholder="node1.example.com" class="w-full mt-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_nat64">NAT64 Prefix</label>
-                                                  <input type="text" id="add-user-nat64" placeholder="e.g. 64:ff9b::/96" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono">
-                                                  <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_nat64_user">Optional. Converts IPv4 Proxy IPs to NAT64 IPv6 addresses.</p>
-                                              </div>
-                                          </div>
-                                      </details>
-                                      <details class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_advanced">Advanced</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_protocol_mode">Protocol Mode</label>
-                                                  <div id="add-user-mode-wrap" class="flex gap-3 mt-1">
-                                                      <label class="flex items-center gap-1.5 text-sm cursor-pointer"><input type="checkbox" value="alpha" class="add-mode-cb accent-primary"> <span>Alpha (VLESS)</span></label>
-                                                      <label class="flex items-center gap-1.5 text-sm cursor-pointer"><input type="checkbox" value="beta" class="add-mode-cb accent-primary"> <span>Beta (Trojan)</span></label>
-                                                  </div>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1">Ports</label>
-                                                  <div id="add-user-ports-wrap" class="flex flex-wrap gap-2 mt-1"></div>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_max_configs">Max Configs</label>
-                                                  <input type="number" id="add-user-max-configs" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" data-i18n-placeholder="unlimited">
-                                              </div>
-                                          </div>
-                                      </details>
-                                  </div>
-                              </div>
-                              <div class="px-6 py-4 shrink-0 border-t border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard sm:rounded-b-3xl pb-[env(safe-area-inset-bottom)]">
-                                  <div class="flex justify-end gap-2">
-                                      <button onclick="document.getElementById('modal-add-user').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold" data-i18n="btn_cancel">Cancel</button>
-                                      <button onclick="commitAddUser()" class="px-4 py-2 rounded-xl bg-primary text-white font-bold" data-i18n="save_btn_user">Save User</button>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
+                       <!-- PAGE: Add User -->
+                       <div id="view-add-user" class="hidden h-full flex flex-col">
+                           <div class="bg-white dark:bg-darkcard rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 dark:border-darkborder overflow-hidden flex flex-col flex-1 min-h-0">
+                               <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-200 dark:border-darkborder shrink-0">
+                                   <button onclick="closeAddUserPage()" class="native-press p-2 -ms-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                       <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                                   </button>
+                                   <h3 class="text-lg font-bold text-slate-800 dark:text-white" data-i18n="modal_add_title">Add User</h3>
+                               </div>
+                               <div class="overflow-y-auto flex-1 min-h-0 p-5 space-y-5">
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_basic_info">Basic Info</h4>
+                                       <div class="space-y-3">
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_u_name">Name / Identifier</label>
+                                               <input type="text" id="add-user-name" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_custom_config_name">Custom Config Name / Prefix</label>
+                                               <input type="text" id="add-user-custom-name" placeholder="Leave empty to use user name" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_limits">Limits</h4>
+                                       <div class="space-y-3">
+                                           <div class="grid grid-cols-2 gap-3">
+                                               <div>
+                                                   <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_traffic_limit_gb">Traffic (GB) Limit</label>
+                                                   <input type="number" id="add-user-total-reqs" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                               </div>
+                                               <div>
+                                                   <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_daily_limit_gb">Daily Limit (GB)</label>
+                                                   <input type="number" id="add-user-daily-reqs" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                               </div>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_expiration_days">Expiration (Days)</label>
+                                               <input type="number" id="add-user-days" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_conn_limit">IP Connection Limit</label>
+                                               <input type="number" id="add-user-conn-limit" placeholder="Unlimited" min="1" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" data-i18n-placeholder="unlimited">
+                                               <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_conn_limit">Max simultaneous connections per IP. Leave empty for unlimited.</p>
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_network">Network</h4>
+                                       <div class="space-y-3">
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_clean_ips">Clean IPs</label>
+                                               <div id="add-user-clean-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
+                                               <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_clean_ips_modal">Custom Clean IPs (comma/newline)</label>
+                                               <textarea id="add-user-custom-clean" rows="2" placeholder="e.g. 1.2.3.4, 5.6.7.8" class="w-full mt-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_proxy_ips">Proxy IPs</label>
+                                               <div id="add-user-proxy-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
+                                               <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_proxy_ips">Custom Proxy IPs (comma/newline)</label>
+                                               <textarea id="add-user-custom-proxy" rows="2" placeholder="e.g. proxy1.com:443" class="w-full mt-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_assigned_nodes">Assigned Nodes</label>
+                                               <div id="add-user-nodes-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
+                                               <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_assigned_nodes">Custom Nodes (comma/newline, empty = all nodes)</label>
+                                               <textarea id="add-user-custom-nodes" rows="2" placeholder="node1.example.com" class="w-full mt-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_user_panel_url">Main Panel URL (Custom Nodes)</label>
+                                               <input type="text" id="add-user-panel-url" placeholder="e.g. panel.example.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                               <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_user_panel_url">Main panel domain for custom nodes. If empty, default panel URL is used.</p>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_nat64">NAT64 Prefix</label>
+                                               <input type="text" id="add-user-nat64" placeholder="e.g. 64:ff9b::/96" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono">
+                                               <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_nat64_user">Optional. Converts IPv4 Proxy IPs to NAT64 IPv6 addresses.</p>
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_advanced">Advanced</h4>
+                                       <div class="space-y-3">
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_protocol_mode">Protocol Mode</label>
+                                               <div id="add-user-mode-wrap" class="flex gap-4 mt-1">
+                                                   <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="alpha" class="add-mode-cb accent-primary"> <span>Alpha (VLESS)</span></label>
+                                                   <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="beta" class="add-mode-cb accent-primary"> <span>Beta (Trojan)</span></label>
+                                               </div>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5">Ports</label>
+                                               <div id="add-user-ports-wrap" class="flex flex-wrap gap-2 mt-1"></div>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_max_configs">Max Configs</label>
+                                               <input type="number" id="add-user-max-configs" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" data-i18n-placeholder="unlimited">
+                                           </div>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="px-5 py-4 border-t border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard flex justify-between items-center shrink-0">
+                                   <button onclick="closeAddUserPage()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm" data-i18n="btn_cancel">Cancel</button>
+                                   <button onclick="commitAddUser()" class="native-press px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-sm" data-i18n="save_btn_user">Save User</button>
+                               </div>
+                           </div>
+                       </div>
 
-                      <!-- Modal: Edit User -->
-                      <div id="modal-edit-user" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-                          <div class="bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-darkborder">
-                              <div class="px-6 pt-6 pb-4 shrink-0">
-                                  <h3 class="text-xl font-bold" data-i18n="edit_sub">Edit Subscriber</h3>
-                                  <input type="hidden" id="edit-user-id">
-                              </div>
-                              <div class="overflow-y-auto flex-1 min-h-0 px-6 pb-4">
-                                  <div class="space-y-3">
-                                      <details open class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_basic_info">Basic Info</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_name_ph">Name / Identifier</label>
-                                                  <input type="text" id="edit-user-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_custom_config_name">Custom Config Name / Prefix</label>
-                                                  <input type="text" id="edit-user-custom-name" placeholder="Leave empty to use user name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
-                                              </div>
-                                          </div>
-                                      </details>
-                                      <details open class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_limits">Limits</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div class="grid grid-cols-2 gap-3">
-                                                  <div>
-                                                      <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_traffic_limit_gb">Traffic Limit (GB)</label>
-                                                      <input type="number" id="edit-user-total-reqs" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                                  </div>
-                                                  <div>
-                                                      <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_daily_limit_gb">Daily Limit (GB)</label>
-                                                      <input type="number" id="edit-user-daily-reqs" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                                  </div>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_expiration_days">Expiration (Days)</label>
-                                                  <input type="number" id="edit-user-days" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none">
-                                              </div>
-                                          </div>
-                                      </details>
-                                      <details class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_network">Network</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_clean_ips">Clean IPs</label>
-                                                  <div id="edit-user-clean-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
-                                                  <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_clean_ips_modal">Custom Clean IPs (comma/newline)</label>
-                                                  <textarea id="edit-user-custom-clean" rows="1" placeholder="e.g. 1.2.3.4, 5.6.7.8" class="w-full mt-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_proxy_ips">Proxy IPs</label>
-                                                  <div id="edit-user-proxy-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
-                                                  <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_proxy_ips">Custom Proxy IPs (comma/newline)</label>
-                                                  <textarea id="edit-user-custom-proxy" rows="1" placeholder="e.g. proxy1.com:443" class="w-full mt-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_assigned_nodes">Assigned Nodes</label>
-                                                  <div id="edit-user-nodes-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
-                                                  <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_assigned_nodes">Custom Nodes (comma/newline, empty = all nodes)</label>
-                                                  <textarea id="edit-user-custom-nodes" rows="1" placeholder="node1.example.com" class="w-full mt-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_nat64">NAT64 Prefix</label>
-                                                  <input type="text" id="edit-user-nat64" placeholder="e.g. 64:ff9b::/96" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono">
-                                                  <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_nat64_user">Optional. Converts IPv4 Proxy IPs to NAT64 IPv6 addresses.</p>
-                                              </div>
-                                          </div>
-                                      </details>
-                                      <details class="group">
-                                          <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none list-none">
-                                              <svg class="w-3 h-3 transform transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                              <span data-i18n="section_advanced">Advanced</span>
-                                          </summary>
-                                          <div class="space-y-3 ps-5">
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_protocol_mode">Protocol Mode</label>
-                                                  <div id="edit-user-mode-wrap" class="flex gap-3 mt-1">
-                                                      <label class="flex items-center gap-1.5 text-sm cursor-pointer"><input type="checkbox" value="alpha" class="edit-mode-cb accent-primary"> <span>Alpha (VLESS)</span></label>
-                                                      <label class="flex items-center gap-1.5 text-sm cursor-pointer"><input type="checkbox" value="beta" class="edit-mode-cb accent-primary"> <span>Beta (Trojan)</span></label>
-                                                  </div>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1">Ports</label>
-                                                  <div id="edit-user-ports-wrap" class="flex flex-wrap gap-2 mt-1"></div>
-                                              </div>
-                                              <div>
-                                                  <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="lbl_max_configs">Max Configs</label>
-                                                  <input type="number" id="edit-user-max-configs" placeholder="Unlimited" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" data-i18n-placeholder="unlimited">
-                                              </div>
-                                          </div>
-                                      </details>
-                                  </div>
-                              </div>
-                              <div class="px-6 py-4 shrink-0 border-t border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard sm:rounded-b-3xl pb-[env(safe-area-inset-bottom)]">
-                                  <div class="flex justify-end gap-2">
-                                      <button onclick="document.getElementById('modal-edit-user').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold" data-i18n="btn_cancel">Cancel</button>
-                                      <button onclick="commitEditUser()" class="px-4 py-2 rounded-xl bg-primary text-white font-bold" data-i18n="btn_save_changes">Save Changes</button>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-
-                      <!-- SHOP MANAGEMENT VIEW -->
-                      <div id="view-shop" class="hidden space-y-6">
-
-                          <!-- Stats Row -->
-                          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
-                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pending</div>
-                                  <div id="shop-stat-pending" class="text-2xl font-black text-amber-500">0</div>
-                              </div>
-                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
-                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plans</div>
-                                  <div id="shop-stat-plans" class="text-2xl font-black text-primary">0</div>
-                              </div>
-                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
-                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Purchase</div>
-                                  <div id="shop-stat-purchase" class="text-2xl font-black text-emerald-500">OFF</div>
-                              </div>
-                              <div class="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-darkborder">
-                                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Free Trial</div>
-                                  <div id="shop-stat-trial" class="text-2xl font-black text-violet-500">OFF</div>
-                              </div>
-                          </div>
-
-                          <!-- Shop Settings Card -->
-                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
-                              <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-5">⚙️ Shop Settings</h3>
-                              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                  <!-- Toggle: Purchase Enabled -->
-                                  <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50">
-                                      <div>
-                                          <div class="font-bold text-sm text-slate-700 dark:text-slate-200">🛒 Purchase Enabled</div>
-                                          <div class="text-[11px] text-slate-400 mt-0.5">Allow users to buy subscriptions via bot</div>
-                                      </div>
-                                      <label class="relative inline-flex items-center cursor-pointer ms-3 shrink-0">
-                                          <input type="checkbox" id="shop-purchase-enabled" class="sr-only peer" onchange="window.nahanConfig.purchaseEnabled=this.checked; updateShopStats();">
-                                          <div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                      </label>
-                                  </div>
-                                  <!-- Toggle: Free Trial -->
-                                  <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50">
-                                      <div>
-                                          <div class="font-bold text-sm text-slate-700 dark:text-slate-200">🎁 Free Trial</div>
-                                          <div class="text-[11px] text-slate-400 mt-0.5">Allow users to get a one-time trial</div>
-                                      </div>
-                                      <label class="relative inline-flex items-center cursor-pointer ms-3 shrink-0">
-                                          <input type="checkbox" id="shop-free-trial" class="sr-only peer" onchange="window.nahanConfig.freeTrial=this.checked; updateShopStats();">
-                                          <div class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full peer peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                      </label>
-                                  </div>
-                                  <!-- Trial Days -->
-                                  <div>
-                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">⏳ Trial Duration (Days)</label>
-                                      <input type="number" id="shop-trial-days" min="1" max="30" placeholder="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" onchange="window.nahanConfig.freeTrialDays=parseInt(this.value)||3;">
-                                  </div>
-                                  <!-- Trial GB -->
-                                  <div>
-                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">📊 Trial Data Limit (GB)</label>
-                                      <input type="number" id="shop-trial-gb" min="1" max="100" placeholder="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" onchange="window.nahanConfig.freeTrialGB=parseInt(this.value)||3;">
-                                  </div>
-                                  <!-- Card Number -->
-                                  <div>
-                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">💳 Card Number</label>
-                                      <input type="text" id="shop-card-number" placeholder="6037-xxxx-xxxx-xxxx" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono" onchange="window.nahanConfig.adminCardNumber=this.value;">
-                                  </div>
-                                  <!-- Card Owner -->
-                                  <div>
-                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">👤 Card Owner Name</label>
-                                      <input type="text" id="shop-card-owner" placeholder="Full name on card" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" onchange="window.nahanConfig.adminCardOwner=this.value;">
-                                  </div>
-                                  <!-- Welcome Message -->
-                                  <div class="md:col-span-2">
-                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">👋 Bot Welcome Message</label>
-                                      <textarea id="shop-welcome-msg" rows="2" placeholder="Welcome! How can we help you today?" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm resize-none" onchange="window.nahanConfig.botWelcomeMsg=this.value;"></textarea>
-                                  </div>
-                                  <!-- Support Message -->
-                                  <div class="md:col-span-2">
-                                      <label class="block text-xs font-bold text-slate-500 mb-1.5">💬 Support Message</label>
-                                      <textarea id="shop-support-msg" rows="2" placeholder="Contact @support for help." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm resize-none" onchange="window.nahanConfig.botSupportMsg=this.value;"></textarea>
-                                  </div>
-                              </div>
-                              <div class="mt-5 flex justify-end">
-                                  <button onclick="saveShopConfig()" class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-sm transition-colors shadow-sm">
-                                      💾 Save Settings
-                                  </button>
-                              </div>
-                          </div>
-
-                          <!-- Purchase Plans Card -->
-                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
-                              <div class="flex items-center justify-between mb-5">
-                                  <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider">📦 Purchase Plans</h3>
-                                  <button onclick="addShopPlan()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs transition-colors shadow-sm">
-                                      + Add Plan
-                                  </button>
-                              </div>
-                              <div id="shop-plans-list" class="space-y-3">
-                                  <p class="text-sm text-slate-400 text-center py-4">No purchase plans configured.</p>
-                              </div>
-                          </div>
-
-                          <!-- Pending Purchases Card -->
-                          <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
-                              <div class="flex items-center justify-between mb-5">
-                                  <h3 class="text-sm uppercase font-bold text-slate-500 tracking-wider">⏳ Pending Purchases</h3>
-                                  <button onclick="renderPendingPurchases()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors">
-                                      🔄 Refresh
-                                  </button>
-                              </div>
-                              <div id="shop-pending-list" class="space-y-3">
-                                  <p class="text-sm text-slate-400 text-center py-4">No pending purchase requests.</p>
-                              </div>
-                          </div>
-
-                      <!-- Promo Codes Card -->
-                      <div class="bg-white dark:bg-darkcard rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-darkborder">
-                          <div class="flex items-center justify-between mb-5">
-                              <div class="flex items-center gap-3">
-                                  <div class="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center shrink-0">
-                                      <span class="text-lg">🏷️</span>
-                                  </div>
-                                  <div>
-                                      <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Promo Codes</h3>
-                                      <p class="text-[11px] text-slate-400">Discount codes for your users</p>
-                                  </div>
-                              </div>
-                              <button onclick="addPromoCode()" class="px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-bold text-xs transition-colors shadow-sm">
-                                  ＋ New Code
-                              </button>
-                          </div>
-                          <div id="shop-promo-list" class="space-y-3">
-                              <p class="text-sm text-slate-400 text-center py-4">No promo codes yet. Add one to offer discounts.</p>
-                          </div>
-                      </div>
-
-                      </div>
+                       <!-- PAGE: Edit User -->
+                       <div id="view-edit-user" class="hidden h-full flex flex-col">
+                           <div class="bg-white dark:bg-darkcard rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 dark:border-darkborder overflow-hidden flex flex-col flex-1 min-h-0">
+                               <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-200 dark:border-darkborder shrink-0">
+                                   <button onclick="closeEditUserPage()" class="native-press p-2 -ms-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                       <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                                   </button>
+                                   <h3 class="text-lg font-bold text-slate-800 dark:text-white" data-i18n="edit_sub">Edit Subscriber</h3>
+                                   <input type="hidden" id="edit-user-id">
+                               </div>
+                               <div class="overflow-y-auto flex-1 min-h-0 p-5 space-y-5">
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_basic_info">Basic Info</h4>
+                                       <div class="space-y-3">
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_name_ph">Name / Identifier</label>
+                                               <input type="text" id="edit-user-name" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_custom_config_name">Custom Config Name / Prefix</label>
+                                               <input type="text" id="edit-user-custom-name" placeholder="Leave empty to use user name" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_limits">Limits</h4>
+                                       <div class="space-y-3">
+                                           <div class="grid grid-cols-2 gap-3">
+                                               <div>
+                                                   <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_traffic_limit_gb">Traffic Limit (GB)</label>
+                                                   <input type="number" id="edit-user-total-reqs" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                               </div>
+                                               <div>
+                                                   <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_daily_limit_gb">Daily Limit (GB)</label>
+                                                   <input type="number" id="edit-user-daily-reqs" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                               </div>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_expiration_days">Expiration (Days)</label>
+                                               <input type="number" id="edit-user-days" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_conn_limit">IP Connection Limit</label>
+                                               <input type="number" id="edit-user-conn-limit" placeholder="Unlimited" min="1" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" data-i18n-placeholder="unlimited">
+                                               <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_conn_limit">Max simultaneous connections per user. Leave empty for unlimited.</p>
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_network">Network</h4>
+                                       <div class="space-y-3">
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_clean_ips">Clean IPs</label>
+                                               <div id="edit-user-clean-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
+                                               <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_clean_ips_modal">Custom Clean IPs (comma/newline)</label>
+                                               <textarea id="edit-user-custom-clean" rows="2" placeholder="e.g. 1.2.3.4, 5.6.7.8" class="w-full mt-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_proxy_ips">Proxy IPs</label>
+                                               <div id="edit-user-proxy-ips-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
+                                               <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_proxy_ips">Custom Proxy IPs (comma/newline)</label>
+                                               <textarea id="edit-user-custom-proxy" rows="2" placeholder="e.g. proxy1.com:443" class="w-full mt-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_assigned_nodes">Assigned Nodes</label>
+                                               <div id="edit-user-nodes-wrap" class="flex flex-wrap gap-2 mt-1 text-slate-500"></div>
+                                               <label class="block text-[10px] font-bold text-slate-400 mt-2" data-i18n="desc_assigned_nodes">Custom Nodes (comma/newline, empty = all nodes)</label>
+                                               <textarea id="edit-user-custom-nodes" rows="2" placeholder="node1.example.com" class="w-full mt-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm"></textarea>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_user_panel_url">Main Panel URL (Custom Nodes)</label>
+                                               <input type="text" id="edit-user-panel-url" placeholder="e.g. panel.example.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm">
+                                               <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_user_panel_url">Main panel domain for custom nodes. If empty, default panel URL is used.</p>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_nat64">NAT64 Prefix</label>
+                                               <input type="text" id="edit-user-nat64" placeholder="e.g. 64:ff9b::/96" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm font-mono">
+                                               <p class="text-[10px] text-slate-400 mt-1" data-i18n="desc_nat64_user">Optional. Converts IPv4 Proxy IPs to NAT64 IPv6 addresses.</p>
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div class="space-y-4">
+                                       <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="section_advanced">Advanced</h4>
+                                       <div class="space-y-3">
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_protocol_mode">Protocol Mode</label>
+                                               <div id="edit-user-mode-wrap" class="flex gap-4 mt-1">
+                                                   <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="alpha" class="edit-mode-cb accent-primary"> <span>Alpha (VLESS)</span></label>
+                                                   <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" value="beta" class="edit-mode-cb accent-primary"> <span>Beta (Trojan)</span></label>
+                                               </div>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5">Ports</label>
+                                               <div id="edit-user-ports-wrap" class="flex flex-wrap gap-2 mt-1"></div>
+                                           </div>
+                                           <div>
+                                               <label class="block text-xs font-bold text-slate-500 mb-1.5" data-i18n="lbl_max_configs">Max Configs</label>
+                                               <input type="number" id="edit-user-max-configs" placeholder="Unlimited" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-slate-800 focus:border-primary outline-none text-sm" data-i18n-placeholder="unlimited">
+                                           </div>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="px-5 py-4 border-t border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard flex justify-between items-center shrink-0">
+                                   <button onclick="closeEditUserPage()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm" data-i18n="btn_cancel">Cancel</button>
+                                   <button onclick="commitEditUser()" class="native-press px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-sm" data-i18n="btn_save_changes">Save Changes</button>
+                               </div>
+                           </div>
+                       </div>
 
                       <!-- LOGS VIEW -->
                       <div id="view-logs" class="hidden space-y-6">
@@ -8559,45 +7402,41 @@ function getDashboardUI(hasDB) {
               </div>
   
               <!-- Save Bar (Docked to bottom of main content) -->
-              <div class="shrink-0 bg-white dark:bg-darkcard border-t border-slate-200 dark:border-darkborder p-4 flex justify-between md:justify-end items-center z-20">
+              <div class="shrink-0 bg-white dark:bg-darkcard border-t border-slate-200 dark:border-darkborder p-4 flex justify-between md:justify-end items-center z-20 mobile-save-bar">
                   <span id="save-status" class="text-sm font-bold text-slate-500 md:me-4"></span>
-                  <button onclick="doSave()" class="px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-opacity" data-i18n="save_btn">Save Config</button>
+                  <button onclick="doSave()" class="native-press px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-opacity" data-i18n="save_btn">Save Config</button>
               </div>
           </main>
   
           <!-- BOTTOM NAV (Mobile) -->
-          <nav class="md:hidden w-full h-16 bg-white dark:bg-darkcard border-t border-slate-200 dark:border-darkborder flex justify-around items-center z-30 shrink-0 pb-safe">
-              <button onclick="switchTab('overview')" id="mob-tab-overview" class="mobile-nav-item active flex flex-col items-center justify-center w-full h-full text-slate-400">
+          <nav class="md:hidden w-full mobile-bottom-nav flex justify-around items-center z-30 shrink-0" style="height:calc(4rem + env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px);">
+              <button onclick="switchTab('overview')" id="mob-tab-overview" class="mobile-tab-item mobile-nav-item active flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_overview">Home</span>
               </button>
-              <button onclick="switchTab('info')" id="mob-tab-info" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+              <button onclick="switchTab('info')" id="mob-tab-info" class="mobile-tab-item mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_info">Endpoints</span>
               </button>
-              <button onclick="switchTab('network')" id="mob-tab-network" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
-                  <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              <button onclick="switchTab('network')" id="mob-tab-network" class="mobile-tab-item mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+                  <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_status">Metrics</span>
               </button>
-              <button onclick="switchTab('settings')" id="mob-tab-settings" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+              <button onclick="switchTab('settings')" id="mob-tab-settings" class="mobile-tab-item mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_settings">System</span>
               </button>
-              <button onclick="switchTab('advanced')" id="mob-tab-advanced" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+              <button onclick="switchTab('advanced')" id="mob-tab-advanced" class="mobile-tab-item mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_adv">Network</span>
               </button>
-              <button onclick="switchTab('logs')" id="mob-tab-logs" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+              <button onclick="switchTab('logs')" id="mob-tab-logs" class="mobile-tab-item mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_logs">Logs</span>
               </button>
-              <button onclick="switchTab('users')" id="mob-tab-users" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
+              <button onclick="switchTab('users')" id="mob-tab-users" class="mobile-tab-item mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
                   <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                   <span class="text-[10px] font-bold" data-i18n="tab_users">Users</span>
-              </button>
-              <button onclick="switchTab('shop')" id="mob-tab-shop" class="mobile-nav-item flex flex-col items-center justify-center w-full h-full text-slate-400">
-                  <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-4H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                  <span class="text-[10px] font-bold">Shop</span>
               </button>
           </nav>
       </div>
@@ -8788,8 +7627,13 @@ function getDashboardUI(hasDB) {
                   lbl_u_max_config:"Max Configs",
                   login_password:"Password",
                   lbl_u_ipproxy:"User Proxy IP(s) (Optional - overrides global Clean IP, comma/newline separated)",
-                  lbl_custom_panel_url:"Custom Panel URL / Subscription Domain",
-                  v_pop_title: "Release Notice", v_pop_whatsnew: "What's New", v_pop_headline: "New Features & Improvements",
+                   lbl_custom_panel_url:"Custom Panel URL / Subscription Domain",
+                   lbl_api_keys: "Panel API Keys", desc_api_keys: "Generate API keys to securely connect remote panels. Remote panels use these keys instead of sharing your master key.",
+                   btn_generate_key: "Generate Key", api_key_created: "API Key Created! Copy it now — it won't be shown again.",
+                   api_keys_empty: "No API keys generated yet.", enter_key_name: "Enter a name for this API key:",
+                   confirm_revoke: "Revoke this API key? The remote panel will lose access.", revoke: "Revoke",
+                   created: "Created", last_used: "Last used", never: "Never",
+                   v_pop_title: "Release Notice", v_pop_whatsnew: "What's New", v_pop_headline: "New Features & Improvements",
                   v_pop_btn: "Got it!",
                   changelog_title: "Release Notes & Changelog:",
                   changelog_added: "Added", changelog_fixed: "Fixed", changelog_improved: "Improved", changelog_changed: "Changed", changelog_note: "Important Notes",
@@ -8798,8 +7642,12 @@ function getDashboardUI(hasDB) {
                   ov_system: "System", ov_recent_activity: "Recent Activity", ov_view_all: "View All →", ov_loading: "Loading...",
                    ov_quick_actions: "Quick Actions", ov_add_user: "Add User", ov_backup_config: "Backup Config", ov_refresh: "Refresh Statistics", ov_manage_users: "Manage Users",
                    ov_gb_unit: "GB",
-                   lbl_allow_sync:"Allow Sync",
-                   deploy_btn: "Deploy Now", update_deploying: "Deploying update...",
+                    lbl_allow_sync:"Allow Sync",
+                    other_nodes_title: "Other Nodes", other_nodes_desc: "External nodes (URL + API Key) for cross-panel management.",
+                    add_node_title: "Add External Node", add_node_desc: "Enter the URL and API Key of the external panel.",
+                    add_node_url: "Node URL", add_node_apikey: "API Key", add_node_confirm: "Add Node", add_node_invalid: "Please enter both URL and API Key.",
+                    node_added: "Node added successfully!", node_removed: "Node removed.",
+                    deploy_btn: "Deploy Now", update_deploying: "Deploying update...",
                    update_success: "Update successful! Reloading...", update_error: "Update failed",
                    lbl_cf_worker: "CF Worker Script Name", desc_cf_worker: "Required for in-panel updates. The script name shown in your Cloudflare Workers dashboard.",
                    view_github: "View on GitHub",
@@ -8827,6 +7675,7 @@ function getDashboardUI(hasDB) {
                     section_basic_info: "Basic Info", section_limits: "Limits", section_network: "Network", section_advanced: "Advanced",
                     lbl_nat64: "NAT64 Prefix", desc_nat64: "Optional. Converts IPv4 Proxy IPs to NAT64 IPv6 addresses. Supports multiple prefixes.",
                     lbl_direct_configs: "Include Direct Configs", desc_direct_configs: "Generate configs without Proxy IP alongside relay configs",
+                    lbl_sync_api_key: "Sync API Key (Slave Push)", desc_sync_api_key: "API key from a slave panel. Main uses this to push config. Same key must exist on each slave's Panel API Keys.",
                     lbl_auto_update: "Auto-Update", desc_auto_update: "Automatically deploy when a new version is detected",
                     lbl_auto_update_format: "Update Format", format_normal_label: "Normal", format_obfuscated_label: "Obfuscated",
                     desc_format_normal: "Standard _worker.js", desc_format_obfuscated: "XOR byte-shifting",
@@ -8837,6 +7686,8 @@ function getDashboardUI(hasDB) {
                     desc_proxy_ips: "Custom Proxy IPs (comma/newline)",
                     desc_clean_ips_modal: "Custom Clean IPs (comma/newline)",
                     btn_generate_uuid: "Generate UUID",
+                    lbl_conn_limit: "IP Connection Limit", desc_conn_limit: "Max simultaneous connections per user. Leave empty for unlimited.",
+                    lbl_user_panel_url: "Main Panel URL (Custom Nodes)", desc_user_panel_url: "Main panel domain for custom nodes. If empty, default panel URL is used.",
                     html_desc_strategy: "Supported placeholders: <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{FLAG}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{COUNTRY}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{CITY}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{ISP}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{PROTOCOL}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{USER}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{PORT}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{PREFIX}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{IP}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{HOST}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{DATE}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{INDEX}</code>, <code class='bg-slate-100 dark:bg-slate-800/80 px-1 py-0.5 rounded text-rose-500 font-mono'>{WORKER}</code>.<br><span class='text-[10px] text-slate-400 dark:text-slate-500 leading-snug'>• <b>{FLAG}</b>: Country flag emoji (e.g. 🇺🇸).<br>• <b>{COUNTRY}</b>: Country name (e.g. United States).<br>• <b>{CITY}</b>: City name (e.g. San Francisco).<br>• <b>{ISP}</b>: ISP / ASN org (e.g. Cloudflare, Inc.).<br>• <b>{PROTOCOL}</b>: Core mode (VLESS / Trojan).<br>• <b>{USER}</b>: Subscriber name.<br>• <b>{PORT}</b>: Active port.<br>• <b>{PREFIX}</b>: Custom prefix.<br>• <b>{IP}</b>: Clean IP address.<br>• <b>{HOST}</b>: Hostname.<br>• <b>{DATE}</b>: Current date (YYYY-MM-DD).<br>• <b>{INDEX}</b>: Config index (0, 1, 2...).<br>• <b>{WORKER}</b>: Worker name from config.</span><br>Pre-defined strategies: <code>default</code>, <code>type-user-port</code>, <code>user-port</code>, <code>host-port-user</code>, <code>prefix-user-port</code>, <code>ip</code>.",
                },
               fa: {
@@ -8851,8 +7702,13 @@ function getDashboardUI(hasDB) {
                   lbl_fake_configs: "ورودی‌های اطلاعاتی اشتراک", desc_fake_configs: "متن نمایشی ورودی‌ها در پروفایل اشتراک را سفارشی کنید. از {usage} و {expiry} برای مقادیر پویا استفاده کنید.", btn_add_entry: "افزودن ورودی", lbl_tg_token: "توکن ربات تلگرام", lbl_tg_chat: "شناسه عددی تلگرام", lbl_tg_admin: "شناسه مدیر تلگرام", desc_tg_admin: "فقط این شناسه کاربری تلگرام می‌تواند پنل را از طریق ربات مدیریت کند. خالی بگذارید برای استفاده از شناسه چت.", desc_tg_bot: "با تنظیم این مقادیر، جزئیات ورود به پنل به تلگرام ارسال می‌شود.",
                   lbl_cf_acc: "شناسه اکانت ابری", lbl_cf_token: "توکن دسترسی کاربری", desc_cf_api: "اختیاری: برای نمایش میزان مصرف روزانه کارگر از صد هزار درخواست رایگان در پیام‌های تلگرام.",
                   lbl_silent: "هشدار و پیغام خاموش", lbl_pause: "کلید توقف اضطراری",
-                  lbl_sub_ua: "یوزراجنت سفارشی ساب", desc_sub_ua: "درخواست‌های مرورگر که حاوی این متن باشند، استتار را خنثی کرده و مستقیم به ساب دسترسی پیدا می‌کنند.",
-                  tab_users: "کاربران",
+                   lbl_sub_ua: "یوزراجنت سفارشی ساب", desc_sub_ua: "درخواست‌های مرورگر که حاوی این متن باشند، استتار را خنثی کرده و مستقیم به ساب دسترسی پیدا می‌کنند.",
+                   lbl_api_keys: "کلیدهای API پنل", desc_api_keys: "کلیدهای API برای اتصال امن پنل‌های راهدور ایجاد کنید. پنل‌های راهدور به جای اشتراک‌گذاری کلید اصلی، از این کلیدها استفاده می‌کنند.",
+                   btn_generate_key: "ایجاد کلید", api_key_created: "کلید API ایجاد شد! آن را کپی کنید — دوباره نمایش داده نخواهد شد.",
+                   api_keys_empty: "هنوز کلید API ایجاد نشده.", enter_key_name: "نامی برای این کلید API وارد کنید:",
+                   confirm_revoke: "این کلید API لغو شود؟ پنل راهدور دسترسی خود را از دست خواهد داد.", revoke: "لغو",
+                   created: "ایجاد شده", last_used: "آخرین استفاده", never: "هرگز",
+                   tab_users: "کاربران",
                   user_mgt_title: "مدیریت کاربران", user_mgt_desc: "مدیریت کاربران متعدد، تنظیم محدودیت ترافیک، و تاریخ انقضا.", btn_add_user: "+ افزودن کاربر جدید",
                   tbl_name: "نام", tbl_uuid: "شناسه یکتا", tbl_traffic: "ترافیک (مصرفی/محدودیت)", tbl_exp: "انقضا", tbl_action: "عملیات", no_users: "کاربری یافت نشد. از دکمه بالا یک کاربر ایجاد کنید.",
                   modal_add_title: "افزودن کاربر جدید", lbl_u_name: "نام (الزامی)", lbl_u_gb: "محدودیت ترافیک (گیگابایت) - اختیاری", lbl_u_days: "مدت زمان اعتبار (روز) - اختیاری", btn_cancel: "انصراف", btn_confirm: "افزودن کاربر",
@@ -8882,6 +7738,7 @@ function getDashboardUI(hasDB) {
                     section_basic_info: "اطلاعات پایه", section_limits: "محدودیت‌ها", section_network: "شبکه", section_advanced: "پیشرفته",
                     lbl_nat64: "پیشوند NAT64", desc_nat64: "اختیاری. آی‌پی‌های پروکسی IPv4 را به آدرس‌های NAT64 IPv6 تبدیل می‌کند. چند پیشوند پشتیبانی می‌شود.",
                     lbl_direct_configs: "شامل کانفیگ‌های مستقیم", desc_direct_configs: "تولید کانفیگ‌ها بدون آی‌پی پروکسی در کنار کانفیگ‌های رله",
+                    lbl_sync_api_key: "کلید API همگام‌سازی (ارسال به اسلیو)", desc_sync_api_key: "کلید API از پنل اسلیو. پنل اصلی با این کلید کانفیگ را ارسال می‌کند. این کلید باید در کلیدهای API پنل اسلیو وجود داشته باشد.",
                     lbl_auto_update: "بروزرسانی خودکار", desc_auto_update: "دپلوی خودکار هنگام شناسایی نسخه جدید",
                     lbl_auto_update_format: "قالب بروزرسانی", format_normal_label: "معمولی", format_obfuscated_label: "مبهم‌سازی شده",
                     desc_format_normal: "استاندارد _worker.js", desc_format_obfuscated: "جابجایی بایت XOR",
@@ -8892,6 +7749,8 @@ function getDashboardUI(hasDB) {
                     desc_proxy_ips: "آی‌پی‌های پروکسی سفارشی (کاما/خط جدید)",
                     desc_clean_ips_modal: "آی‌پی‌های تمیز سفارشی (کاما/خط جدید)",
                     btn_generate_uuid: "تولید UUID",
+                    lbl_conn_limit: "محدودیت اتصال همزمان", desc_conn_limit: "حداکثر اتصالات همزمان برای هر کاربر. برای نامحدود خالی بگذارید.",
+                    lbl_user_panel_url: "آدرس پنل اصلی (نودهای سفارشی)", desc_user_panel_url: "دامنه پنل اصلی برای نودهای سفارشی. اگر خالی باشد، آدرس پنل پیش‌فرض استفاده می‌شود.",
                   metrics_live: "وضعیت زنده مصرف اتصالات و پردازش", no_metrics: "هنوز داده‌ای از تراکنش و اتصالات فعال ثبت نشده است.", run_diagnostics: "⚡ اجرای عیب‌یابی شبکه",
                   target_node: "هدف گره شبکه", response: "مدت زمان تاخیر پاسخگویی", status: "وضعیت گره", local_port: "درگاه محلی",
                   lbl_doh: "تحلیل‌گر تخصصی آدرس‌یابی عددی", lbl_strategy: "روش نام‌گذاری کانفیگ‌ها", lbl_prefix: "پیشوند نام کانفیگ‌ها",
@@ -8919,6 +7778,10 @@ function getDashboardUI(hasDB) {
                    ov_quick_actions: "عملیات سریع", ov_add_user: "افزودن کاربر", ov_backup_config: "پشتیبان‌گیری", ov_refresh: "بروزرسانی آمار", ov_manage_users: "مدیریت کاربران",
                    ov_gb_unit: "گیگابایت",
                      lbl_allow_sync:"اجازه همگام سازی",
+                     other_nodes_title: "سایر نودها", other_nodes_desc: "نودهای خارجی (URL + کلید API) برای مدیریت بین پنل‌ها.",
+                     add_node_title: "افزودن نود خارجی", add_node_desc: "آدرس URL و کلید API پنل خارجی را وارد کنید.",
+                     add_node_url: "آدرس نود", add_node_apikey: "کلید API", add_node_confirm: "افزودن نود", add_node_invalid: "لطفاً URL و کلید API را وارد کنید.",
+                     node_added: "نود با موفقیت اضافه شد!", node_removed: "نود حذف شد.",
                       deploy_btn: "هم‌اکنون نصب کن", update_deploying: "در حال نصب بروزرسانی...",
                       update_success: "بروزرسانی موفق! در حال بارگذاری...", update_error: "خطا در بروزرسانی",
                       lbl_cf_worker: "نام اسکریپت کارگر ابری", desc_cf_worker: "برای بروزرسانی خودکار الزامی است. نام اسکریپت در داشبورد کارگرهای ابری.",
@@ -8929,6 +7792,52 @@ function getDashboardUI(hasDB) {
           };
 
           const CHANGELOG_DATA = {
+              "7.4.0": {
+                  headline: { en: "Secure Sub-Links, Shop System & User Telegram Bot", fa: "لینک‌های امن اشتراک، سیستم فروشگاه و ربات تلگرام کاربری" },
+                  added: [
+                      { en: "Secure hashed subscription links (/sub/{hash}) — each user and service gets a unique 44-char SHA-256 hash link that hides their username", fa: "لینک‌های اشتراک هش‌شده امن (/sub/{hash}) — هر کاربر و سرویس یک لینک هش SHA-256 منحصربه‌فرد ۴۴ کاراکتری دریافت می‌کند" },
+                      { en: "Full shop/purchase system — admin defines packages (name, price, GB, days), users buy with wallet balance", fa: "سیستم خرید کامل — ادمین پکیج‌ها را تعریف می‌کند، کاربران با موجودی کیف پول خرید می‌کنند" },
+                      { en: "User wallet system — deposit via card transfer, admin approves/rejects via Telegram, full transaction history", fa: "سیستم کیف پول کاربری — شارژ از طریق کارت بانکی، تایید/رد توسط ادمین از طریق تلگرام، تاریخچه کامل" },
+                      { en: "Promo code system — percentage or fixed discount codes with usage limits and expiry dates", fa: "سیستم کد تخفیف — کدهای تخفیف درصدی یا ثابت با محدودیت استفاده و تاریخ انقضا" },
+                      { en: "Referral commission system — users earn wallet credit when they refer new registrations", fa: "سیستم کمیسیون معرفی — کاربران با معرفی ثبت‌نام جدید اعتبار کیف پول دریافت می‌کنند" },
+                      { en: "Free trial system — admin configures GB and days, each user can activate once via Telegram or API", fa: "سیستم تست رایگان — ادمین GB و روز را تنظیم می‌کند، هر کاربر یکبار از طریق تلگرام یا API فعال می‌کند" },
+                      { en: "Per-user service management — multiple services per user, each with independent sub-link, expiry, pause/resume", fa: "مدیریت سرویس به‌ازای هر کاربر — چندین سرویس مستقل، هر کدام با لینک، انقضا و وضعیت مستقل" },
+                      { en: "User-facing Telegram bot menu — users linked via telegramId can manage services, wallet, referrals directly in Telegram", fa: "منوی ربات تلگرام برای کاربران — کاربران لینک‌شده می‌توانند سرویس، کیف پول و معرفی را از تلگرام مدیریت کنند" },
+                      { en: "Admin payment info settings — card number and holder name shown to users during wallet charge flow", fa: "تنظیمات اطلاعات پرداخت ادمین — شماره کارت و نام صاحب کارت در فرآیند شارژ به کاربران نشان داده می‌شود" },
+                      { en: "JWT authentication system for user-facing APIs using HMAC-SHA256 via crypto.subtle.importKey", fa: "سیستم احراز هویت JWT برای API های کاربری با استفاده از HMAC-SHA256 از طریق crypto.subtle.importKey" },
+                      { en: "REST APIs: /api/register, /api/login, /api/profile, /api/wallet/charge, /api/wallet/history, /api/shop, /api/agency, /api/referral, /api/subscriptions, /api/search", fa: "APIهای REST: /api/register, /api/login, /api/profile, /api/wallet/charge و سایر endpoint های کاربری و مدیریتی" },
+                      { en: "Admin inline Telegram buttons to approve or reject wallet charge receipts with instant user notification", fa: "دکمه‌های تلگرام ادمین برای تایید یا رد رسید شارژ با اطلاع‌رسانی فوری به کاربر" },
+                      { en: "Max services per user limit (configurable, default 20)", fa: "حداکثر تعداد سرویس برای هر کاربر (قابل تنظیم، پیش‌فرض ۲۰)" }
+                  ],
+                  improved: [
+                      { en: "All user creation paths (API, Telegram bot) now auto-generate subHash, referralCode, wallet, and services fields", fa: "تمام مسیرهای ایجاد کاربر (API، ربات تلگرام) اکنون به‌طور خودکار subHash، referralCode، کیف پول و سرویس‌ها را تولید می‌کنند" },
+                      { en: "Telegram webhook now routes registered users (matched by telegramId) to user menu instead of access denied", fa: "Webhook تلگرام اکنون کاربران ثبت‌شده (تطابق بر اساس telegramId) را به منوی کاربری هدایت می‌کند" },
+                      { en: "SYSTEM_DEFAULTS restructured with consistent naming: purchaseEnabled, purchaseOptions, pendingPurchases, adminCardNumber, adminCardOwner, freeTrialDays, freeTrialGB, jwtSecret", fa: "SYSTEM_DEFAULTS با نام‌گذاری یکپارچه بازسازی شد: purchaseEnabled، purchaseOptions، pendingPurchases و سایر فیلدها" }
+                  ],
+                  fixed: []
+              },
+              "2.9.0": {
+                  headline: { en: "Protocol Fix & Per-Config Node Routing", fa: "رفع پروتکل و مسیریابی نود به‌ازای هر کانفیگ" },
+                  added: [
+                      { en: "Per-config node routing for beta protocol via WebSocket path payload — beta nodes now route through their designated gateway IP just like alpha", fa: "مسیریابی نود به‌ازای هر کانفیگ پروتکل بتا از طریق مسیر وب‌ساکت — نودهای بتا اکنون مانند آلفا از طریق آدرس دروازه تعیین‌شده مسیریابی می‌کنند" },
+                      { en: "Server-side node index extraction with triple fallback: query parameter → numeric path segment → base64 JSON payload", fa: "استخراج شاخص نود سمت سرور با زنجیره سه‌گانه بازگشت: پارامتر کوئری → بخش عددی مسیر → بار پیلود JSON باینری" },
+                      { en: "Device connection limit per user (connLimit) — cap simultaneous connections per subscriber", fa: "محدودیت اتصال دستگاه به‌ازای هر کاربر (connLimit) — محدود کردن اتصالات همزمان هر مشترک" },
+                      { en: "Panel API key system for secure node-to-panel authentication", fa: "سیستم کلید API پنل برای احراز هویت امن اتصال نود به پنل" },
+                      { en: "Mobile-friendly add/edit user modals with improved responsive layout", fa: "فرم‌های افزودن/ویرایش کاربر سازگار با موبایل با طرح‌بندی واکنش‌گرا بهبودیافته" }
+                  ],
+                  fixed: [
+                      { en: "Fixed beta protocol header offset parsing — beta connections were silently dropping payload data after the port field", fa: "رفع خطای اندازه‌گیری افست هدر پروتکل بتا — اتصالات بتا به‌طور خاموش داده پس از فیلد پورت را حذف می‌کردند" },
+                      { en: "Fixed beta protocol authentication — password was set to generated internal ID instead of raw user identifier, causing permanent auth failure", fa: "رفع احراز هویت پروتکل بتا — رمز عبور به‌جای شناسه داخلی تولیدشده از شناسه خام کاربر استفاده می‌کند" },
+                      { en: "Added SHA224 hash registration in configRegistry so beta lookup works when isolate is warm", fa: "افزودن ثبت هش SHA224 در configRegistry تا جستجوی بتا در isolate گرم کار کند" },
+                      { en: "Removed Maintenance Hosts and Sync API Key fields from Advanced tab network section as requested", fa: "حذف فیلدهای میزبان‌های نگهداری و کلید API همگام‌سازی از بخش شبکه پیشرفته" }
+                  ],
+                  improved: [
+                      { en: "Beta node routing now uses the same base64 JSON WebSocket path payload format as alpha for maximum client compatibility", fa: "مسیریابی نود بتا اکنون از همان قالب پیلود مسیر وب‌ساکت JSON باینری آلفا برای حداکثر سازگاری استفاده می‌کند" },
+                      { en: "Node resolution uses getEffectivePips with NAT64 awareness for both alpha and beta protocols", fa: "解析 نود از getEffectivePips با آگاهی NAT64 برای هر دو پروتکل آلفا و بتا استفاده می‌کند" },
+                      { en: "Added reqPath variable to buildYamlProfile for consistent path generation", fa: "افزودن متغیر reqPath به buildYamlProfile برای تولید مسیر یکپارچه" }
+                  ],
+                  notes: []
+              },
               "2.6.0": {
                   headline: { en: "Bilingual Subscription Page & NAT64 Support", fa: "صفحه اشتراک چندزبانه و پشتیبانی NAT64" },
                   added: [
@@ -8936,7 +7845,7 @@ function getDashboardUI(hasDB) {
                       { en: "Dark and light mode toggle on the subscription page with saved preference", fa: "قابلیت تغییر حالت تاریک/روشن در صفحه اشتراک با ذخیره ترجیح کاربر" },
                       { en: "NAT64 support for automatic IPv4 to IPv6 address conversion", fa: "پشتیبانی NAT64 برای تبدیل خودکار آدرس IPv4 به IPv6" },
                       { en: "Per-user custom hostnames for multi-region deployments", fa: "هاست‌های اختصاصی برای هر کاربر جهت استقرار چند منطقه‌ای" },
-                      { en: "Direct connection configs that work without proxy IPs", fa: "کانفیگ‌های اتصال مستقیم بدون نیاز به آدرس پروکسی" },
+                      { en: "Direct connection configs that work without gateway IPs", fa: "کانفیگ‌های اتصال مستقیم بدون نیاز به آدرس دروازه" },
                       { en: "Auto update from GitHub directly inside the dashboard", fa: "بروزرسانی خودکار از GitHub مستقیماً از داشبورد" },
                       { en: "Customizable fake subscription entries with usage and expiry display", fa: "ورودی‌های اشتراک جعلی سفارشی با نمایش مصرف و انقضا" },
                       { en: "Full gateway management via Telegram inline buttons", fa: "مدیریت کامل دروازه از طریق دکمه‌های اینلاین تلگرام" }
@@ -8972,12 +7881,12 @@ function getDashboardUI(hasDB) {
               "2.5.7": {
                   headline: { en: "Dynamic Multi-IP Failover & Keyless Country Flagging", fa: "لینک هوشمند آی‌پی‌ها، بهبود کلودفلر و نگاشت پرچم بدون تحریم" },
                   added: [
-                      { en: "Support entering custom clean IPs, proxy IPs, and custom config names for each subscriber dynamically in Add/Edit user modals, with automatic extraction and seamless database merging", fa: "امکان ثبت آی‌پی تمیز دلخواه، آی‌پی پروکسی دلخواه و نام کانفیگ دلخواه برای هر کاربر به صورت مجزا با قابلیت استخراج خودکار و ادغام هوشمند" },
+                      { en: "Support entering custom clean IPs, gateway IPs, and custom config names for each subscriber dynamically in Add/Edit user modals, with automatic extraction and seamless database merging", fa: "امکان ثبت آی‌پی تمیز دلخواه، آی‌پی دروازه دلخواه و نام کانفیگ دلخواه برای هر کاربر به صورت مجزا با قابلیت استخراج خودکار و ادغام هوشمند" },
                       { en: "Integrated free, open-source and keyless api.country.is for country flag mapping of IP addresses", fa: "یکپارچه‌سازی وب‌سرویس رایگان و متن‌باز api.country.is جهت نگاشت پرچم کشورهای مربوط به آدرس‌های آی‌پی" }
                   ],
                   fixed: [
                       { en: "Resolved Cloudflare API compatibility flag error ('No such compatibility flag: unsafe-eval' and startup 'Uncaught EvalError') by updating to 'allow_eval_during_startup'", fa: "رفع خطای ناسازگاری فلگ کلودفلر (خطای عدم وجود فلگ unsafe-eval و خطای زمان شروع کار EvalError) در بخش استقرار خودکار با بازنویسی به فلگ مدرن allow_eval_during_startup" },
-                      { en: "Fixed a critical issue where selecting multiple proxy IPs for a user caused session disruptions (IP splitting) on sites behind Cloudflare, resolved via user-consistent hashing and smart proxy failover", fa: "رفع مشکل عدم باز شدن وب‌سایت‌های پشت کلودفلر هنگام انتخاب چندین آی‌پی پروکسی با پیاده‌سازی مکانیزم Hashing پایدار کاربر و سوییچ خودکار (Failover) بر روی پروکسی‌های جایگزین" },
+                      { en: "Fixed a critical issue where selecting multiple gateway IPs for a user caused session disruptions (IP splitting) on sites behind Cloudflare, resolved via user-consistent hashing and smart gateway failover", fa: "رفع مشکل عدم باز شدن وب‌سایت‌های پشت کلودفلر هنگام انتخاب چندین آی‌پی دروازه با پیاده‌سازی مکانیزم Hashing پایدار کاربر و سوییچ خودکار (Failover) بر روی دروازه‌های جایگزین" },
                       { en: "Fixed client-side regular expression parsing to correctly split global IPs separated by backslashes, tabs, commas, or semicolons in the browser", fa: "اصلاح عبارات منظم فرانت‌اند در مروگر جهت تفکیک صحیح لیست آی‌پی‌های تفکیک شده با اینتر، ویرگول، نقطه ویرگول یا بک‌اسلش" }
                   ],
                   improved: [
@@ -8988,7 +7897,7 @@ function getDashboardUI(hasDB) {
               "2.5.6.1": {
                   headline: { en: "Multi-IP Management & Crucial Bug Fixes", fa: "مدیریت آی‌پی‌های چندگانه و رفع خطاهای بحرانی" },
                   added: [
-                      { en: "Support setting custom config name, custom proxy IP, and custom clean IP for each user dynamically in the Add User modal", fa: "اضافه شدن امکان ثبت نام کانفیگ دلخواه، آی‌پی پروکسی اختصاصی و آی‌پی تمیز اختصاصی به صورت مجزا برای هر کاربر در پنجره افزودن کاربر" }
+                       { en: "Support setting custom config name, custom gateway IP, and custom clean IP for each user dynamically in the Add User modal", fa: "اضافه شدن امکان ثبت نام کانفیگ دلخواه، آی‌پی دروازه اختصاصی و آی‌پی تمیز اختصاصی به صورت مجزا برای هر کاربر در پنجره افزودن کاربر" }
                   ],
                   fixed: [
                       { en: "Fixed a critical JavaScript rollback error ('ReferenceError: proxyIp is not defined') when adding a new user", fa: "رفع خطای بحرانی جاوااسکریپت ('ReferenceError: proxyIp is not defined') هنگام تلاش برای افزودن یک کاربر جدید" }
@@ -8999,16 +7908,16 @@ function getDashboardUI(hasDB) {
                   notes: []
               },
               "2.5.6": {
-                  headline: { en: "Multiple Proxy IPs & Flag Matching", fa: "آی‌پی‌های پروکسی متعدد و انطباق پرچم" },
+                  headline:                { en: "Multiple Gateway IPs & Flag Matching", fa: "آی‌پی‌های دروازه متعدد و انطباق پرچم" },
                   added: [
-                      { en: "Support multi-proxy IP lists (rotated/distributed across generated configs to bypass Cloudflare limits)", fa: "پشتیبانی از لیست‌های آی‌پی پروکسی چندگانه (چرخش و توزیع خودکار میان کانفیگ‌ها برای عبور از محدودیت‌های کلودفلر)" },
-                      { en: "Proper country flag matching for configs based on the actual proxy IP used", fa: "انطباق صحیح پرچم کشور برای کانفیگ‌ها بر اساس آی‌پی پروکسی واقعی استفاده‌شده" }
+                      { en: "Support multi-gateway IP lists (rotated/distributed across generated configs to bypass Cloudflare limits)", fa: "پشتیبانی از لیست‌های آی‌پی دروازه چندگانه (چرخش و توزیع خودکار میان کانفیگ‌ها برای عبور از محدودیت‌های کلودفلر)" },
+                      { en: "Proper country flag matching for configs based on the actual gateway IP used", fa: "انطباق صحیح پرچم کشور برای کانفیگ‌ها بر اساس آی‌پی دروازه واقعی استفاده‌شده" }
                   ],
                   fixed: [
                       { en: "Fixed outbound transport and websocket configurations formatting errors", fa: "رفع خطاهای فرمت‌دهی در کانفیگ‌های حمل و نقل خروجی و وب‌ساکت" }
                   ],
                   improved: [
-                      { en: "Distributed multiple proxy IPs evenly across subscription sub-configs", fa: "توزیع یکنواخت چندین آی‌پی پروکسی میان زیرکانفیگ‌های اشتراک" },
+                      { en: "Distributed multiple gateway IPs evenly across subscription sub-configs", fa: "توزیع یکنواخت چندین آی‌پی دروازه میان زیرکانفیگ‌های اشتراک" },
                       { en: "Enhanced IP API resolving and flag caching logic", fa: "بهبود منطق حل‌وفصل و کش پرچم برای آی‌پی‌ها" }
                   ],
                   notes: []
@@ -9153,7 +8062,7 @@ function getDashboardUI(hasDB) {
               "2.4.9": {
                   headline: { en: "Custom Protocol & Port Configuration", fa: "پیکربندی پروتکل و پورت سفارشی" },
                   added: [
-                      { en: "Custom protocol mode per user (VLESS/Trojan/Both)", fa: "حالت پروتکل سفارشی برای هر کاربر (VLESS/Trojan/هر دو)" },
+                      { en: "Custom protocol mode per user (VLESS/Beta/Both)", fa: "حالت پروتکل سفارشی برای هر کاربر (VLESS/Beta/هر دو)" },
                       { en: "Custom port configuration per user", fa: "پیکربندی پورت سفارشی برای هر کاربر" },
                       { en: "Maximum configs limit per user", fa: "محدودیت حداکثر کانفیگ برای هر کاربر" },
                   ],
@@ -9321,7 +8230,7 @@ function getDashboardUI(hasDB) {
           }
   
           function switchTab(tab) {
-            ['overview','info','network','settings','advanced','logs','users','shop'].forEach(t => {
+            ['overview','info','network','settings','advanced','logs','users'].forEach(t => {
                   const view = document.getElementById('view-'+t);
                   const deskBtn = document.getElementById('tab-'+t);
                   const mobBtn = document.getElementById('mob-tab-'+t);
@@ -9333,11 +8242,18 @@ function getDashboardUI(hasDB) {
                       deskBtn.classList.remove('active'); mobBtn.classList.remove('active');
                   }
               });
+            document.getElementById('view-add-user').classList.add('hidden');
+            document.getElementById('view-edit-user').classList.add('hidden');
+            var sc = document.querySelector('.scroll-content');
+            sc.style.overflow = '';
+            sc.classList.remove('flex', 'flex-col');
+            sc.firstElementChild.classList.remove('flex-1', 'min-h-0', 'flex', 'flex-col');
             updateTitle();
+            var sc = document.querySelector('.scroll-content');
+            if (sc) sc.scrollTop = 0;
             if(tab === 'overview') loadDashboard();
             if(tab === 'logs') loadLogs();
             if(tab === 'network') doLogin(true); // refresh metrics
-            if(tab === 'shop') renderShopView();
         }
 
         async function loadLogs() {
@@ -9406,6 +8322,7 @@ function getDashboardUI(hasDB) {
             } catch (err) {
                 console.error('Dashboard load error:', err);
             }
+            loadApiKeys();
         }
 
           function copyData(id) {
@@ -9422,7 +8339,38 @@ function getDashboardUI(hasDB) {
               document.getElementById('qr-modal').classList.remove('hidden');
               document.getElementById('qr-modal').classList.add('flex');
           }
-          
+
+          window.toggleAccordion = function(btn) {
+              const card = btn.closest('[data-accordion]');
+              if (!card) return;
+              const content = card.querySelector('[data-accordion-content]');
+              const icon = btn.querySelector('.accordion-icon');
+              const isOpen = content.style.visibility === 'visible';
+
+              content.style.transition = 'max-height 0.3s ease, visibility 0.3s ease';
+
+              if (isOpen) {
+                  content.style.maxHeight = content.scrollHeight + 'px';
+                  requestAnimationFrame(() => {
+                      content.style.maxHeight = '0';
+                      content.style.visibility = 'hidden';
+                  });
+                  icon.style.transform = 'rotate(0deg)';
+              } else {
+                  content.style.visibility = 'visible';
+                  content.style.maxHeight = content.scrollHeight + 'px';
+                  icon.style.transform = 'rotate(180deg)';
+                  setTimeout(() => { if (content.style.visibility === 'visible') content.style.maxHeight = 'none'; }, 350);
+              }
+          }
+
+          window.handleCopy = function handleCopy(btn) {
+              copyData('sync-' + btn.dataset.id);
+          }
+          window.handleQR = function handleQR(btn) {
+              showQR(btn.dataset.name, document.getElementById('sync-' + btn.dataset.id).value);
+          }
+
           function closeQRModal() {
               document.getElementById('qr-modal').classList.add('hidden');
               document.getElementById('qr-modal').classList.remove('flex');
@@ -9462,6 +8410,55 @@ function getDashboardUI(hasDB) {
           function logout() {
               localStorage.removeItem('nahan_session');
               window.location.reload();
+          }
+
+          function showAddNodeModal() {
+              document.getElementById('modal-add-node').classList.remove('hidden');
+              document.getElementById('add-node-url').value = '';
+              document.getElementById('add-node-apikey').value = '';
+              document.getElementById('add-node-url').focus();
+          }
+
+          function commitAddNode() {
+              const url = document.getElementById('add-node-url').value.trim();
+              const apiKey = document.getElementById('add-node-apikey').value.trim();
+              if (!url || !apiKey) {
+                  const t = i18n[lang] || i18n['en'];
+                  alert(t.add_node_invalid || 'Please enter both URL and API Key.');
+                  return;
+              }
+              if (!window.nahanConfig) window.nahanConfig = {};
+              if (!Array.isArray(window.nahanConfig.linkedPanels)) window.nahanConfig.linkedPanels = [];
+              window.nahanConfig.linkedPanels.push({ url, apiKey });
+              document.getElementById('modal-add-node').classList.add('hidden');
+              renderLinkedNodes();
+          }
+
+          function removeLinkedNode(idx) {
+              if (!window.nahanConfig || !Array.isArray(window.nahanConfig.linkedPanels)) return;
+              window.nahanConfig.linkedPanels.splice(idx, 1);
+              renderLinkedNodes();
+          }
+
+          function renderLinkedNodes() {
+              const list = document.getElementById('linked-nodes-list');
+              if (!list) return;
+              const panels = (window.nahanConfig && Array.isArray(window.nahanConfig.linkedPanels)) ? window.nahanConfig.linkedPanels : [];
+              if (panels.length === 0) {
+                  list.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-500 italic">' + ((i18n[lang] || i18n['en']).no_nodes_advanced || 'No external nodes added yet.') + '</p>';
+                  return;
+              }
+              list.innerHTML = panels.map((p, i) => \`
+                  <div class="flex items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-darkborder/50">
+                      <div class="min-w-0 flex-1">
+                          <p class="text-sm font-mono font-bold text-slate-700 dark:text-slate-200 truncate">\${p.url}</p>
+                          <p class="text-[11px] text-slate-400 dark:text-slate-500 font-mono truncate">\${p.apiKey.substring(0, 12)}...</p>
+                      </div>
+                      <button onclick="removeLinkedNode(\${i})" class="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors shrink-0" title="Remove">
+                          <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                      </button>
+                  </div>
+              \`).join('');
           }
 
           function renderFakeConfigs(configs) {
@@ -9543,16 +8540,17 @@ function getDashboardUI(hasDB) {
               const payload = {
                   mode: el('cfg-proto').value, socketPorts: Array.from(el('cfg-port').selectedOptions).map(o=>o.value).join(','), deviceId: el('cfg-uuid').value,
                   apiRoute: el('cfg-path').value, masterKey: el('cfg-pass').value, agent: el('cfg-fp').value,
-                  resolveIp: el('cfg-dns').value, customDns: el('cfg-custom-dns').value ? el('cfg-custom-dns').value : 'https://cloudflare-dns.com/dns-query', cleanIps: el('cfg-ips').value, maintenanceHost: el('cfg-fake').value, backupRelay: el('cfg-relay').value, nat64Prefix: el('cfg-nat64') ? el('cfg-nat64').value : '', enableDirectConfigs: el('cfg-direct-configs') ? el('cfg-direct-configs').checked : false, autoUpdate: el('cfg-auto-update') ? el('cfg-auto-update').checked : false, autoUpdateFormat: document.querySelector('input[name="auto-update-format"]:checked')?.value || 'normal',
-                  enableOpt1: el('cfg-tfo').checked, enableOpt2: el('cfg-ech').checked,
-                  tgToken: el('cfg-tg-token').value, tgChatId: el('cfg-tg-chat').value, tgAdminId: el('cfg-tg-admin').value,
+                   resolveIp: el('cfg-dns').value, customDns: el('cfg-custom-dns').value ? el('cfg-custom-dns').value : 'https://cloudflare-dns.com/dns-query', cleanIps: el('cfg-ips').value, maintenanceHost: el('cfg-fake') ? el('cfg-fake').value : '', backupRelay: el('cfg-relay').value, nat64Prefix: el('cfg-nat64') ? el('cfg-nat64').value : '', enableDirectConfigs: el('cfg-direct-configs') ? el('cfg-direct-configs').checked : false, syncApiKey: el('cfg-sync-api-key') ? el('cfg-sync-api-key').value.trim() : '', autoUpdate: el('cfg-auto-update') ? el('cfg-auto-update').checked : false, autoUpdateFormat: document.querySelector('input[name="auto-update-format"]:checked')?.value || 'normal',
+                   enableOpt1: el('cfg-tfo').checked, enableOpt2: el('cfg-ech').checked,
+                   tgToken: el('cfg-tg-token').value, tgChatId: el('cfg-tg-chat').value, tgAdminId: el('cfg-tg-admin').value,
                   cfAccountId: el('cfg-cf-acc').value, cfApiToken: el('cfg-cf-token').value,
                   cfWorkerName: el('cfg-cf-worker').value,
                   isPaused: el('cfg-pause').checked, silentAlerts: el('cfg-silent').checked,
                   githubRepo: el('cfg-github-repo').value,
                   subUserAgent: el('cfg-sub-ua').value,
                   customPanelUrl: el('cfg-custom-panel-url').value,
-                  fakeConfigs: getFakeConfigsFromUI()
+                  fakeConfigs: getFakeConfigsFromUI(),
+                  linkedPanels: (window.nahanConfig && Array.isArray(window.nahanConfig.linkedPanels)) ? window.nahanConfig.linkedPanels : []
               };
               const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
               const dlAnchor = document.createElement('a');
@@ -9600,6 +8598,7 @@ function getDashboardUI(hasDB) {
                       if (conf.silentAlerts !== undefined) document.getElementById('cfg-silent').checked = conf.silentAlerts;
                       mapId('cfg-nat64', conf.nat64Prefix);
                       if (conf.enableDirectConfigs !== undefined && document.getElementById('cfg-direct-configs')) document.getElementById('cfg-direct-configs').checked = conf.enableDirectConfigs;
+                      if (document.getElementById('cfg-sync-api-key')) document.getElementById('cfg-sync-api-key').value = conf.syncApiKey || '';
                       if (conf.autoUpdate !== undefined && document.getElementById('cfg-auto-update')) {
                           document.getElementById('cfg-auto-update').checked = conf.autoUpdate;
                           const wrap = document.getElementById('auto-update-format-wrap');
@@ -9611,6 +8610,11 @@ function getDashboardUI(hasDB) {
                       }
                       
                       if (conf.fakeConfigs) renderFakeConfigs(conf.fakeConfigs);
+                      if (conf.linkedPanels) {
+                          if (!window.nahanConfig) window.nahanConfig = {};
+                          window.nahanConfig.linkedPanels = conf.linkedPanels;
+                          renderLinkedNodes();
+                      }
                       
                       updateUI();
                       alert(lang === 'fa' ? 'پیکربندی با موفقیت وارد شد! روی ذخیره کلیک کنید.' : 'Configuration parsed! Click save to write changes.');
@@ -9706,11 +8710,11 @@ function getDashboardUI(hasDB) {
                       document.getElementById('cfg-dns').value = conf.resolveIp || '';
                       document.getElementById('cfg-custom-dns').value = conf.customDns || 'https://cloudflare-dns.com/dns-query';
                       document.getElementById('cfg-ips').value = conf.cleanIps || '';
-                      document.getElementById('cfg-nodes').value = conf.slaveNodes || '';
-                      document.getElementById('cfg-fake').value = conf.maintenanceHost || '';
+                      if (document.getElementById('cfg-fake')) document.getElementById('cfg-fake').value = conf.maintenanceHost || '';
                        document.getElementById('cfg-relay').value = conf.backupRelay || '';
                        if (document.getElementById('cfg-nat64')) document.getElementById('cfg-nat64').value = conf.nat64Prefix || '';
                        if (document.getElementById('cfg-direct-configs')) document.getElementById('cfg-direct-configs').checked = conf.enableDirectConfigs || false;
+                       if (document.getElementById('cfg-sync-api-key')) document.getElementById('cfg-sync-api-key').value = conf.syncApiKey || '';
                        if (document.getElementById('cfg-auto-update')) {
                            document.getElementById('cfg-auto-update').checked = conf.autoUpdate || false;
                            const wrap = document.getElementById('auto-update-format-wrap');
@@ -9722,7 +8726,6 @@ function getDashboardUI(hasDB) {
                        }
                       document.getElementById('cfg-tfo').checked = conf.enableOpt1 || false;
                       document.getElementById('cfg-ech').checked = conf.enableOpt2 || false;
-                      document.getElementById('cfg-allow-sync').checked = conf.allowSyncWorker || false;
                       document.getElementById('cfg-tg-token').value = conf.tgToken || '';
                       document.getElementById('cfg-tg-chat').value = conf.tgChatId || '';
                       document.getElementById('cfg-tg-admin').value = conf.tgAdminId || '';
@@ -9745,11 +8748,11 @@ function getDashboardUI(hasDB) {
                       window.nahanUsage = data.sysUsage || {};
                       window.nahanProfiles = data.profiles || [];
                       renderUsersTable();
-                      renderShopView();
+                      renderLinkedNodes();
                       try { checkUpdate(); } catch(ue) { console.error(ue); }
-                      if (!silent) switchTab('overview');
+                       if (!silent) switchTab('overview');
 
-                      ['cfg-proto','cfg-port','cfg-fp','cfg-ips','cfg-nodes','cfg-path', 'cfg-relay', 'cfg-name-strategy', 'cfg-name-prefix', 'cfg-sub-ua', 'cfg-custom-panel-url'].forEach(id => {
+                      ['cfg-proto','cfg-port','cfg-fp','cfg-ips','cfg-path', 'cfg-relay', 'cfg-name-strategy', 'cfg-name-prefix', 'cfg-sub-ua', 'cfg-custom-panel-url'].forEach(id => {
                           const el = document.getElementById(id);
                           if(el) { el.addEventListener('input', updateUI); el.addEventListener('change', updateUI); }
                       });
@@ -9764,40 +8767,6 @@ function getDashboardUI(hasDB) {
                               if (wrap) wrap.classList.toggle('hidden', !autoUpdateEl.checked);
                           });
                       }
-
-                      
-            
-                     window.toggleAccordion = function(btn) 
-                        {
-                            const card = btn.closest('[data-accordion]');
-                            if (!card) return;
-                            const content = card.querySelector('[data-accordion-content]');
-                            const icon = btn.querySelector('.accordion-icon');
-                            const isOpen = content.style.visibility === 'visible';
-
-                            content.style.transition = 'max-height 0.3s ease, visibility 0.3s ease';
-
-                            if (isOpen) {
-                                content.style.maxHeight = content.scrollHeight + 'px';
-                                requestAnimationFrame(() => {
-                                    content.style.maxHeight = '0';
-                                    content.style.visibility = 'hidden';
-                                });
-                                icon.style.transform = 'rotate(0deg)';
-                            } else {
-                                content.style.visibility = 'visible';
-                                content.style.maxHeight = content.scrollHeight + 'px';
-                                icon.style.transform = 'rotate(180deg)';
-                                setTimeout(() => { if (content.style.visibility === 'visible') content.style.maxHeight = 'none'; }, 350);
-                            }
-                        }
-
-                window.handleCopy = function handleCopy(btn) {
-                    copyData('sync-' + btn.dataset.id);
-                }
-                window.handleQR = function handleQR(btn) {
-                    showQR(btn.dataset.name, document.getElementById('sync-' + btn.dataset.id).value);
-                }
                 const pCont = document.getElementById('dyn-profiles-container');
                 let profilesHtml = '';
                 data.profiles.forEach(p => {
@@ -9870,7 +8839,7 @@ function getDashboardUI(hasDB) {
                   config: {
                       mode: el('cfg-proto').value, socketPorts: Array.from(el('cfg-port').selectedOptions).map(o=>o.value).join(','), deviceId: el('cfg-uuid').value,
                       apiRoute: el('cfg-path').value, masterKey: el('cfg-pass').value, agent: el('cfg-fp').value,
-                      resolveIp: el('cfg-dns').value, customDns: el('cfg-custom-dns').value ? el('cfg-custom-dns').value : 'https://cloudflare-dns.com/dns-query', cleanIps: el('cfg-ips').value, slaveNodes: el('cfg-nodes').value, maintenanceHost: el('cfg-fake').value, backupRelay: el('cfg-relay').value, nat64Prefix: el('cfg-nat64') ? el('cfg-nat64').value : '', enableDirectConfigs: el('cfg-direct-configs') ? el('cfg-direct-configs').checked : false, autoUpdate: el('cfg-auto-update') ? el('cfg-auto-update').checked : false, autoUpdateFormat: document.querySelector('input[name="auto-update-format"]:checked')?.value || 'normal',
+                      resolveIp: el('cfg-dns').value, customDns: el('cfg-custom-dns').value ? el('cfg-custom-dns').value : 'https://cloudflare-dns.com/dns-query', cleanIps: el('cfg-ips').value, maintenanceHost: el('cfg-fake') ? el('cfg-fake').value : '', backupRelay: el('cfg-relay').value, nat64Prefix: el('cfg-nat64') ? el('cfg-nat64').value : '', enableDirectConfigs: el('cfg-direct-configs') ? el('cfg-direct-configs').checked : false, syncApiKey: el('cfg-sync-api-key') ? el('cfg-sync-api-key').value.trim() : '', autoUpdate: el('cfg-auto-update') ? el('cfg-auto-update').checked : false, autoUpdateFormat: document.querySelector('input[name="auto-update-format"]:checked')?.value || 'normal',
                       enableOpt1: el('cfg-tfo').checked, enableOpt2: el('cfg-ech').checked,
                       tgToken: el('cfg-tg-token').value, tgChatId: el('cfg-tg-chat').value, tgAdminId: el('cfg-tg-admin').value,
                       cfAccountId: el('cfg-cf-acc').value, cfApiToken: el('cfg-cf-token').value,
@@ -9880,22 +8849,9 @@ function getDashboardUI(hasDB) {
                       subUserAgent: el('cfg-sub-ua').value,
                       customPanelUrl: el('cfg-custom-panel-url').value,
                       nameStrategy: el('cfg-name-strategy').value,
-                      allowSyncWorker: el('cfg-allow-sync').checked,
                       namePrefix: el('cfg-name-prefix').value,
                       fakeConfigs: getFakeConfigsFromUI(),
-                      purchaseEnabled: el('shop-purchase-enabled') ? el('shop-purchase-enabled').checked : (window.nahanConfig.purchaseEnabled || false),
-                      freeTrial: el('shop-free-trial') ? el('shop-free-trial').checked : (window.nahanConfig.freeTrial || false),
-                      freeTrialDays: el('shop-trial-days') ? (parseInt(el('shop-trial-days').value) || 3) : (window.nahanConfig.freeTrialDays || 3),
-                      freeTrialGB: el('shop-trial-gb') ? (parseInt(el('shop-trial-gb').value) || 3) : (window.nahanConfig.freeTrialGB || 3),
-                      adminCardNumber: el('shop-card-number') ? el('shop-card-number').value : (window.nahanConfig.adminCardNumber || ''),
-                      adminCardOwner: el('shop-card-owner') ? el('shop-card-owner').value : (window.nahanConfig.adminCardOwner || ''),
-                      botWelcomeMsg: el('shop-welcome-msg') ? el('shop-welcome-msg').value : (window.nahanConfig.botWelcomeMsg || ''),
-                      botSupportMsg: el('shop-support-msg') ? el('shop-support-msg').value : (window.nahanConfig.botSupportMsg || ''),
-                      purchaseOptions: window.nahanConfig.purchaseOptions || [],
-                      pendingPurchases: window.nahanConfig.pendingPurchases || [],
-                      promoCodes: window.nahanConfig.promoCodes || [],
-                      usedTrials: window.nahanConfig.usedTrials || [],
-                      userAccounts: window.nahanConfig.userAccounts || []
+                      linkedPanels: (window.nahanConfig && Array.isArray(window.nahanConfig.linkedPanels)) ? window.nahanConfig.linkedPanels : []
                   }
               };
                         //update user port after change global
@@ -9912,58 +8868,28 @@ function getDashboardUI(hasDB) {
                   const data = await res.json();
                   if (data.success) {
                       stat.textContent = i18n[lang].msg_saved; stat.className = "text-sm font-bold text-emerald-500 md:me-4";
+                      if (Array.isArray(window.nahanConfig?.linkedPanels) && window.nahanConfig.linkedPanels.length > 0) {
+                          const sc = payload.config;
+                          const slaveCfg = { ...sc };
+                          delete slaveCfg.tgToken; delete slaveCfg.tgChatId; delete slaveCfg.tgAdminId; delete slaveCfg.tgBotLang;
+                          delete slaveCfg.cfAccountId; delete slaveCfg.cfApiToken; delete slaveCfg.cfWorkerName;
+                          delete slaveCfg.panelApiKeys; delete slaveCfg.linkedPanels; delete slaveCfg.slaveNodes; delete slaveCfg.syncApiKey;
+                          const synced = new Set();
+                          window.nahanConfig.linkedPanels.forEach(p => {
+                              if (!p || !p.url || !p.apiKey) return;
+                              const h = p.url.trim().replace(/^https?:\\/\\//, '').replace(/\\/.*$/, '');
+                              if (!h || synced.has(h.toLowerCase())) return;
+                              synced.add(h.toLowerCase());
+                              fetch('https://' + h + '/' + encodeURIComponent(sc.apiRoute || 'sync') + '/api/sync', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ key: p.apiKey, config: slaveCfg, fromMaster: true })
+                              }).then(r => { if (!r.ok) console.error('Sync to ' + h + ' failed: HTTP ' + r.status); }).catch(e => { console.error('Sync to ' + h + ' error:', e.message); });
+                          });
+                      }
                       setTimeout(() => window.location.href = '/' + data.newRoute + '/dash', 1000);
                   } else { stat.textContent = i18n[lang].msg_err; stat.className = "text-sm font-bold text-red-500 md:me-4"; }
               } catch(e) { stat.textContent = i18n[lang].msg_err; stat.className = "text-sm font-bold text-red-500 md:me-4"; }
-          }
-          
-          async function forceSyncNodes() {
-              const nodesRaw = document.getElementById('cfg-nodes').value;
-              if (!nodesRaw || nodesRaw.trim() === '') {
-                  const noSlaveMsg = lang === 'fa' ? 'هیچ نود فرعی مشخص نشده است.' : 'No slave nodes specified.';
-                  alert(noSlaveMsg);
-                  return;
-              }
-              const btnTxt = document.getElementById('sync-btn-txt');
-              const icon = document.getElementById('sync-icon');
-              
-              btnTxt.innerText = 'Syncing...';
-              icon.classList.add('animate-spin');
-              
-              const el = id => document.getElementById(id);
-              const payload = {
-                  key: sessionKey,
-                  config: {
-                      mode: el('cfg-proto').value, socketPorts: Array.from(el('cfg-port').selectedOptions).map(o=>o.value).join(','), deviceId: el('cfg-uuid').value,
-                      apiRoute: el('cfg-path').value, masterKey: el('cfg-pass').value, agent: el('cfg-fp').value,
-                      resolveIp: el('cfg-dns').value, customDns: el('cfg-custom-dns').value ? el('cfg-custom-dns').value : 'https://cloudflare-dns.com/dns-query', cleanIps: el('cfg-ips').value, slaveNodes: el('cfg-nodes').value, maintenanceHost: el('cfg-fake').value, backupRelay: el('cfg-relay').value, nat64Prefix: el('cfg-nat64') ? el('cfg-nat64').value : '', enableDirectConfigs: el('cfg-direct-configs') ? el('cfg-direct-configs').checked : false, autoUpdate: el('cfg-auto-update') ? el('cfg-auto-update').checked : false, autoUpdateFormat: document.querySelector('input[name="auto-update-format"]:checked')?.value || 'normal',
-                      enableOpt1: el('cfg-tfo').checked, enableOpt2: el('cfg-ech').checked,
-                      tgToken: el('cfg-tg-token').value, tgChatId: el('cfg-tg-chat').value, tgAdminId: el('cfg-tg-admin').value,
-                      cfAccountId: el('cfg-cf-acc').value, cfApiToken: el('cfg-cf-token').value,
-                      cfWorkerName: el('cfg-cf-worker').value,
-                      isPaused: el('cfg-pause').checked, silentAlerts: el('cfg-silent').checked,
-                      githubRepo: el('cfg-github-repo').value,
-                      subUserAgent: el('cfg-sub-ua').value,
-                      customPanelUrl: el('cfg-custom-panel-url').value,
-                      nameStrategy: el('cfg-name-strategy').value,
-                      namePrefix: el('cfg-name-prefix').value,
-                      fakeConfigs: getFakeConfigsFromUI()
-                  }
-              };
-              
-              try {
-                  const res = await fetch(baseRoute + '/api/sync', { method: 'POST', body: JSON.stringify(payload) });
-                  if (res.ok) {
-                      btnTxt.innerText = 'Success!';
-                  } else {
-                      btnTxt.innerText = 'Sync Failed';
-                  }
-              } catch (e) {
-                  btnTxt.innerText = 'Network Error';
-              } finally {
-                  icon.classList.remove('animate-spin');
-                  setTimeout(() => { btnTxt.innerText = 'Force Sync Now'; }, 3000);
-              }
           }
 
           document.getElementById('pwd').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
@@ -10087,13 +9013,13 @@ function getDashboardUI(hasDB) {
                   let resetTitle = lang === 'fa' ? 'بازنشانی مصرف ترافیک' : 'Reset Traffic Metrics';
                   let deleteTitle = lang === 'fa' ? 'حذف کاربر' : 'Delete User';
 
-                  let linkHtml = \`<button onclick="copyData('sync-\${u.id}')" class="text-primary hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 p-2 rounded-lg" title="\${linkTitle}">🔗</button>\`;
-                  
-                  let pauseBtnHtml = \`<button onclick="togglePauseUser('\${u.id}')" class="\${u.isPaused ? 'text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-800/50' : 'text-amber-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-800/50'} p-2 rounded-lg" title="\${pauseTitle}">\\s*\${u.isPaused ? '▶️' : '⏸️'}</button>\`;
+                   let linkHtml = \`<button onclick="copyData('sync-\${u.id}')" class="native-press flex-1 flex items-center justify-center text-primary hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 py-2 rounded-lg" title="\${linkTitle}">🔗</button>\`;
+                   
+                   let pauseBtnHtml = \`<button onclick="togglePauseUser('\${u.id}')" class="native-press flex-1 flex items-center justify-center \${u.isPaused ? 'text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-800/50' : 'text-amber-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 dark:hover:bg-amber-800/50'} py-2 rounded-lg" title="\${pauseTitle}">\\s*\${u.isPaused ? '▶️' : '⏸️'}</button>\`;
 
-                  let editBtnHtml = \`<button onclick="editUser('\${u.id}')" class="text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 p-2 rounded-lg" title="\${editTitle}">✏️</button>\`;
+                   let editBtnHtml = \`<button onclick="editUser('\${u.id}')" class="native-press flex-1 flex items-center justify-center text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-800/50 py-2 rounded-lg" title="\${editTitle}">✏️</button>\`;
 
-                  let resetBtnHtml = \`<button onclick="resetUserTraffic('\${u.id}')" class="text-violet-500 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-900/30 dark:hover:bg-violet-800/50 p-2 rounded-lg" title="\${resetTitle}">🔄</button>\`;
+                   let resetBtnHtml = \`<button onclick="resetUserTraffic('\${u.id}')" class="native-press flex-1 flex items-center justify-center text-violet-500 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-900/30 dark:hover:bg-violet-800/50 py-2 rounded-lg" title="\${resetTitle}">🔄</button>\`;
 
                   let isAutoDisabled = u.isPaused && u.disabledReason;
                   let disableInfoHtml = '';
@@ -10119,43 +9045,60 @@ function getDashboardUI(hasDB) {
                       rawSync += rawSync.includes('?') ? '&flag=a' : '?flag=a';
                   }
 
-                  tblHtml += \`<div class="bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-darkborder p-4 hover:shadow-md transition-shadow">
-                      <div class="flex items-center justify-between mb-2">
-                          <div class="flex items-center gap-2 min-w-0">
+                  tblHtml += \`<div class="native-press bg-white dark:bg-darkcard rounded-2xl border border-slate-200 dark:border-darkborder p-4 hover:shadow-md transition-shadow">
+                      <div class="flex items-center justify-between mb-3">
+                          <div class="flex items-center gap-2 min-w-0 flex-1">
                               <span class="w-2 h-2 rounded-full shrink-0 \${u.isPaused ? (isAutoDisabled ? 'bg-red-500' : 'bg-amber-500') : (isExp ? 'bg-red-400' : 'bg-emerald-500')}"></span>
                               <span class="font-bold text-sm text-slate-800 dark:text-slate-100 truncate">\${u.name}</span>
-                              \${u.proxyIpGeo ? \`<span class="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 font-semibold">\${u.proxyIpGeo.flag}</span>\` : ''}
+                              \${u.proxyIpGeo ? \`<span class="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 font-semibold shrink-0">\${u.proxyIpGeo.flag}</span>\` : ''}
                           </div>
                           <input type="hidden" id="sync-\${u.id}" value="\${rawSync}">
-                          <div class="flex items-center gap-1 shrink-0">
-                              \${linkHtml}
-                              \${pauseBtnHtml}
-                              \${editBtnHtml}
-                              \${resetBtnHtml}
-                              <button onclick="deleteUser('\${u.id}')" class="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors" title="\${deleteTitle}">🗑️</button>
-                          </div>
                       </div>
-                      <div class="flex flex-wrap gap-1 mb-2">
+                      <div class="flex items-center gap-1 mb-3">
+                          \${linkHtml}
+                          \${pauseBtnHtml}
+                          \${editBtnHtml}
+                          \${resetBtnHtml}
+                          <button onclick="deleteUser('\${u.id}')" class="native-press flex-1 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg transition-colors text-sm" title="\${deleteTitle}">🗑️</button>
+                      </div>
+                      <div class="flex flex-wrap gap-1 mb-3">
                           \${u.isPaused && u.disabledReason ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300">Auto-Disabled</span>\` : ''}
                           \${u.userMode ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">\${u.userMode === 'alpha' ? 'VLESS' : u.userMode === 'beta' ? 'Trojan' : 'Both'}</span>\` : ''}
                           \${u.userPorts ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300">\${u.userPorts}</span>\` : ''}
-                          \${u.maxConfigs ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300">\${u.maxConfigs} cfgs</span>\` : ''}
+                           \${u.maxConfigs ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300">\${u.maxConfigs} cfgs</span>\` : ''}
+                           \${u.connLimit ? \`<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300">\${u.connLimit} conn</span>\` : ''}
                       </div>
                       \${disableInfoHtml}
-                      <div class="space-y-1.5">
-                          <div class="flex items-center justify-between text-[11px]">
-                              <span class="text-slate-500">\${totalLabel} \${(userReqs/6000).toFixed(2)} GB \${u.limitTotalReq ? '/ ' + (u.limitTotalReq/6000).toFixed(2) + ' GB' : ''}</span>
-                              \${perT !== '-' ? \`<span class="font-bold \${parseFloat(perT) > 85 ? 'text-red-500' : parseFloat(perT) > 60 ? 'text-amber-500' : 'text-emerald-500'}">\${perT}</span>\` : ''}
+                      <div class="grid grid-cols-2 gap-3">
+                          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-2.5">
+                              <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">\${totalLabel}</div>
+                              <div class="text-sm font-black text-slate-800 dark:text-white">\${(userReqs/6000).toFixed(2)} <span class="text-[10px] font-semibold text-slate-400">GB</span></div>
+                              \${u.limitTotalReq ? \`
+                              <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1.5">
+                                  <div class="bg-gradient-to-r \${parseFloat(perT) > 85 ? 'from-red-500 to-rose-600' : parseFloat(perT) > 60 ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-teal-500'} h-full rounded-full" style="width: \${perT}"></div>
+                              </div>
+                              <div class="flex items-center justify-between mt-1">
+                                  <span class="text-[9px] text-slate-400">/ \${(u.limitTotalReq/6000).toFixed(2)} GB</span>
+                                  \${perT !== '-' ? \`<span class="text-[9px] font-bold \${parseFloat(perT) > 85 ? 'text-red-500' : parseFloat(perT) > 60 ? 'text-amber-500' : 'text-emerald-500'}">\${perT}</span>\` : ''}
+                              </div>
+                              \` : '<div class="text-[9px] text-slate-400 mt-1">' + unlimitedTxt + '</div>'}
                           </div>
-                          \${u.limitTotalReq ? \`
-                          <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                              <div class="bg-gradient-to-r \${parseFloat(perT) > 85 ? 'from-red-500 to-rose-600' : parseFloat(perT) > 60 ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-teal-500'} h-full rounded-full" style="width: \${perT}"></div>
+                          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-2.5">
+                              <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">\${dailyLabel}</div>
+                              <div class="text-sm font-black text-slate-800 dark:text-white">\${userDReqs} <span class="text-[10px] font-semibold text-slate-400">\${rLabel}</span></div>
+                              \${u.limitDailyReq ? \`
+                              <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mt-1.5">
+                                  <div class="bg-gradient-to-r \${parseFloat(perD) > 85 ? 'from-red-500 to-rose-600' : parseFloat(perD) > 60 ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-teal-500'} h-full rounded-full" style="width: \${perD}"></div>
+                              </div>
+                              <div class="flex items-center justify-between mt-1">
+                                  <span class="text-[9px] text-slate-400">/ \${(u.limitDailyReq/6000).toFixed(2)} GB</span>
+                                  \${perD !== '-' ? \`<span class="text-[9px] font-bold \${parseFloat(perD) > 85 ? 'text-red-500' : parseFloat(perD) > 60 ? 'text-amber-500' : 'text-emerald-500'}">\${perD}</span>\` : ''}
+                              </div>
+                              \` : '<div class="text-[9px] text-slate-400 mt-1">' + unlimitedTxt + '</div>'}
                           </div>
-                          \` : ''}
-                          <div class="flex items-center justify-between text-[10px] text-slate-400">
-                              <span>\${dailyLabel} \${userDReqs} \${rLabel}</span>
-                              <span>\${expTxt}</span>
-                          </div>
+                      </div>
+                      <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <span class="text-[10px] text-slate-400">📅 \${expTxt}</span>
                       </div>
                   \`;
                   tblHtml += '</div>';
@@ -10223,13 +9166,41 @@ function getDashboardUI(hasDB) {
               return (window.nahanConfig && window.nahanConfig.mode) ? window.nahanConfig.mode : 'alpha';
           }
 
-          function openAddUserModal() {
-              document.getElementById('modal-add-user').classList.remove('hidden');
+          function openAddUserPage() {
+              document.getElementById('view-users').classList.add('hidden');
+              document.getElementById('view-add-user').classList.remove('hidden');
+              var sc = document.querySelector('.scroll-content');
+              sc.style.overflow = 'hidden';
+              sc.classList.add('flex', 'flex-col');
+              sc.firstElementChild.classList.add('flex-1', 'min-h-0', 'flex', 'flex-col');
+              updateTitleText('Add User');
               buildPortCheckboxes('add-user-ports-wrap', null);
               buildModeCheckboxes('add-user-mode-wrap', null);
               buildIPCheckboxes("add-user-clean-ips-wrap", "", (window.nahanConfig?.cleanIps||"").split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
               buildIPCheckboxes("add-user-proxy-ips-wrap", "", (window.nahanConfig?.backupRelay||"").split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
-              buildNodeCheckboxes("add-user-nodes-wrap", "", (window.nahanConfig?.slaveNodes||"").split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
+              buildNodeCheckboxes("add-user-nodes-wrap", "", getGlobalNodeList());
+          }
+          function closeAddUserPage() {
+              document.getElementById('view-add-user').classList.add('hidden');
+              document.getElementById('view-users').classList.remove('hidden');
+              var sc = document.querySelector('.scroll-content');
+              sc.style.overflow = '';
+              sc.classList.remove('flex', 'flex-col');
+              sc.firstElementChild.classList.remove('flex-1', 'min-h-0', 'flex', 'flex-col');
+              updateTitle();
+          }
+          function closeEditUserPage() {
+              document.getElementById('view-edit-user').classList.add('hidden');
+              document.getElementById('view-users').classList.remove('hidden');
+              var sc = document.querySelector('.scroll-content');
+              sc.style.overflow = '';
+              sc.classList.remove('flex', 'flex-col');
+              sc.firstElementChild.classList.remove('flex-1', 'min-h-0', 'flex', 'flex-col');
+              updateTitle();
+          }
+          function updateTitleText(txt) {
+              var el = document.getElementById('view-title');
+              if (el) el.innerText = txt;
           }
 
           
@@ -10263,6 +9234,20 @@ function getSelectedCheckboxes(wrapId) {
     if(!wrap) return '';
     const checked = Array.from(wrap.querySelectorAll('input:checked')).map(cb => cb.value);
     return checked.join(',');
+}
+function getGlobalNodeList() {
+    var nodes = (window.nahanConfig && window.nahanConfig.slaveNodes ? window.nahanConfig.slaveNodes : "").split(/[\\s,;]+/).map(function(s){return s.trim();}).filter(Boolean);
+    var lp = (window.nahanConfig && Array.isArray(window.nahanConfig.linkedPanels)) ? window.nahanConfig.linkedPanels : [];
+    lp.forEach(function(p){
+        var raw = (p && typeof p === 'object') ? (p.url || '') : (p || '');
+        raw = String(raw).trim();
+        if(!raw) return;
+        raw = raw.replace(/^[a-zA-Z]+:\\/\\//, '').split('/')[0].split('@').pop();
+        var h = raw.indexOf('[') === 0 ? raw.slice(0, raw.indexOf(']') + 1) : raw.split(':')[0];
+        h = h.trim();
+        if(h) nodes.push(h);
+    });
+    return nodes.filter(function(v,i,a){return a.indexOf(v) === i;});
 }
 function buildNodeCheckboxes(wrapId, selectedNodes, allNodes) {
     const wrap = document.getElementById(wrapId);
@@ -10361,7 +9346,7 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                if (nodesCheckbox) nodesArray.push(...nodesCheckbox.split(','));
                if (nodesCustom) nodesArray.push(...nodesCustom.split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
                const userNodes = nodesArray.length ? nodesArray.join(',') : null;
-               const nat64 = document.getElementById('add-user-nat64').value.trim() || null;
+               const nat64 = document.getElementById('edit-user-nat64').value.trim() || null;
                
                if(!name) {
                    alert(lang === 'fa' ? 'لطفاً نام را وارد کنید' : 'Please enter a name');
@@ -10376,32 +9361,43 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                   return;
               }
 
-              tReq = tReq ? parseInt(tReq) : null;
-              dReq = dReq ? parseInt(dReq) : null;
-              days = days ? parseInt(days) : null;
-              
-              let newId = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-                  .map((b,i) => (i===4||i===6||i===8||i===10?'-':'') + b.toString(16).padStart(2,'0')).join('');
-              
-               const u = {
-                   id: newId,
-                   name: name,
-                   limitTotalReq: tReq,
-                   limitDailyReq: dReq,
-                   expiryMs: days ? Date.now() + days*86400000 : null,
-                   proxyIp: proxyIp,
-                    cleanIp: cleanIp,
-                    customName: customName,
-                    userMode: userMode,
-                    userPorts: userPorts,
-                    maxConfigs: maxConfigs,
-                    userNodes: userNodes,
-                    nat64: nat64,
-                    createdAt: Date.now()
-               };
+               tReq = tReq ? parseInt(tReq) : null;
+               dReq = dReq ? parseInt(dReq) : null;
+               days = days ? parseInt(days) : null;
+               let connLimit = document.getElementById('add-user-conn-limit').value;
+               connLimit = connLimit ? parseInt(connLimit) : null;
+               const userPanelUrl = document.getElementById('add-user-panel-url').value.trim() || null;
+               
+               let newId = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                   .map((b,i) => (i===4||i===6||i===8||i===10?'-':'') + b.toString(16).padStart(2,'0')).join('');
+               
+                const u = {
+                    id: newId,
+                    name: name,
+                    limitTotalReq: tReq,
+                    limitDailyReq: dReq,
+                    expiryMs: days ? Date.now() + days*86400000 : null,
+                    proxyIp: proxyIp,
+                     cleanIp: cleanIp,
+                     customName: customName,
+                     userMode: userMode,
+                     userPorts: userPorts,
+                     maxConfigs: maxConfigs,
+                     userNodes: userNodes,
+                     nat64: nat64,
+                     connLimit: connLimit,
+                     userPanelUrl: userPanelUrl,
+                     createdAt: Date.now()
+                };
               
               window.nahanConfig.users.push(u);
-              document.getElementById('modal-add-user').classList.add('hidden');
+              document.getElementById('view-add-user').classList.add('hidden');
+              document.getElementById('view-users').classList.remove('hidden');
+              var sc = document.querySelector('.scroll-content');
+              sc.style.overflow = '';
+              sc.classList.remove('flex', 'flex-col');
+              sc.firstElementChild.classList.remove('flex-1', 'min-h-0', 'flex', 'flex-col');
+              updateTitle();
               document.getElementById('add-user-name').value = '';
                document.getElementById('add-user-custom-name').value = '';
                document.getElementById('add-user-custom-clean').value = '';
@@ -10411,6 +9407,8 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
               document.getElementById('add-user-daily-reqs').value = '';
               document.getElementById('add-user-days').value = '';
               document.getElementById('add-user-max-configs').value = '';
+              document.getElementById('add-user-conn-limit').value = '';
+              document.getElementById('add-user-panel-url').value = '';
               
               renderUsersTable();
               doSaveDirectly();
@@ -10451,7 +9449,7 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                buildIPCheckboxes("edit-user-proxy-ips-wrap", checkedGlobalProxy.join(','), globalProxyIps);
                document.getElementById('edit-user-custom-proxy').value = customProxy.join(', ');
 
-               const globalNodes = (window.nahanConfig?.slaveNodes||"").split(/[\\r\\n,;]+/).map(s=>s.trim()).filter(Boolean);
+               const globalNodes = getGlobalNodeList();
                const userNodesList = (u.userNodes || "").split(/[\\r\\n,;]+/).map(s=>s.trim()).filter(Boolean);
                const checkedGlobalNodes = [];
                const customNodes = [];
@@ -10467,6 +9465,8 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                document.getElementById('edit-user-custom-name').value = u.customName || '';
               
               document.getElementById('edit-user-max-configs').value = u.maxConfigs || '';
+              document.getElementById('edit-user-conn-limit').value = u.connLimit || '';
+              document.getElementById('edit-user-panel-url').value = u.userPanelUrl || '';
               
               buildPortCheckboxes('edit-user-ports-wrap', u.userPorts);
               buildModeCheckboxes('edit-user-mode-wrap', u.userMode);
@@ -10478,7 +9478,13 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
               }
               document.getElementById('edit-user-days').value = daysLeft;
               
-              document.getElementById('modal-edit-user').classList.remove('hidden');
+              document.getElementById('view-users').classList.add('hidden');
+              document.getElementById('view-edit-user').classList.remove('hidden');
+              var sc = document.querySelector('.scroll-content');
+              sc.style.overflow = 'hidden';
+              sc.classList.add('flex', 'flex-col');
+              sc.firstElementChild.classList.add('flex-1', 'min-h-0', 'flex', 'flex-col');
+              updateTitleText('Edit Subscriber');
           }
 
           function commitEditUser() {
@@ -10517,7 +9523,10 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
                if (nodesCheckbox) nodesArray.push(...nodesCheckbox.split(','));
                if (nodesCustom) nodesArray.push(...nodesCustom.split(/[\\s,;]+/).map(s=>s.trim()).filter(Boolean));
                const userNodes = nodesArray.length ? nodesArray.join(',') : null;
-               const nat64 = document.getElementById('edit-user-nat64').value.trim() || null;
+                const nat64 = document.getElementById('add-user-nat64').value.trim() || null;
+                let connLimit = document.getElementById('edit-user-conn-limit').value;
+                connLimit = connLimit ? parseInt(connLimit) : null;
+                const userPanelUrl = document.getElementById('edit-user-panel-url').value.trim() || null;
                
                if(!name) {
                   alert(lang === 'fa' ? 'لطفاً نام را وارد کنید' : 'Please enter a name');
@@ -10549,321 +9558,89 @@ function buildPortCheckboxes(wrapId, selectedPorts) {
               u.maxConfigs = maxConfigs;
               u.userNodes = userNodes;
               u.nat64 = nat64;
+              u.connLimit = connLimit;
+              u.userPanelUrl = userPanelUrl;
               
-              document.getElementById('modal-edit-user').classList.add('hidden');
+              document.getElementById('view-edit-user').classList.add('hidden');
+              document.getElementById('view-users').classList.remove('hidden');
+              var sc = document.querySelector('.scroll-content');
+              sc.style.overflow = '';
+              sc.classList.remove('flex', 'flex-col');
+              sc.firstElementChild.classList.remove('flex-1', 'min-h-0', 'flex', 'flex-col');
               renderUsersTable();
               doSaveDirectly();
           }
 
-          function renderShopView() {
-              const conf = window.nahanConfig;
-              if (!conf) return;
-              const el = id => document.getElementById(id);
-              if (el('shop-purchase-enabled')) el('shop-purchase-enabled').checked = conf.purchaseEnabled || false;
-              if (el('shop-free-trial')) el('shop-free-trial').checked = conf.freeTrial || false;
-              if (el('shop-trial-days')) el('shop-trial-days').value = conf.freeTrialDays || 3;
-              if (el('shop-trial-gb')) el('shop-trial-gb').value = conf.freeTrialGB || 3;
-              if (el('shop-card-number')) el('shop-card-number').value = conf.adminCardNumber || '';
-              if (el('shop-card-owner')) el('shop-card-owner').value = conf.adminCardOwner || '';
-              if (el('shop-welcome-msg')) el('shop-welcome-msg').value = conf.botWelcomeMsg || '';
-              if (el('shop-support-msg')) el('shop-support-msg').value = conf.botSupportMsg || '';
-              renderShopPlans();
-              renderPendingPurchases();
-              renderPromoCodes();
-              updateShopStats();
-          }
-
-          function updateShopStats() {
-              const conf = window.nahanConfig || {};
-              const pending = (conf.pendingPurchases || []).length;
-              const plans = (conf.purchaseOptions || []).length;
-              const purchaseOn = conf.purchaseEnabled || false;
-              const trialOn = conf.freeTrial || false;
-              const el = id => document.getElementById(id);
-              if (el('shop-stat-pending')) el('shop-stat-pending').textContent = pending;
-              if (el('shop-stat-plans')) el('shop-stat-plans').textContent = plans;
-              if (el('shop-stat-purchase')) {
-                  el('shop-stat-purchase').textContent = purchaseOn ? 'ON' : 'OFF';
-                  el('shop-stat-purchase').className = 'text-2xl font-black ' + (purchaseOn ? 'text-emerald-500' : 'text-slate-400');
-              }
-              if (el('shop-stat-trial')) {
-                  el('shop-stat-trial').textContent = trialOn ? 'ON' : 'OFF';
-                  el('shop-stat-trial').className = 'text-2xl font-black ' + (trialOn ? 'text-violet-500' : 'text-slate-400');
-              }
-          }
-
-          function renderShopPlans() {
-              const plans = (window.nahanConfig && window.nahanConfig.purchaseOptions) ? window.nahanConfig.purchaseOptions : [];
-              const list = document.getElementById('shop-plans-list');
-              if (!list) return;
-              if (plans.length === 0) {
-                  list.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No purchase plans configured. Add a plan to get started.</p>';
-                  const statEl = document.getElementById('shop-stat-plans');
-                  if (statEl) statEl.textContent = '0';
-                  return;
-              }
-              list.innerHTML = plans.map((p, idx) => \`
-                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50">
-                      <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          <div>
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Name</label>
-                              <input type="text" value="\${p.name || ''}" onchange="window.nahanConfig.purchaseOptions[\${idx}].name=this.value;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs font-semibold">
-                          </div>
-                          <div>
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Price</label>
-                              <input type="text" value="\${p.price || ''}" placeholder="e.g. 50,000 T" onchange="window.nahanConfig.purchaseOptions[\${idx}].price=this.value;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs">
-                          </div>
-                          <div>
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Days</label>
-                              <input type="number" value="\${p.days || 30}" min="1" onchange="window.nahanConfig.purchaseOptions[\${idx}].days=parseInt(this.value)||30;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs">
-                          </div>
-                          <div>
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">GB</label>
-                              <input type="number" value="\${p.gb || 10}" min="1" onchange="window.nahanConfig.purchaseOptions[\${idx}].gb=parseInt(this.value)||10;" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-darkborder bg-white dark:bg-slate-900 focus:border-primary outline-none text-xs">
-                          </div>
-                      </div>
-                      <button onclick="removeShopPlan(\${idx})" class="shrink-0 p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 rounded-xl transition-colors" title="Remove Plan">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                      </button>
-                  </div>
-              \`).join('');
-              const statEl = document.getElementById('shop-stat-plans');
-              if (statEl) statEl.textContent = plans.length;
-          }
-
-          function addShopPlan() {
-              if (!window.nahanConfig) return;
-              if (!window.nahanConfig.purchaseOptions) window.nahanConfig.purchaseOptions = [];
-              const newId = 'plan_' + Date.now();
-              window.nahanConfig.purchaseOptions.push({ id: newId, name: 'New Plan', price: '', days: 30, gb: 10 });
-              renderShopPlans();
-              updateShopStats();
-          }
-
-          function removeShopPlan(idx) {
-              if (!window.nahanConfig || !window.nahanConfig.purchaseOptions) return;
-              window.nahanConfig.purchaseOptions.splice(idx, 1);
-              renderShopPlans();
-              updateShopStats();
-          }
-
-          function renderPendingPurchases() {
-              const purchases = (window.nahanConfig && window.nahanConfig.pendingPurchases) ? window.nahanConfig.pendingPurchases : [];
-              const list = document.getElementById('shop-pending-list');
-              if (!list) return;
-              if (purchases.length === 0) {
-                  list.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">✅ No pending purchase requests.</p>';
-                  const statEl = document.getElementById('shop-stat-pending');
-                  if (statEl) statEl.textContent = '0';
-                  return;
-              }
-              list.innerHTML = purchases.map((p, idx) => {
-                  const timeStr = p.ts ? new Date(p.ts).toLocaleString('en-US', {hour12: false}) : '-';
-                  const planName = p.planName || p.packageId || 'Unknown';
-                  const username = p.username ? '@' + p.username : (p.firstName || ('User ' + p.chatId));
-                  const hasReceipt = p.receiptFileId ? true : false;
-                  return \`
-                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-200 dark:border-amber-800/30">
-                      <div class="flex-1 min-w-0">
-                          <div class="flex items-center gap-2 mb-1">
-                              <span class="font-bold text-sm text-slate-800 dark:text-slate-100">\${username}</span>
-                              \${hasReceipt ? '<span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">Receipt Uploaded</span>' : '<span class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold">Awaiting Receipt</span>'}
-                          </div>
-                          <div class="text-xs text-slate-500">📦 \${planName}</div>
-                          <div class="text-[10px] text-slate-400 mt-0.5">🕒 \${timeStr} · ID: \${p.chatId}</div>
-                      </div>
-                      <div class="flex items-center gap-2 shrink-0">
-                          <button onclick="approvePurchase(\${idx})" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm">
-                              ✅ Approve
-                          </button>
-                          <button onclick="rejectPurchase(\${idx})" class="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm">
-                              ❌ Reject
-                          </button>
-                      </div>
-                  </div>
-                  \`;
-              }).join('');
-              const statEl = document.getElementById('shop-stat-pending');
-              if (statEl) statEl.textContent = purchases.length;
-          }
-
-          function approvePurchase(idx) {
-              const conf = window.nahanConfig;
-              if (!conf || !conf.pendingPurchases) return;
-              const purchase = conf.pendingPurchases[idx];
-              if (!purchase) return;
-              const confirmMsg = lang === 'fa'
-                  ? \`آیا از تأیید خرید \${purchase.username ? '@'+purchase.username : purchase.chatId} مطمئنید؟\`
-                  : \`Approve purchase for \${purchase.username ? '@'+purchase.username : purchase.chatId}?\`;
-              if (!confirm(confirmMsg)) return;
-
-              const plan = (conf.purchaseOptions || []).find(p => p.id === purchase.packageId) || {};
-              const gb = purchase.gb || plan.gb || 10;
-              const days = purchase.days || plan.days || 30;
-              const expiryMs = Date.now() + days * 24 * 3600 * 1000;
-              const limitTotalReq = Math.round(gb * 6000);
-
-              if (!conf.users) conf.users = [];
-              const existingUser = conf.users.find(u => u.tgChatId == purchase.chatId);
-              if (existingUser) {
-                  existingUser.isPaused = false;
-                  existingUser.expiryMs = expiryMs;
-                  existingUser.limitTotalReq = limitTotalReq;
-                  existingUser.disabledReason = null;
-                  existingUser.disabledAt = null;
-              } else {
-                  const newId = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
-                  conf.users.push({
-                      id: newId,
-                      name: purchase.firstName || purchase.username || ('User ' + purchase.chatId),
-                      tgChatId: purchase.chatId,
-                      limitTotalReq,
-                      expiryMs,
-                      createdAt: Date.now(),
-                      subId: newId
+          async function loadApiKeys() {
+              try {
+                  const res = await fetch(baseRoute + '/api/keys', {
+                      headers: { 'Authorization': 'Bearer ' + sessionKey }
                   });
-              }
-
-              conf.pendingPurchases.splice(idx, 1);
-              renderPendingPurchases();
-              renderUsersTable();
-              updateShopStats();
-              doSaveDirectly();
+                  const data = await res.json();
+                  if (data.success) {
+                      const list = document.getElementById('api-keys-list');
+                      if (!list) return;
+                      if (!data.keys || data.keys.length === 0) {
+                          list.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-500">' + (i18n[lang]?.api_keys_empty || 'No API keys generated yet.') + '</p>';
+                          return;
+                      }
+                      list.innerHTML = data.keys.map(k => {
+                          const created = new Date(k.createdAt).toLocaleDateString();
+                          const lastUsed = k.lastUsed ? new Date(k.lastUsed).toLocaleDateString() : (i18n[lang]?.never || 'Never');
+                          return '<div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-darkborder">' +
+                              '<div class="flex-1 min-w-0">' +
+                              '<p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">' + (k.name || 'Unnamed') + '</p>' +
+                              '<p class="text-[10px] font-mono text-slate-400 mt-0.5">' + k.keyPreview + '</p>' +
+                              '<p class="text-[10px] text-slate-400 mt-0.5">' + (i18n[lang]?.created || 'Created') + ': ' + created + ' · ' + (i18n[lang]?.last_used || 'Last used') + ': ' + lastUsed + '</p>' +
+                              '</div>' +
+                              '<button onclick="revokeApiKey(\\'' + k.id + '\\')" class="ms-3 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">' + (i18n[lang]?.revoke || 'Revoke') + '</button>' +
+                              '</div>';
+                      }).join('');
+                  }
+              } catch(e) {}
           }
 
-          function rejectPurchase(idx) {
-              const conf = window.nahanConfig;
-              if (!conf || !conf.pendingPurchases) return;
-              const purchase = conf.pendingPurchases[idx];
-              if (!purchase) return;
-              const confirmMsg = lang === 'fa'
-                  ? \`رد کردن درخواست خرید \${purchase.username ? '@'+purchase.username : purchase.chatId}؟\`
-                  : \`Reject purchase request from \${purchase.username ? '@'+purchase.username : purchase.chatId}?\`;
-              if (!confirm(confirmMsg)) return;
-              conf.pendingPurchases.splice(idx, 1);
-              renderPendingPurchases();
-              updateShopStats();
-              doSaveDirectly();
+          async function generateApiKey() {
+              const name = prompt(i18n[lang]?.enter_key_name || 'Enter a name for this API key:');
+              if (!name) return;
+              try {
+                  const res = await fetch(baseRoute + '/api/keys', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionKey },
+                      body: JSON.stringify({ action: 'create', name })
+                  });
+                  const data = await res.json();
+                  if (data.success && data.key) {
+                      const newBox = document.getElementById('api-key-new');
+                      const keyInput = document.getElementById('api-key-value');
+                      keyInput.value = data.key.key;
+                      newBox.classList.remove('hidden');
+                      loadApiKeys();
+                  } else {
+                      alert(data.error || 'Failed to create key');
+                  }
+              } catch(e) { alert('Error: ' + e.message); }
           }
 
-          function renderPromoCodes() {
-              const codes = (window.nahanConfig && window.nahanConfig.promoCodes) ? window.nahanConfig.promoCodes : [];
-              const list = document.getElementById('shop-promo-list');
-              if (!list) return;
-              if (codes.length === 0) {
-                  list.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No promo codes yet. Add one to offer discounts.</p>';
-                  return;
-              }
-              const nowMs = Date.now();
-              list.innerHTML = codes.map((c, idx) => {
-                  const isExpired = c.validUntil && nowMs > c.validUntil;
-                  const isFull = c.maxUses > 0 && c.usedCount >= c.maxUses;
-                  const statusBadge = !c.isActive
-                      ? '<span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded font-bold">OFF</span>'
-                      : isExpired
-                      ? '<span class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold">EXPIRED</span>'
-                      : isFull
-                      ? '<span class="text-[10px] bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded font-bold">FULL</span>'
-                      : '<span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>';
-                  const discountText = c.discountType === 'percentage' ? \`\${c.discountValue}%\` : \`\${c.discountValue} off\`;
-                  const expiryText = c.validUntil ? new Date(c.validUntil).toLocaleDateString('en-US') : 'No expiry';
-                  const usesText = c.maxUses > 0 ? \`\${c.usedCount}/\${c.maxUses}\` : \`\${c.usedCount}/∞\`;
-                  return \`
-                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-darkborder/50 \${!c.isActive || isExpired || isFull ? 'opacity-60' : ''}">
-                      <div class="flex-1 min-w-0">
-                          <div class="flex items-center flex-wrap gap-2 mb-1">
-                              <code class="font-black text-sm text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-lg">\${c.code}</code>
-                              \${statusBadge}
-                              <span class="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">\${c.discountType === 'percentage' ? '%' : '$'} \${discountText}</span>
-                          </div>
-                          <div class="flex flex-wrap gap-3 text-[11px] text-slate-400 mt-1">
-                              <span>📊 Uses: <strong class="text-slate-600 dark:text-slate-300">\${usesText}</strong></span>
-                              <span>📅 Expires: <strong class="text-slate-600 dark:text-slate-300">\${expiryText}</strong></span>
-                              \${c.note ? \`<span>📝 \${c.note}</span>\` : ''}
-                          </div>
-                      </div>
-                      <div class="flex items-center gap-2 shrink-0">
-                          <button onclick="togglePromoCode(\${idx})" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-colors \${c.isActive ? 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300' : 'bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'}">
-                              \${c.isActive ? '⏸ Disable' : '▶ Enable'}
-                          </button>
-                          <button onclick="removePromoCode(\${idx})" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 rounded-xl transition-colors" title="Delete">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                          </button>
-                      </div>
-                  </div>
-                  \`;
-              }).join('');
+          async function revokeApiKey(id) {
+              if (!confirm(i18n[lang]?.confirm_revoke || 'Revoke this API key? The remote panel will lose access.')) return;
+              try {
+                  const res = await fetch(baseRoute + '/api/keys', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionKey },
+                      body: JSON.stringify({ action: 'revoke', id })
+                  });
+                  const data = await res.json();
+                  if (data.success) loadApiKeys();
+                  else alert(data.error || 'Failed to revoke key');
+              } catch(e) { alert('Error: ' + e.message); }
           }
 
-          function addPromoCode() {
-              const code = prompt('Promo code (e.g. WELCOME20):');
-              if (!code || !code.trim()) return;
-              const codeClean = code.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
-              if (!codeClean) return alert('Invalid code. Use letters, numbers, _ or -');
-              const conf = window.nahanConfig;
-              if (!conf) return;
-              if (!conf.promoCodes) conf.promoCodes = [];
-              if (conf.promoCodes.find(c => c.code === codeClean)) return alert('This code already exists.');
-
-              const discType = prompt('Discount type: enter "%" for percentage or "f" for fixed amount:', '%') === 'f' ? 'fixed' : 'percentage';
-              const discVal = parseFloat(prompt(\`Discount value (\${discType === 'percentage' ? 'e.g. 10 for 10%' : 'e.g. 5000 for fixed amount'}):\`) || '0');
-              if (!discVal || discVal <= 0) return alert('Invalid discount value.');
-              const maxUses = parseInt(prompt('Max uses (0 = unlimited):', '0') || '0');
-              const daysValid = parseInt(prompt('Valid for how many days? (0 = no expiry):', '30') || '0');
-              const noteText = prompt('Note/description (optional):') || '';
-
-              const validUntil = daysValid > 0 ? Date.now() + daysValid * 86400000 : null;
-              conf.promoCodes.push({
-                  id: 'promo_' + Date.now(),
-                  code: codeClean,
-                  discountType: discType,
-                  discountValue: discVal,
-                  maxUses: maxUses,
-                  usedCount: 0,
-                  usedBy: [],
-                  validUntil: validUntil,
-                  applicablePlans: [],
-                  isActive: true,
-                  createdAt: Date.now(),
-                  note: noteText
-              });
-              renderPromoCodes();
-              doSaveDirectly();
-          }
-
-          function togglePromoCode(idx) {
-              const conf = window.nahanConfig;
-              if (!conf || !conf.promoCodes || !conf.promoCodes[idx]) return;
-              conf.promoCodes[idx].isActive = !conf.promoCodes[idx].isActive;
-              renderPromoCodes();
-              doSaveDirectly();
-          }
-
-          function removePromoCode(idx) {
-              const conf = window.nahanConfig;
-              if (!conf || !conf.promoCodes) return;
-              const c = conf.promoCodes[idx];
-              if (!c) return;
-              if (!confirm(\`Delete promo code "\${c.code}"? This cannot be undone.\`)) return;
-              conf.promoCodes.splice(idx, 1);
-              renderPromoCodes();
-              doSaveDirectly();
-          }
-
-          function saveShopConfig() {
-              const el = id => document.getElementById(id);
-              const conf = window.nahanConfig;
-              if (!conf) return;
-              if (el('shop-purchase-enabled')) conf.purchaseEnabled = el('shop-purchase-enabled').checked;
-              if (el('shop-free-trial')) conf.freeTrial = el('shop-free-trial').checked;
-              if (el('shop-trial-days')) conf.freeTrialDays = parseInt(el('shop-trial-days').value) || 3;
-              if (el('shop-trial-gb')) conf.freeTrialGB = parseInt(el('shop-trial-gb').value) || 3;
-              if (el('shop-card-number')) conf.adminCardNumber = el('shop-card-number').value;
-              if (el('shop-card-owner')) conf.adminCardOwner = el('shop-card-owner').value;
-              if (el('shop-welcome-msg')) conf.botWelcomeMsg = el('shop-welcome-msg').value;
-              if (el('shop-support-msg')) conf.botSupportMsg = el('shop-support-msg').value;
-              updateShopStats();
-              doSaveDirectly();
+          function copyApiKey() {
+              const input = document.getElementById('api-key-value');
+              navigator.clipboard.writeText(input.value);
+              const stat = document.getElementById('save-status');
+              if (stat) { stat.textContent = "Copied!"; stat.className = "text-sm font-bold text-emerald-500 md:me-4"; setTimeout(() => { stat.textContent = ""; }, 2000); }
           }
 
           async function doSaveDirectly() {
