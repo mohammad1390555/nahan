@@ -1714,15 +1714,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         .status-dot.expired { background: #ef4444; color: #ef4444; }
 
         /* ═══ V7.5.0 — PRINT STYLES ═══ */
-        @media print {
-            body { background: #fff !important; color: #000 !important; }
-            .no-print { display: none !important; }
-            .card-main { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
-            .glass-card { backdrop-filter: none !important; background: #f9f9f9 !important; border: 1px solid #ccc !important; break-inside: avoid; page-break-inside: avoid; }
-            .print-section { display: block !important; page-break-before: always; }
-            .gauge-ring { filter: none !important; }
-        }
-        .print-section { display: none; }
+        
     </style>
 </head>
 <body class="min-h-screen py-6 px-4 flex flex-col items-center justify-center fade-in">
@@ -1865,16 +1857,6 @@ function serveSubscriptionInfoPage(user, host, url, request) {
     </div>
 
     <!-- QR Code Modal -->
-    <div id="qr-modal" class="fixed inset-0 modal-overlay backdrop-blur-md z-50 hidden items-center justify-center p-4">
-        <div class="modal-card rounded-3xl max-w-sm w-full p-6 text-center space-y-4">
-            <h3 id="qr-title" class="text-lg font-black" style="color: var(--text-primary);"></h3>
-            <div class="bg-white p-4 rounded-2xl inline-block mx-auto">
-                <img id="qr-img" src="" alt="QR Code" class="w-48 h-48">
-            </div>
-            <p id="qr-text" class="text-[10px] font-mono break-all p-3 rounded-xl max-h-24 overflow-y-auto" style="color: var(--text-muted); background: var(--bg-input); border: 1px solid var(--border-inner);"></p>
-            <button onclick="closeQRModal()" class="w-full py-2.5 btn-primary rounded-xl text-xs font-bold transition-colors" data-i18n="close">Close</button>
-        </div>
-    </div>
 
     <!-- Toast -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-xs shadow-xl opacity-0 transition-opacity duration-350 pointer-events-none font-bold" style="background: var(--green-text); color: white;"></div>
@@ -1963,19 +1945,12 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         // V7.5.0 — QR Modal
         function showQRModal(url, title) {
             const modal = document.getElementById('qr-modal');
-            const qrImg = document.getElementById('qr-img');
-            const qrTitle = document.getElementById('qr-title');
+            const qrImg = document.getElementById('qr-modal-img');
+            const qrTitle = document.getElementById('qr-modal-title');
             if (modal && qrImg) {
                 qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
                 if (qrTitle) qrTitle.textContent = title || 'QR Code';
                 modal.classList.add('active');
-            }
-        }
-        function closeQRModal() {
-            const modal = document.getElementById('qr-modal');
-            if (modal) modal.classList.remove('active');
-        }
-
         // V7.5.0 — Copy with Toast
         function copyWithToast(text) {
             navigator.clipboard.writeText(text).then(() => {
@@ -2156,20 +2131,6 @@ function serveSubscriptionInfoPage(user, host, url, request) {
             } catch(e) {
                 alert(I18N[currentLang].decodedError + ': ' + e.message);
             }
-        }
-
-        function showQRModal() {
-            const t = I18N[currentLang];
-            document.getElementById('qr-title').innerText = t.qrTitle;
-            document.getElementById('qr-text').innerText = '${syncNormal}';
-            document.getElementById('qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent('${syncNormal}');
-            document.getElementById('qr-modal').classList.remove('hidden');
-            document.getElementById('qr-modal').classList.add('flex');
-        }
-
-        function closeQRModal() {
-            document.getElementById('qr-modal').classList.add('hidden');
-            document.getElementById('qr-modal').classList.remove('flex');
         }
 
         function showToast(msg) {
@@ -7867,8 +7828,8 @@ function getDashboardUI(hasDB) {
       </div>
       
       <!-- QR Code Modal (Enhanced) -->
-      <div id="qr-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-          <div class="bg-white dark:bg-darkcard rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-darkborder relative">
+      <div id="qr-modal" class="qr-modal-overlay">
+          <div class="qr-modal-card">
               <button onclick="closeQRModal()" class="absolute top-4 end-4 text-slate-400 hover:text-slate-800 dark:hover:text-white">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
@@ -8792,8 +8753,7 @@ function getDashboardUI(hasDB) {
           }
 
           function closeQRModal() {
-              document.getElementById('qr-modal').classList.add('hidden');
-              document.getElementById('qr-modal').classList.remove('flex');
+              document.getElementById('qr-modal')?.classList.remove('active');
           }
   
           function updateUI() {
@@ -9313,25 +9273,6 @@ function getDashboardUI(hasDB) {
           }
 
           document.getElementById('pwd').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
-  
-        // V7.5.0 - Animated Counter
-        function animateCounter(el, target, dur) {
-            let s = 0;
-            const step = (t) => {
-                if (!s) s = t;
-                const p = Math.min((t - s) / dur, 1);
-                el.textContent = Math.floor(p * target).toLocaleString();
-                if (p < 1) requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-        }
-        function initCounters() {
-            document.querySelectorAll("[data-count]").forEach(el => {
-                animateCounter(el, parseInt(el.getAttribute("data-count")) || 0, 1200);
-            });
-        }
-          function renderUsersTable() {
-              const tbl = document.getElementById('tbl-users');
               if(!tbl) return;
               let users = window.nahanConfig?.users || [];
               let usage = window.nahanUsage || {};
