@@ -1945,8 +1945,8 @@ function serveSubscriptionInfoPage(user, host, url, request) {
         // V7.5.0 — QR Modal
         function showQRModal(url, title) {
             const modal = document.getElementById('qr-modal');
-            const qrImg = document.getElementById('qr-img');
-            const qrTitle = document.getElementById('qr-title');
+            const qrImg = document.getElementById('qr-modal-img');
+            const qrTitle = document.getElementById('qr-modal-title');
             if (modal && qrImg) {
                 qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
                 if (qrTitle) qrTitle.textContent = title || 'QR Code';
