@@ -5,7 +5,12 @@
  * Handles real-time binary streams from remote sensor nodes.
  */
 
-const CURRENT_VERSION = "7.6.0";
+const CURRENT_VERSION = "7.6.1";
+async function processTelemetryStream(env, ctx, wsRelayIdx) {
+    // WebSocket transport is disabled - return 404
+    return new Response('WebSocket transport is disabled', { status: 404 });
+}
+
 
 // Static changelog — fallback when GitHub is unreachable and for offline installs.
 const CHANGELOG_DATA = [
@@ -1345,14 +1350,28 @@ export default {
                 let wsRelayIdx = -1;
                 try {
                     const riParam = url.searchParams.get('ri');
-                    if (riParam !== null) wsRelayIdx = parseInt(riParam, 10);
+                    if (riParam !== null) {
+                        const parsed = parseInt(riParam, 10);
+                        if (!isNaN(parsed)) wsRelayIdx = parsed;
+                    }
                 } catch(e) {}
+                
                 if (wsRelayIdx < 0) {
                     try {
                         const lastSeg = url.pathname.split('/').pop();
                         if (lastSeg) {
                             const num = parseInt(lastSeg, 10);
                             if (!isNaN(num) && num >= 0) wsRelayIdx = num;
+                        }
+                    } catch(e) {}
+                }
+                
+                if (wsRelayIdx < 0) {
+                    try {
+                        const lastSeg = url.pathname.split('/').pop();
+                        if (lastSeg) {
+                            const decoded = JSON.parse(atob(lastSeg));
+                            if (typeof decoded.relayIdx === 'number') wsRelayIdx = decoded.relayIdx;
                         }
                     } catch(e) {}
                 }
@@ -10674,64 +10693,83 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
     
     const send = async (text, kb, editMsgId) => {
         const payload = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: kb };
+        let res;
         if (editMsgId) {
-            const res = await fetch(`${tgApi}/editMessageText`, { 
+            res = await fetch(`${tgApi}/editMessageText`, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ ...payload, message_id: editMsgId }) 
             });
             if (res.ok) return res;
         }
-        return fetch(`${tgApi}/sendMessage`, { 
+        res = await fetch(`${tgApi}/sendMessage`, { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify(payload) 
         });
+        return res;
     };
 
-    const answerCb = (text = '') => fetch(`${tgApi}/answerCallbackQuery`, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ callback_query_id: update.callback_query?.id, text, show_alert: false }) 
-    });
+    const answerCb = (text = '') => {
+        if (!update.callback_query) return Promise.resolve();
+        return fetch(`${tgApi}/answerCallbackQuery`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ 
+                callback_query_id: update.callback_query.id, 
+                text, 
+                show_alert: false 
+            }) 
+        });
+    };
 
     const uu = sysConfig.users.find(x => x.id === linkedUser.id);
     const idClean = uu?.id?.replace(/-/g, '').toLowerCase();
     const sysU = sysUsageCache?.users?.[idClean] || { reqs: 0 };
 
-    // --- Helpers ---
+    // Helper functions
     const formatGB = (reqs) => (reqs / 6000).toFixed(2);
-    const getProgressBar = (used, total) => {
-        if (!total) return '♾️';
-        const p = Math.min(100, Math.round((used / total) * 100));
-        const filled = Math.round(p / 10);
-        return '<code>' + '█'.repeat(filled) + '░'.repeat(10 - filled) + '</code> ' + p + '%';
-    };
 
-    // --- Menus ---
     const getMainMenu = () => {
         const balance = uu?.walletBalance || 0;
         const activeSvcs = (uu?.services || []).filter(s => !s.isPaused && (!s.expiryMs || Date.now() <= s.expiryMs));
-        const usedGB = formatGB(sysU.reqs);
+        const usedGB = formatGB(sysU.reqs || 0);
         
         const text = isFA 
-            ? `👋 <b>سلام ${uu?.name || ''}!</b>\n${SEP}\n` +
-              `👤 <b>شناسه کاربر:</b> <code>${uu?.id.substring(0,8)}</code>\n` +
-              `💳 <b>موجودی کیف پول:</b> <code>${balance.toLocaleString()}</code> تومان\n` +
-              `📦 <b>سرویس‌های فعال:</b> <code>${activeSvcs.length}</code>\n` +
-              `📊 <b>مصرف کل:</b> <code>${usedGB}</code> GB\n${SEP}\n` +
+            ? `👋 <b>سلام ${uu?.name || ''}!</b>
+${SEP}
+` +
+              `👤 <b>شناسه کاربر:</b> <code>${uu?.id?.substring(0,8) || ''}</code>
+` +
+              `💳 <b>موجودی کیف پول:</b> <code>${balance.toLocaleString()}</code> تومان
+` +
+              `📦 <b>سرویس‌های فعال:</b> <code>${activeSvcs.length}</code>
+` +
+              `📊 <b>مصرف کل:</b> <code>${usedGB}</code> GB
+${SEP}
+` +
               `✨ <i>خوش آمدید! از منوی زیر استفاده کنید:</i>`
-            : `👋 <b>Hello ${uu?.name || ''}!</b>\n${SEP}\n` +
-              `👤 <b>User ID:</b> <code>${uu?.id.substring(0,8)}</code>\n` +
-              `💳 <b>Wallet Balance:</b> <code>${balance.toLocaleString()}</code> IRT\n` +
-              `📦 <b>Active Services:</b> <code>${activeSvcs.length}</code>\n` +
-              `📊 <b>Total Usage:</b> <code>${usedGB}</code> GB\n${SEP}\n` +
+            : `👋 <b>Hello ${uu?.name || ''}!</b>
+${SEP}
+` +
+              `👤 <b>User ID:</b> <code>${uu?.id?.substring(0,8) || ''}</code>
+` +
+              `💳 <b>Wallet Balance:</b> <code>${balance.toLocaleString()}</code> IRT
+` +
+              `📦 <b>Active Services:</b> <code>${activeSvcs.length}</code>
+` +
+              `📊 <b>Total Usage:</b> <code>${usedGB}</code> GB
+${SEP}
+` +
               `✨ <i>Welcome! Use the menu below:</i>`;
 
         const kb = { inline_keyboard: [
-            [{ text: isFA ? '📦 سرویس‌های من' : '📦 My Services', callback_data: 'u_services' }, { text: isFA ? '🛒 خرید سرویس' : '🛒 Buy Service', callback_data: 'u_shop' }],
-            [{ text: isFA ? '💳 کیف پول' : '💳 Wallet', callback_data: 'u_wallet' }, { text: isFA ? '🎁 زیرمجموعه‌گیری' : '🎁 Referral', callback_data: 'u_referral' }],
-            [{ text: isFA ? '👤 پروفایل' : '👤 Profile', callback_data: 'u_profile' }, { text: isFA ? '📞 پشتیبانی' : '📞 Support', callback_data: 'u_support' }]
+            [{ text: isFA ? '📦 سرویس‌های من' : '📦 My Services', callback_data: 'u_services' }, 
+             { text: isFA ? '🛒 خرید سرویس' : '🛒 Buy Service', callback_data: 'u_shop' }],
+            [{ text: isFA ? '💳 کیف پول' : '💳 Wallet', callback_data: 'u_wallet' }, 
+             { text: isFA ? '🎁 زیرمجموعه‌گیری' : '🎁 Referral', callback_data: 'u_referral' }],
+            [{ text: isFA ? '👤 پروفایل' : '👤 Profile', callback_data: 'u_profile' }, 
+             { text: isFA ? '📞 پشتیبانی' : '📞 Support', callback_data: 'u_support' }]
         ]};
         return { text, kb };
     };
@@ -10740,17 +10778,32 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
         const svcs = uu?.services || [];
         if (svcs.length === 0) {
             return {
-                text: isFA ? `📦 <b>سرویس‌های شما</b>\n${SEP}\n\n❌ شما هنوز هیچ سرویسی ندارید.` : `📦 <b>Your Services</b>\n${SEP}\n\n❌ You don't have any services yet.`,
-                kb: { inline_keyboard: [[{ text: isFA ? '🛒 خرید اولین سرویس' : '🛒 Buy First Service', callback_data: 'u_shop' }], [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]] }
+                text: isFA ? `📦 <b>سرویس‌های شما</b>
+${SEP}
+
+❌ شما هنوز هیچ سرویسی ندارید.` 
+                           : `📦 <b>Your Services</b>
+${SEP}
+
+❌ You don't have any services yet.`,
+                kb: { inline_keyboard: [
+                    [{ text: isFA ? '🛒 خرید اولین سرویس' : '🛒 Buy First Service', callback_data: 'u_shop' }],
+                    [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]
+                ]}
             };
         }
         
-        let text = isFA ? `📦 <b>لیست سرویس‌های شما:</b>\n${SEP}\n` : `📦 <b>Your Services List:</b>\n${SEP}\n`;
+        let text = isFA ? `📦 <b>لیست سرویس‌های شما:</b>
+${SEP}
+` : `📦 <b>Your Services List:</b>
+${SEP}
+`;
         const kb = { inline_keyboard: [] };
         
         svcs.forEach((s, i) => {
             const status = s.isPaused ? '⏸️' : (s.expiryMs && Date.now() > s.expiryMs ? '❌' : '✅');
-            text += `${i+1}. ${status} <b>${s.name}</b>\n`;
+            text += `${i+1}. ${status} <b>${s.name}</b>
+`;
             kb.inline_keyboard.push([{ text: `${status} ${s.name}`, callback_data: `u_svc_view_${s.subHash}` }]);
         });
         
@@ -10764,29 +10817,44 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
         
         const used = s.used || 0;
         const limit = s.limit || 0;
-        const progress = getProgressBar(used, limit);
-        const status = s.isPaused ? (isFA ? '⏸️ متوقف شده' : '⏸️ Paused') : (s.expiryMs && Date.now() > s.expiryMs ? (isFA ? '❌ منقضی شده' : '❌ Expired') : (isFA ? '✅ فعال' : '✅ Active'));
+        const status = s.isPaused ? (isFA ? '⏸️ متوقف شده' : '⏸️ Paused') : 
+                       (s.expiryMs && Date.now() > s.expiryMs ? (isFA ? '❌ منقضی شده' : '❌ Expired') : 
+                       (isFA ? '✅ فعال' : '✅ Active'));
         const expiry = s.expiryMs ? new Date(s.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US') : (isFA ? 'نامحدود' : 'Unlimited');
         const daysLeft = s.expiryMs ? Math.ceil((s.expiryMs - Date.now()) / 86400000) : null;
         
         const text = isFA
-            ? `🛠 <b>جزئیات سرویس: ${s.name}</b>\n${SEP}\n` +
-              `🔹 <b>وضعیت:</b> ${status}\n` +
-              `📊 <b>مصرف:</b> ${used.toFixed(2)} / ${limit > 0 ? limit + ' GB' : '♾️'}\n` +
-              `${progress}\n` +
-              `📅 <b>انقضا:</b> ${expiry}${daysLeft !== null ? ` (<code>${daysLeft}</code> روز مانده)` : ''}\n` +
-              `🔗 <b>لینک ساب:</b> <code>${hostName}/sub/${s.subHash}</code>\n${SEP}`
-            : `🛠 <b>Service Details: ${s.name}</b>\n${SEP}\n` +
-              `🔹 <b>Status:</b> ${status}\n` +
-              `📊 <b>Usage:</b> ${used.toFixed(2)} / ${limit > 0 ? limit + ' GB' : '♾️'}\n` +
-              `${progress}\n` +
-              `📅 <b>Expiry:</b> ${expiry}${daysLeft !== null ? ` (<code>${daysLeft}</code> days left)` : ''}\n` +
-              `🔗 <b>Sub Link:</b> <code>${hostName}/sub/${s.subHash}</code>\n${SEP}`;
+            ? `🛠 <b>جزئیات سرویس: ${s.name}</b>
+${SEP}
+` +
+              `🔹 <b>وضعیت:</b> ${status}
+` +
+              `📊 <b>مصرف:</b> ${used.toFixed(2)} / ${limit > 0 ? limit + ' GB' : '♾️'}
+` +
+              `📅 <b>انقضا:</b> ${expiry}${daysLeft !== null ? ` (<code>${daysLeft}</code> روز مانده)` : ''}
+` +
+              `🔗 <b>لینک ساب:</b> <code>${hostName}/sub/${s.subHash}</code>
+${SEP}`
+            : `🛠 <b>Service Details: ${s.name}</b>
+${SEP}
+` +
+              `🔹 <b>Status:</b> ${status}
+` +
+              `📊 <b>Usage:</b> ${used.toFixed(2)} / ${limit > 0 ? limit + ' GB' : '♾️'}
+` +
+              `📅 <b>Expiry:</b> ${expiry}${daysLeft !== null ? ` (<code>${daysLeft}</code> days left)` : ''}
+` +
+              `🔗 <b>Sub Link:</b> <code>${hostName}/sub/${s.subHash}</code>
+${SEP}`;
 
         const kb = { inline_keyboard: [
-            [{ text: isFA ? '📋 کپی لینک' : '📋 Copy Link', callback_data: `u_svc_copy_${s.subHash}` }, { text: isFA ? '🔄 تمدید' : '🔄 Renew', callback_data: `u_svc_renew_${s.subHash}` }],
-            [{ text: s.isPaused ? (isFA ? '▶️ فعال‌سازی' : '▶️ Resume') : (isFA ? '⏸️ توقف' : '⏸️ Pause'), callback_data: `u_svc_toggle_${s.subHash}` }, { text: isFA ? '✏️ تغییر نام' : '✏️ Rename', callback_data: `u_svc_rename_${s.subHash}` }],
-            [{ text: isFA ? '🔗 لینک جدید' : '🔗 New Link', callback_data: `u_svc_rehash_${s.subHash}` }, { text: isFA ? '🗑️ حذف' : '🗑️ Delete', callback_data: `u_svc_del_${s.subHash}` }],
+            [{ text: isFA ? '📋 کپی لینک' : '📋 Copy Link', callback_data: `u_svc_copy_${s.subHash}` }, 
+             { text: isFA ? '🔄 تمدید' : '🔄 Renew', callback_data: `u_svc_renew_${s.subHash}` }],
+            [{ text: s.isPaused ? (isFA ? '▶️ فعال‌سازی' : '▶️ Resume') : (isFA ? '⏸️ توقف' : '⏸️ Pause'), 
+               callback_data: `u_svc_toggle_${s.subHash}` }, 
+             { text: isFA ? '✏️ تغییر نام' : '✏️ Rename', callback_data: `u_svc_rename_${s.subHash}` }],
+            [{ text: isFA ? '🔗 لینک جدید' : '🔗 New Link', callback_data: `u_svc_rehash_${s.subHash}` }, 
+             { text: isFA ? '🗑️ حذف' : '🗑️ Delete', callback_data: `u_svc_del_${s.subHash}` }],
             [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_services' }]
         ]};
         return { text, kb };
@@ -10795,13 +10863,23 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
     const getWalletMenu = () => {
         const balance = uu?.walletBalance || 0;
         const text = isFA
-            ? `💳 <b>مدیریت کیف پول</b>\n${SEP}\n` +
-              `💰 <b>موجودی فعلی:</b>\n` +
-              `<code>${balance.toLocaleString()}</code> تومان\n\n` +
+            ? `💳 <b>مدیریت کیف پول</b>
+${SEP}
+` +
+              `💰 <b>موجودی فعلی:</b>
+` +
+              `<code>${balance.toLocaleString()}</code> تومان
+
+` +
               `✨ <i>با شارژ کیف پول می‌توانید سرویس‌های خود را تمدید یا سرویس جدید خریداری کنید.</i>`
-            : `💳 <b>Wallet Management</b>\n${SEP}\n` +
-              `💰 <b>Current Balance:</b>\n` +
-              `<code>${balance.toLocaleString()}</code> IRT\n\n` +
+            : `💳 <b>Wallet Management</b>
+${SEP}
+` +
+              `💰 <b>Current Balance:</b>
+` +
+              `<code>${balance.toLocaleString()}</code> IRT
+
+` +
               `✨ <i>By charging your wallet, you can renew or buy new services.</i>`;
               
         const kb = { inline_keyboard: [
@@ -10813,21 +10891,39 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
     };
 
     const getReferralMenu = () => {
-        const refCode = uu?.id.substring(0, 8);
-        const refLink = `https://t.me/${sysConfig.tgBotUsername || 'bot'}?start=ref_${refCode}`;
-        const refCount = uu?.referrals?.length || 0;
-        const refEarned = uu?.referralEarned || 0;
+        const refCode = uu?.referralCode || uu?.id?.substring(0, 8) || '';
+        const refLink = `https://${hostName}/${sysConfig.apiRoute}?ref=${refCode}`;
+        const refCount = (sysConfig.users || []).filter(u => u.referredBy === uu?.id).length;
+        const refEarned = (uu?.walletTransactions || [])
+            .filter(t => t.type === 'referral')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
         
         const text = isFA
-            ? `🎁 <b>برنامه زیرمجموعه‌گیری</b>\n${SEP}\n` +
-              `👥 <b>تعداد زیرمجموعه‌ها:</b> <code>${refCount}</code> نفر\n` +
-              `💰 <b>سود کسب شده:</b> <code>${refEarned.toLocaleString()}</code> تومان\n\n` +
-              `🔗 <b>لینک دعوت شما:</b>\n<code>${refLink}</code>\n\n` +
+            ? `🎁 <b>برنامه زیرمجموعه‌گیری</b>
+${SEP}
+` +
+              `👥 <b>تعداد زیرمجموعه‌ها:</b> <code>${refCount}</code> نفر
+` +
+              `💰 <b>سود کسب شده:</b> <code>${refEarned.toLocaleString()}</code> تومان
+
+` +
+              `🔗 <b>لینک دعوت شما:</b>
+<code>${refLink}</code>
+
+` +
               `💡 <i>با دعوت دوستان خود، <code>${sysConfig.referralCommission || 10}%</code> از هر خرید آن‌ها به کیف پول شما واریز می‌شود.</i>`
-            : `🎁 <b>Referral Program</b>\n${SEP}\n` +
-              `👥 <b>Total Referrals:</b> <code>${refCount}</code>\n` +
-              `💰 <b>Total Earned:</b> <code>${refEarned.toLocaleString()}</code> IRT\n\n` +
-              `🔗 <b>Your Invite Link:</b>\n<code>${refLink}</code>\n\n` +
+            : `🎁 <b>Referral Program</b>
+${SEP}
+` +
+              `👥 <b>Total Referrals:</b> <code>${refCount}</code>
+` +
+              `💰 <b>Total Earned:</b> <code>${refEarned.toLocaleString()}</code> IRT
+
+` +
+              `🔗 <b>Your Invite Link:</b>
+<code>${refLink}</code>
+
+` +
               `💡 <i>By inviting friends, you earn <code>${sysConfig.referralCommission || 10}%</code> of their purchases.</i>`;
               
         const kb = { inline_keyboard: [
@@ -10837,38 +10933,336 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
         return { text, kb };
     };
 
-    // --- Interaction Logic ---
-    if (cbData) {
-        if (cbData === 'u_main') {
+    // ============================================
+    // CALLBACK QUERY HANDLING
+    // ============================================
+    if (update.callback_query) {
+        const data = cbData || '';
+        
+        // Reset state
+        if (tgState && chatId) {
+            tgState[chatId] = null;
+            ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(() => {}));
+        }
+
+        // Main Menu
+        if (data === 'u_main' || data === 'u_back_main') {
             const { text, kb } = getMainMenu();
             await send(text, kb, msgId);
-            return await answerCb();
+            await answerCb();
+            return new Response('OK', { status: 200 });
         }
-        if (cbData === 'u_services') {
+
+        // Services Menu
+        if (data === 'u_services') {
             const { text, kb } = getServicesMenu();
             await send(text, kb, msgId);
-            return await answerCb();
+            await answerCb();
+            return new Response('OK', { status: 200 });
         }
-        if (cbData.startsWith('u_svc_view_')) {
-            const hash = cbData.replace('u_svc_view_', '');
+
+        // Service Details
+        if (data.startsWith('u_svc_view_')) {
+            const hash = data.replace('u_svc_view_', '');
             const res = getServiceDetails(hash);
-            if (res) await send(res.text, res.kb, msgId);
-            return await answerCb();
+            if (res) {
+                await send(res.text, res.kb, msgId);
+            } else {
+                await send(isFA ? '❌ سرویس یافت نشد' : '❌ Service not found', 
+                          { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_services' }]] }, 
+                          msgId);
+            }
+            await answerCb();
+            return new Response('OK', { status: 200 });
         }
-        if (cbData === 'u_wallet') {
+
+        // Wallet Menu
+        if (data === 'u_wallet') {
             const { text, kb } = getWalletMenu();
             await send(text, kb, msgId);
-            return await answerCb();
+            await answerCb();
+            return new Response('OK', { status: 200 });
         }
-        if (cbData === 'u_referral') {
+
+        // Referral Menu
+        if (data === 'u_referral') {
             const { text, kb } = getReferralMenu();
             await send(text, kb, msgId);
-            return await answerCb();
+            await answerCb();
+            return new Response('OK', { status: 200 });
         }
-        // ... Other callback handlers (Renew, Delete, etc.)
+
+        // Profile
+        if (data === 'u_profile') {
+            const usedGB = formatGB(sysU.reqs || 0);
+            const expiry = uu?.expiryMs ? new Date(uu.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US') : (isFA ? 'نامحدود' : 'Unlimited');
+            const text = isFA
+                ? `👤 <b>پروفایل من</b>
+${SEP}
+` +
+                  `📛 <b>نام:</b> ${uu?.name || ''}
+` +
+                  `🆔 <b>ID:</b> <code>${uu?.id || ''}</code>
+` +
+                  `💳 <b>موجودی:</b> <code>${(uu?.walletBalance || 0).toLocaleString()}</code> تومان
+` +
+                  `📊 <b>مصرف:</b> <code>${usedGB}</code> GB
+` +
+                  `📅 <b>انقضا:</b> ${expiry}
+` +
+                  `🔗 <b>کد معرفی:</b> <code>${uu?.referralCode || '—'}</code>`
+                : `👤 <b>My Profile</b>
+${SEP}
+` +
+                  `📛 <b>Name:</b> ${uu?.name || ''}
+` +
+                  `🆔 <b>ID:</b> <code>${uu?.id || ''}</code>
+` +
+                  `💳 <b>Balance:</b> <code>${(uu?.walletBalance || 0).toLocaleString()}</code> IRT
+` +
+                  `📊 <b>Used:</b> <code>${usedGB}</code> GB
+` +
+                  `📅 <b>Expiry:</b> ${expiry}
+` +
+                  `🔗 <b>Referral Code:</b> <code>${uu?.referralCode || '—'}</code>`;
+            
+            const kb = { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]] };
+            await send(text, kb, msgId);
+            await answerCb();
+            return new Response('OK', { status: 200 });
+        }
+
+        // Support
+        if (data === 'u_support') {
+            const text = isFA 
+                ? '📞 <b>پشتیبانی</b>
+
+برای دریافت کمک با ادمین تماس بگیرید.'
+                : '📞 <b>Support</b>
+
+For help, please contact admin.';
+            const kb = { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]] };
+            await send(text, kb, msgId);
+            await answerCb();
+            return new Response('OK', { status: 200 });
+        }
+
+        // Copy Link
+        if (data.startsWith('u_svc_copy_')) {
+            const hash = data.replace('u_svc_copy_', '');
+            const link = `https://${hostName}/sub/${hash}`;
+            await send(isFA ? `🔗 <b>لینک اشتراک شما:</b>
+<code>${link}</code>` : `🔗 <b>Your subscription link:</b>
+<code>${link}</code>`, 
+                      { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: `u_svc_view_${hash}` }]] }, 
+                      msgId);
+            await answerCb(isFA ? '✅ لینک کپی شد!' : '✅ Link copied!');
+            return new Response('OK', { status: 200 });
+        }
+
+        // Shop
+        if (data === 'u_shop') {
+            const pkgs = sysConfig.purchaseOptions || [];
+            const balance = uu?.walletBalance || 0;
+            let text = isFA 
+                ? `🛒 <b>فروشگاه</b>
+💳 موجودی: <code>${balance.toLocaleString()}</code> تومان
+${SEP}
+`
+                : `🛒 <b>Shop</b>
+💳 Balance: <code>${balance.toLocaleString()}</code> IRT
+${SEP}
+`;
+            const kb = { inline_keyboard: [] };
+            
+            if (!sysConfig.purchaseEnabled) {
+                text += isFA ? '⛔ فروشگاه غیرفعال است.' : '⛔ Shop is disabled.';
+            } else if (!pkgs.length) {
+                text += isFA ? 'هیچ پکیجی موجود نیست.' : 'No packages available.';
+            } else {
+                pkgs.filter(p => p.active !== false).forEach(pkg => {
+                    text += `📦 <b>${pkg.name}</b>
+💰 ${(pkg.priceIrt || 0).toLocaleString()} تومان | 💾 ${pkg.gb}GB | 📅 ${pkg.days} ${isFA ? 'روز' : 'days'}
+`;
+                    if (pkg.description) text += `📝 ${pkg.description}
+`;
+                    text += '
+';
+                    kb.inline_keyboard.push([{ text: `🛒 ${pkg.name}`, callback_data: `u_buy_${pkg.id}` }]);
+                });
+            }
+            
+            if (!uu?.freeTrialUsed && sysConfig.freeTrialDays && sysConfig.purchaseEnabled) {
+                kb.inline_keyboard.push([{ text: isFA ? '🎁 تست رایگان' : '🎁 Free Trial', callback_data: 'u_free_trial' }]);
+            }
+            kb.inline_keyboard.push([{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]);
+            
+            await send(text, kb, msgId);
+            await answerCb();
+            return new Response('OK', { status: 200 });
+        }
+
+        // Free Trial
+        if (data === 'u_free_trial') {
+            if (uu?.freeTrialUsed) {
+                await answerCb(isFA ? '❌ قبلاً استفاده کرده‌اید' : '❌ Already used');
+                return new Response('OK', { status: 200 });
+            }
+            const gb = sysConfig.freeTrialGB || 1;
+            const days = sysConfig.freeTrialDays || 3;
+            const refU = sysConfig.users.find(x => x.id === uu?.id);
+            if (refU) {
+                const svcHash = await generateSubHash(refU.id + ':trial:' + Date.now());
+                const trialSvc = { 
+                    id: crypto.randomUUID(), 
+                    name: isFA ? 'تست رایگان' : 'Free Trial', 
+                    packageId: 'trial', 
+                    subHash: svcHash, 
+                    gb, 
+                    days, 
+                    startedAt: Date.now(), 
+                    expiryMs: Date.now() + days * 86400000, 
+                    isTrial: true, 
+                    isPaused: false,
+                    used: 0,
+                    limit: gb,
+                    type: 'trial',
+                    protocol: 'auto'
+                };
+                if (!refU.services) refU.services = [];
+                refU.services.push(trialSvc);
+                refU.freeTrialUsed = true;
+                if (!refU.limitTotalReq) refU.limitTotalReq = Math.round(gb * 6000);
+                if (!refU.expiryMs) refU.expiryMs = Date.now() + days * 86400000;
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                
+                const subUrl = `https://${hostName}/sub/${trialSvc.subHash}`;
+                await send(isFA 
+                    ? `✅ <b>تست رایگان فعال شد!</b>
+💾 ${gb} GB | 📅 ${days} روز
+
+🔗 <code>${subUrl}</code>` 
+                    : `✅ <b>Free trial activated!</b>
+💾 ${gb} GB | 📅 ${days} days
+
+🔗 <code>${subUrl}</code>`, 
+                    { inline_keyboard: [[{ text: isFA ? '📦 سرویس‌ها' : '📦 Services', callback_data: 'u_services' }]] }, 
+                    msgId);
+                await answerCb(isFA ? '✅ فعال شد!' : '✅ Activated!');
+                return new Response('OK', { status: 200 });
+            }
+            await answerCb('Error');
+            return new Response('OK', { status: 200 });
+        }
+
+        // Renew Service
+        if (data.startsWith('u_svc_renew_')) {
+            const hash = data.replace('u_svc_renew_', '');
+            const svc = (uu?.services || []).find(s => s.subHash === hash);
+            if (!svc) {
+                await answerCb(isFA ? '❌ سرویس یافت نشد' : '❌ Service not found');
+                return new Response('OK', { status: 200 });
+            }
+            const pkg = (sysConfig.purchaseOptions || []).find(p => p.id === svc.packageId);
+            if (!pkg) {
+                await send(isFA ? '❌ پکیج اصلی یافت نشد.' : '❌ Original package not found.', 
+                          { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: `u_svc_view_${hash}` }]] }, 
+                          msgId);
+                await answerCb();
+                return new Response('OK', { status: 200 });
+            }
+            const price = pkg.priceIrt || pkg.price || 0;
+            const balance = uu?.walletBalance || 0;
+            if (balance < price) {
+                await send(isFA 
+                    ? `❌ موجودی کافی نیست.
+💰 موجودی: <code>${balance.toLocaleString()}</code>
+💳 قیمت: <code>${price.toLocaleString()}</code> تومان` 
+                    : `❌ Insufficient balance.
+💰 Balance: <code>${balance.toLocaleString()}</code> IRT
+💳 Price: <code>${price.toLocaleString()}</code> IRT`,
+                    { inline_keyboard: [[{ text: isFA ? '💳 شارژ' : '💳 Charge', callback_data: 'u_wallet_charge' }, 
+                                         { text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: `u_svc_view_${hash}` }]] }, 
+                    msgId);
+            } else {
+                const refU = sysConfig.users.find(x => x.id === uu?.id);
+                if (refU) {
+                    refU.walletBalance = (refU.walletBalance || 0) - price;
+                    if (!refU.walletTransactions) refU.walletTransactions = [];
+                    refU.walletTransactions.push({ type: 'renewal', amount: -price, detail: `تمدید: ${svc.name}`, ts: Date.now() });
+                    const now = Date.now();
+                    svc.expiryMs = Math.max(svc.expiryMs || now, now) + (pkg.days || 30) * 86400000;
+                    svc.isPaused = false;
+                    await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                }
+                await send(isFA 
+                    ? `✅ <b>تمدید موفق!</b>
+${SEP}
+📦 ${svc.name}
+💳 موجودی جدید: <code>${(refU?.walletBalance || 0).toLocaleString()}</code> تومان
+📅 انقضا: <code>${new Date(svc.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US')}</code>` 
+                    : `✅ <b>Renewed!</b>
+${SEP}
+📦 ${svc.name}
+💳 New balance: <code>${(refU?.walletBalance || 0).toLocaleString()}</code> IRT
+📅 Expiry: <code>${new Date(svc.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US')}</code>`,
+                    { inline_keyboard: [[{ text: isFA ? '📦 سرویس‌های من' : '📦 My Services', callback_data: 'u_services' }]] }, 
+                    msgId);
+            }
+            await answerCb();
+            return new Response('OK', { status: 200 });
+        }
+
+        // Toggle Service (Pause/Resume)
+        if (data.startsWith('u_svc_toggle_')) {
+            const hash = data.replace('u_svc_toggle_', '');
+            const svc = (uu?.services || []).find(s => s.subHash === hash);
+            if (svc) {
+                svc.isPaused = !svc.isPaused;
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                await answerCb(svc.isPaused ? (isFA ? '⏸️ متوقف شد' : '⏸️ Paused') : (isFA ? '▶️ فعال شد' : '▶️ Resumed'));
+                const res = getServiceDetails(hash);
+                if (res) await send(res.text, res.kb, msgId);
+            } else {
+                await answerCb(isFA ? '❌ سرویس یافت نشد' : '❌ Service not found');
+            }
+            return new Response('OK', { status: 200 });
+        }
+
+        // Delete Service
+        if (data.startsWith('u_svc_del_')) {
+            const hash = data.replace('u_svc_del_', '');
+            const refU = sysConfig.users.find(x => x.id === uu?.id);
+            if (refU) {
+                refU.services = (refU.services || []).filter(s => s.subHash !== hash);
+                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
+                await answerCb(isFA ? '🗑️ حذف شد' : '🗑️ Deleted');
+                const { text, kb } = getServicesMenu();
+                await send(text, kb, msgId);
+            }
+            return new Response('OK', { status: 200 });
+        }
+
+        // Default fallback
+        const { text, kb } = getMainMenu();
+        await send(text, kb, msgId);
+        await answerCb();
+        return new Response('OK', { status: 200 });
     }
 
-    if (msgText === '/start') {
+    // ============================================
+    // MESSAGE HANDLING
+    // ============================================
+    if (update.message) {
+        const txt = update.message.text || '';
+        
+        if (txt === '/start') {
+            const { text, kb } = getMainMenu();
+            await send(text, kb);
+            return new Response('OK', { status: 200 });
+        }
+
+        // Default response
         const { text, kb } = getMainMenu();
         await send(text, kb);
         return new Response('OK', { status: 200 });
@@ -10877,265 +11271,6 @@ async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText,
     return new Response('OK', { status: 200 });
 }
 
-
-function getDashboardUI(hasDB) {
-    return `<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Nahan Admin Panel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;300;400;500;700;900&display=swap');
-        body { font-family: 'Vazirmatn', sans-serif; background: #0f172a; color: #f8fafc; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .sidebar-item { transition: all 0.2s; border-radius: 12px; margin-bottom: 4px; }
-        .sidebar-item:hover, .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .card { background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 24px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); }
-        .status-online { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        
-        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-value { animation: countUp 0.5s ease-out forwards; }
-        
-        /* Mobile Bottom Nav */
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .mobile-nav { display: flex; }
-            .main-content { padding-bottom: 80px; }
-        }
-    </style>
-</head>
-<body class="min-h-screen flex">
-    <!-- Sidebar -->
-    <aside class="sidebar w-64 glass m-4 rounded-3xl p-6 flex flex-col hidden md:flex">
-        <div class="flex items-center gap-3 mb-10 px-2">
-            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <i class="fas fa-ghost text-white"></i>
-            </div>
-            <h1 class="text-xl font-bold tracking-tight">نهان پنل</h1>
-        </div>
-        
-        <nav class="flex-1 space-y-1">
-            <a href="#" onclick="showTab('overview')" class="sidebar-item active flex items-center gap-3 p-3">
-                <i class="fas fa-chart-pie w-5"></i> داشبورد
-            </a>
-            <a href="#" onclick="showTab('users')" class="sidebar-item flex items-center gap-3 p-3">
-                <i class="fas fa-users w-5"></i> کاربران
-            </a>
-            <a href="#" onclick="showTab('shop')" class="sidebar-item flex items-center gap-3 p-3">
-                <i class="fas fa-shopping-bag w-5"></i> فروشگاه
-            </a>
-            <a href="#" onclick="showTab('logs')" class="sidebar-item flex items-center gap-3 p-3">
-                <i class="fas fa-list-ul w-5"></i> گزارشات
-            </a>
-            <a href="#" onclick="showTab('settings')" class="sidebar-item flex items-center gap-3 p-3">
-                <i class="fas fa-cog w-5"></i> تنظیمات
-            </a>
-        </nav>
-
-        <div class="mt-auto pt-6 border-t border-white/5 px-2">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs">A</div>
-                <div class="flex-1">
-                    <p class="text-xs font-bold">مدیر سیستم</p>
-                    <p class="text-[10px] text-slate-500">v${CURRENT_VERSION}</p>
-                </div>
-                <button onclick="logout()" class="text-slate-500 hover:text-red-400"><i class="fas fa-power-off"></i></button>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content flex-1 p-4 md:p-8 overflow-y-auto">
-        <!-- Overview Tab -->
-        <section id="tab-overview" class="tab-content space-y-8">
-            <header class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-black">نمای کلی سیستم</h2>
-                    <p class="text-slate-500 text-sm mt-1">آخرین وضعیت و آمارهای زنده</p>
-                </div>
-                <div class="flex gap-3">
-                    <div class="glass px-4 py-2 rounded-xl flex items-center gap-2 text-sm">
-                        <span class="w-2 h-2 rounded-full status-online"></span>
-                        سیستم آنلاین است
-                    </div>
-                </div>
-            </header>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="card bg-gradient-to-br from-blue-600/20 to-transparent">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-500">
-                            <i class="fas fa-users text-xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-1 rounded-full">+12%</span>
-                    </div>
-                    <p class="text-slate-400 text-sm">کل کاربران</p>
-                    <h3 id="stat-total-users" class="text-3xl font-black mt-1 animate-value">0</h3>
-                </div>
-                <div class="card bg-gradient-to-br from-emerald-600/20 to-transparent">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500">
-                            <i class="fas fa-bolt text-xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">LIVE</span>
-                    </div>
-                    <p class="text-slate-400 text-sm">کاربران فعال</p>
-                    <h3 id="stat-active-users" class="text-3xl font-black mt-1 animate-value">0</h3>
-                </div>
-                <div class="card bg-gradient-to-br from-purple-600/20 to-transparent">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-500">
-                            <i class="fas fa-exchange-alt text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-slate-400 text-sm">ترافیک امروز</p>
-                    <h3 id="stat-today-traffic" class="text-3xl font-black mt-1 animate-value">0 GB</h3>
-                </div>
-                <div class="card bg-gradient-to-br from-orange-600/20 to-transparent">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center text-orange-500">
-                            <i class="fas fa-wallet text-xl"></i>
-                        </div>
-                    </div>
-                    <p class="text-slate-400 text-sm">درآمد امروز</p>
-                    <h3 id="stat-today-income" class="text-3xl font-black mt-1 animate-value">0 T</h3>
-                </div>
-            </div>
-
-            <!-- Charts & Activity -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 card">
-                    <h4 class="font-bold mb-6">نمودار مصرف ترافیک (۷ روز اخیر)</h4>
-                    <canvas id="trafficChart" height="250"></canvas>
-                </div>
-                <div class="card">
-                    <h4 class="font-bold mb-6">فعالیت‌های اخیر</h4>
-                    <div id="recent-activity" class="space-y-4">
-                        <!-- Activity items -->
-                        <div class="flex gap-3">
-                            <div class="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
-                            <div>
-                                <p class="text-sm">کاربر <b>علی</b> سرویس جدید خرید.</p>
-                                <p class="text-[10px] text-slate-500">۱۰ دقیقه پیش</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Other tabs (Users, Shop, etc.) would follow similar modern structure -->
-        <section id="tab-users" class="tab-content hidden space-y-6">
-            <header class="flex justify-between items-center">
-                <h2 class="text-2xl font-black">مدیریت کاربران</h2>
-                <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl font-bold transition-all">
-                    <i class="fas fa-plus me-2"></i> کاربر جدید
-                </button>
-            </header>
-            
-            <div class="card p-0 overflow-hidden">
-                <div class="p-6 border-b border-white/5 flex gap-4">
-                    <div class="flex-1 relative">
-                        <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" placeholder="جستجوی کاربر..." class="w-full bg-slate-900 border border-white/10 rounded-xl py-2 pr-12 pl-4 focus:border-blue-500 outline-none">
-                    </div>
-                    <select class="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 outline-none">
-                        <option>همه وضعیت‌ها</option>
-                        <option>فعال</option>
-                        <option>غیرفعال</option>
-                    </select>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right">
-                        <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider">
-                            <tr>
-                                <th class="px-6 py-4">کاربر</th>
-                                <th class="px-6 py-4">سرویس‌ها</th>
-                                <th class="px-6 py-4">مصرف</th>
-                                <th class="px-6 py-4">وضعیت</th>
-                                <th class="px-6 py-4">عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body" class="divide-y divide-white/5">
-                            <!-- User rows -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Mobile Navigation -->
-    <nav class="mobile-nav fixed bottom-0 left-0 right-0 h-20 glass border-t border-white/10 flex md:hidden items-center justify-around px-4 z-40">
-        <button onclick="showTab('overview')" class="flex flex-col items-center gap-1 text-blue-500">
-            <i class="fas fa-chart-pie text-xl"></i>
-            <span class="text-[10px]">داشبورد</span>
-        </button>
-        <button onclick="showTab('users')" class="flex flex-col items-center gap-1 text-slate-500">
-            <i class="fas fa-users text-xl"></i>
-            <span class="text-[10px]">کاربران</span>
-        </button>
-        <button onclick="showTab('shop')" class="flex flex-col items-center gap-1 text-slate-500">
-            <i class="fas fa-shopping-bag text-xl"></i>
-            <span class="text-[10px]">فروشگاه</span>
-        </button>
-        <button onclick="showTab('settings')" class="flex flex-col items-center gap-1 text-slate-500">
-            <i class="fas fa-cog text-xl"></i>
-            <span class="text-[10px]">تنظیمات</span>
-        </button>
-    </nav>
-
-    <script>
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            
-            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active', 'text-blue-500'));
-            // Logic to highlight active sidebar item...
-        }
-
-        // Initialize Charts
-        const ctx = document.getElementById('trafficChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'],
-                datasets: [{
-                    label: 'مصرف (GB)',
-                    data: [12, 19, 3, 5, 2, 3, 15],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                    x: { grid: { display: false }, ticks: { color: '#64748b' } }
-                }
-            }
-        });
-    </script>
-</body>
-</html>\`;
-}
-
-
-// Security & Performance Utilities
 
 async function logSecurityEvent(env, type, detail, ip, severity = 'info') {
     const event = {
