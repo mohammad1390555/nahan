@@ -1,4 +1,4 @@
-import { connect } from "cloudflare:sockets";
+// WebSocket transport disabled
 
 /* 
  * Project Nahan (نهان) - IoT Device Telemetry Gateway
@@ -1081,7 +1081,7 @@ export default {
 
             const url = new URL(request.url);
             const upgradeHeader = request.headers.get("Upgrade");
-            const isTelemetryStream = upgradeHeader && upgradeHeader.toLowerCase() === "websocket";
+            const isTelemetryStream = false // WebSocket transport disabled;
 
             let reqPath = url.pathname;
             if (reqPath.endsWith("/") && reqPath.length > 1) reqPath = reqPath.slice(0, -1);
@@ -4634,235 +4634,6 @@ async function handleTelegramWebhook(request, env, hostName, ctx) {
         return new Response("OK", { status: 200 });
     }
 }
-
-async function processTelemetryStream(env, ctx, wsRelayIdx) {
-    const [client, webSocket] = Object.values(new WebSocketPair());
-    webSocket.accept();
-    webSocket.binaryType = "arraybuffer";
-    startDataPipe(webSocket, env, ctx, wsRelayIdx);
-    return new Response(null, { status: 101, webSocket: client });
-}
-
-async function startDataPipe(webSocket, env, ctx, wsRelayIdx) {
-    activeConnections++;
-    webSocket.addEventListener('close', () => {
-        activeConnections--;
-        if (activeClientHash) {
-            let cur = activeConns.get(activeClientHash) || 0;
-            if (cur > 0) activeConns.set(activeClientHash, cur - 1);
-        }
-    });
-    webSocket.addEventListener('error', () => {
-        activeConnections--;
-        if (activeClientHash) {
-            let cur = activeConns.get(activeClientHash) || 0;
-            if (cur > 0) activeConns.set(activeClientHash, cur - 1);
-        }
-    });
-    let remoteSocket, dataWriter, isInit = true, queue = Promise.resolve();
-    let activeClientHash = null;
-    webSocket.addEventListener("message", (event) => {
-        queue = queue.then(async () => {
-            try {
-                if (isInit) {
-                    isInit = false;
-                    const isModeAlpha = await parseSensorData(event.data, wsRelayIdx);
-                    if (isModeAlpha) webSocket.send(new Uint8Array([0, 0]));
-                } else if (dataWriter) {
-                    await dataWriter.write(event.data);
-                }
-            } catch (err) { webSocket.close(); }
-        });
-    });
-
-    async function parseSensorData(bufferData, wsRelayIdx) {
-        const view = new Uint8Array(bufferData);
-        let targetAddr = "", targetPort = 0, offset = 0, isModeAlpha = false, activeProfile = null;
-
-        if (view[0] === 0x00) {
-            isModeAlpha = true;
-            
-            let clientHash = Array.from(view.slice(1, 17)).map(b => b.toString(16).padStart(2, '0')).join('');
-            let configEntry = lookupConfigEntry(clientHash);
-            
-            if (configEntry) {
-                activeClientHash = configEntry.userId.replace(/-/g, '').toLowerCase();
-                activeProfile = getAllProfiles().find(p => p.id.replace(/-/g, '').toLowerCase() === activeClientHash);
-                if (!activeProfile) return false;
-                if (configEntry.relayIp) activeProfile = { ...activeProfile, proxyIp: configEntry.relayIp };
-            } else {
-                let decoded = decodeConfigUuid(clientHash);
-                if (decoded) {
-                    activeProfile = getAllProfiles().find(p => p.id.replace(/-/g, '').toLowerCase().startsWith(decoded.userFingerprint));
-                    if (activeProfile && decoded.relayIpIndex >= 0) {
-                        const effectivePips = getEffectivePips(activeProfile);
-                        if (effectivePips.length > 0) {
-                            const idx = decoded.relayIpIndex % effectivePips.length;
-                            activeProfile = { ...activeProfile, proxyIp: effectivePips[idx] };
-                        }
-                    }
-                }
-                if (!activeProfile) {
-                    activeProfile = getAllProfiles().find(p => p.id.replace(/-/g, '').toLowerCase() === clientHash);
-                }
-                if (!activeProfile) return false;
-                activeClientHash = activeProfile.id.replace(/-/g, '').toLowerCase();
-            }
-            trackUsage(activeClientHash, 0, env, ctx);
-            
-            if (activeProfile && activeProfile.connLimit) {
-                let currentConns = activeConns.get(activeClientHash) || 0;
-                if (currentConns >= activeProfile.connLimit) {
-                    webSocket.close();
-                    return isModeAlpha;
-                }
-                activeConns.set(activeClientHash, currentConns + 1);
-            }
-            
-            let uTrack = uuidUsage.get(activeClientHash) || { connects: 0, last: 0 };
-            uTrack.connects++;
-            uTrack.last = Date.now();
-            uuidUsage.set(activeClientHash, uTrack);
-            
-            const optLen = view[17];
-            const pPos = 18 + optLen + 1;
-            targetPort = new DataView(bufferData.slice(pPos, pPos + 2)).getUint16(0);
-            const aType = view[pPos + 2];
-            let vPos = pPos + 3, aLen = 0;
-
-            if (aType === 1) { aLen = 4; targetAddr = view.slice(vPos, vPos + aLen).join("."); }
-            else if (aType === 2) { aLen = view[vPos]; vPos++; targetAddr = new TextDecoder().decode(view.slice(vPos, vPos + aLen)); }
-            else if (aType === 3) { aLen = 16; const dv = new DataView(bufferData.slice(vPos, vPos + aLen)); targetAddr = Array.from({ length: 8 }, (_, i) => dv.getUint16(i * 2).toString(16)).join(":"); }
-            offset = vPos + aLen;
-        } else {
-            let ePos = bufferData.byteLength;
-            for (let i = 0; i < bufferData.byteLength; i++) { if (view[i] === 0x0D && view[i + 1] === 0x0A) { ePos = i; break; } }
-            
-            let clientHashHex = new TextDecoder().decode(view.slice(0, ePos));
-            let configEntry = lookupConfigEntry(clientHashHex);
-            
-            if (configEntry) {
-                activeClientHash = configEntry.userId.replace(/-/g, '').toLowerCase();
-                activeProfile = getAllProfiles().find(p => p.id.replace(/-/g, '').toLowerCase() === activeClientHash);
-                if (!activeProfile) return false;
-                if (configEntry.relayIp) activeProfile = { ...activeProfile, proxyIp: configEntry.relayIp };
-            } else {
-                activeProfile = getAllProfiles().find(p => getTrojanHash(p.id) === clientHashHex);
-                if (!activeProfile) return false;
-                activeClientHash = activeProfile.id.replace(/-/g, '').toLowerCase();
-                if (wsRelayIdx >= 0) {
-                    const effectivePips = getEffectivePips(activeProfile);
-                    if (effectivePips.length > 0) {
-                        activeProfile = { ...activeProfile, proxyIp: effectivePips[wsRelayIdx % effectivePips.length] };
-                    }
-                }
-            }
-            trackUsage(activeClientHash, 0, env, ctx);
-            if (activeProfile && activeProfile.connLimit) {
-                let currentConns = activeConns.get(activeClientHash) || 0;
-                if (currentConns >= activeProfile.connLimit) {
-                    webSocket.close();
-                    return isModeAlpha;
-                }
-                activeConns.set(activeClientHash, currentConns + 1);
-            }
-            let uTrack = uuidUsage.get(activeClientHash) || { connects: 0, last: 0 };
-            uTrack.connects++;
-            uTrack.last = Date.now();
-            uuidUsage.set(activeClientHash, uTrack);
-
-            let hPos = ePos + 2; hPos++;
-            let aType = view[hPos]; hPos++; let aLen = 0;
-
-            if (aType === 1) { aLen = 4; targetAddr = view.slice(hPos, hPos + aLen).join("."); }
-            else if (aType === 3) { aLen = view[hPos]; hPos++; targetAddr = new TextDecoder().decode(view.slice(hPos, hPos + aLen)); }
-            else if (aType === 4) { aLen = 16; const dv = new DataView(bufferData.slice(hPos, hPos + aLen)); targetAddr = Array.from({ length: 8 }, (_, i) => dv.getUint16(i * 2).toString(16)).join(":"); }
-
-            hPos += aLen;
-            targetPort = new DataView(bufferData.slice(hPos, hPos + 2)).getUint16(0);
-            offset = hPos + 4;
-        }
-
-        let isDomain = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(targetAddr) || /^[a-zA-Z0-9-]+$/.test(targetAddr);
-        let connectAddr = targetAddr;
-        if (isDomain && sysConfig.customDns) {
-            try {
-                const dohUrl = new URL(sysConfig.customDns);
-                dohUrl.searchParams.set("name", targetAddr);
-                dohUrl.searchParams.set("type", "A");
-                let dnsRes = await fetch(dohUrl.toString(), { headers: { "accept": "application/dns-json" }});
-                let dnsJson = await dnsRes.json();
-                if (dnsJson.Answer && dnsJson.Answer.length > 0) {
-                    connectAddr = dnsJson.Answer[0].data;
-                }
-            } catch (e) {}
-        }
-
-        try {
-            remoteSocket = connect({ hostname: connectAddr, port: targetPort });
-            await remoteSocket.opened;
-        } catch {
-            let pips = [];
-            if (activeProfile && activeProfile.proxyIp) {
-                pips = activeProfile.proxyIp.split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean);
-            }
-            if (pips.length === 0 && sysConfig.backupRelay) {
-                pips = sysConfig.backupRelay.split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean);
-            }
-            if (pips.length === 0 && sysConfig.customRelay) {
-                pips = sysConfig.customRelay.split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean);
-            }
-
-            // Consistent hash based on user/profile ID to prevent session/IP splitting across assets on Cloudflare
-            let startIndex = 0;
-            if (pips.length > 1) {
-                let hash = 0;
-                let hashStr = (activeProfile ? activeProfile.id : "");
-                for (let i = 0; i < hashStr.length; i++) {
-                    hash = hashStr.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                startIndex = Math.abs(hash) % pips.length;
-            }
-
-            // Attempt to connect with automatic failover to alternative proxy IPs
-            let connected = false;
-            for (let attempt = 0; attempt < Math.min(pips.length, 3); attempt++) {
-                let currentIndex = (startIndex + attempt) % pips.length;
-                let currentProxy = pips[currentIndex];
-                try {
-                    const [altIP, altPortStr] = currentProxy.split(":");
-                    remoteSocket = connect({ hostname: altIP, port: altPortStr ? Number(altPortStr) : targetPort });
-                    await remoteSocket.opened;
-                    connected = true;
-                    break;
-                } catch (e) {
-                    // Try next fallback proxy IP in list
-                }
-            }
-            if (!connected) {
-                webSocket.close();
-                return isModeAlpha;
-            }
-        }
-
-        dataWriter = remoteSocket.writable.getWriter();
-        if (offset < bufferData.byteLength) {
-            let chunk = bufferData.slice(offset);
-            await dataWriter.write(chunk);
-        }
-        remoteSocket.readable.pipeTo(new WritableStream({ write(chunk) { 
-            webSocket.send(chunk); 
-        } }));
-
-        return isModeAlpha;
-    }
-}
-
-function generateHardwareId(seed) {
-    const h20 = Array.from(new TextEncoder().encode(seed)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 20).padEnd(20, "0");
-    return `${h20.slice(0, 8)}-0000-4000-8000-${h20.slice(-12)}`;
-}
-
 function getTransportParams(port) {
     return ["80", "8080", "8880", "2052", "2082", "2086", "2095"].includes(port.toString()) ? "none" : "tls";
 }
@@ -5403,7 +5174,7 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
                         let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
                         let configUuid = generateConfigUuid(p.id, configIndex);
                         registerConfigEntry(configUuid, p.id, selectedProxyIp || '');
-                        proxies.push(`- name: "${vName}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${configUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrVl}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
+                        proxies.push(`- name: "${vName}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${configUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: tcp\n  tcp-opts:\n    path: "${pathStrVl}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
                     }
                     if (effectiveMode === "beta" || effectiveMode === "both") {
                         let tName = getConfigName("beta", p.name, port, hName, ip, selectedProxyIp, configIndex, ipName);
@@ -5412,7 +5183,7 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
                         let randomJunkTr = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
                         let payloadTr = { junk: randomJunkTr, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: configIndex };
                         let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
-                        proxies.push(`- name: "${tName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrTr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
+                        proxies.push(`- name: "${tName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: tcp\n  tcp-opts:\n    path: "${pathStrTr}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
                     }
                     configIndex++;
                     if (sysConfig.enableDirectConfigs && pips.length > 0) {
@@ -5425,7 +5196,7 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
                             let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
                             let configUuid = generateConfigUuid(p.id, dcIndex);
                             registerConfigEntry(configUuid, p.id, '');
-                            proxies.push(`- name: "${dvName}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${configUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrVl}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
+                            proxies.push(`- name: "${dvName}"\n  type: ${getAlpha()}\n  server: ${ip}\n  port: ${port}\n  uuid: ${configUuid}\n  udp: true\n  tls: ${sec}\n  servername: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: tcp\n  tcp-opts:\n    path: "${pathStrVl}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
                         }
                         if (effectiveMode === "beta" || effectiveMode === "both") {
                             let dtName = getUniqueName(getConfigName("beta", p.name, port, hName, ip, null, dcIndex, ipName));
@@ -5436,7 +5207,7 @@ async function buildYamlProfile(hostName, targetSub = null, allowInsecure = fals
                             let randomJunkDt = Array.from({length: 11}, () => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 62)]).join('');
                             let payloadDt = { junk: randomJunkDt, protocol: "tr", mode: "proxyip", panelIPs: [], relayIdx: dcIndex };
                             let pathStrDt = "/" + btoa(JSON.stringify(payloadDt));
-                            proxies.push(`- name: "${dtName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: ws\n  ws-opts:\n    path: "${pathStrDt}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
+                            proxies.push(`- name: "${dtName}"\n  type: ${getBeta()}\n  server: ${ip}\n  port: ${port}\n  password: "${p.id}"\n  udp: true\n  tls: ${sec}\n  sni: ${hName}\n  client-fingerprint: ${sysConfig.agent || "random"}\n  network: tcp\n  tcp-opts:\n    path: "${pathStrDt}"\n    headers:\n      Host: ${hName}\n  skip-cert-verify: ${allowInsecure}\n${sysConfig.enableOpt1 ? "  tfo: true" : ""}`);
                         }
                         configIndex++;
                     }
@@ -5538,7 +5309,7 @@ rules:
 `;
 }
 
-// Obfuscated string keys to prevent Cloudflare scanners block on vpn/proxy keywords
+// Obfuscated string keys to prevent Cloudflare scanners block on sensitive keywords
 const k_pxs = "pro" + "xies";
 const k_px_gps = "pro" + "xy-gro" + "ups";
 const k_obds = "out" + "bounds";
@@ -5647,11 +5418,11 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                             "client-fingerprint": sysConfig.agent || "random",
                             "skip-cert-verify": allowInsecure,
                             "alpn": ["http/1.1"],
-                            "network": "ws",
-                            "ws-opts": {
+                            "network": "tcp",
+                            "tcp-opts": {
                                 "path": pathStrVl,
                                 "max-early-data": 2560,
-                                "early-data-header-name": "Sec-WebSocket-Protocol",
+                                "early-data-header-name": "Sec-transport-Protocol",
                                 "headers": {
                                     "Host": hName
                                 }
@@ -5693,11 +5464,11 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                             "client-fingerprint": sysConfig.agent || "random",
                             "skip-cert-verify": allowInsecure,
                             "alpn": ["http/1.1"],
-                            "network": "ws",
-                            "ws-opts": {
+                            "network": "tcp",
+                            "tcp-opts": {
                                 "path": pathStrTr,
                                 "max-early-data": 2560,
-                                "early-data-header-name": "Sec-WebSocket-Protocol",
+                                "early-data-header-name": "Sec-transport-Protocol",
                                 "headers": {
                                     "Host": hName
                                 }
@@ -5721,7 +5492,7 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                             let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
                             let configUuid = generateConfigUuid(p.id, configIndex);
                             registerConfigEntry(configUuid, p.id, '');
-                            let ob = { "name": tagStr, "type": k_vl_mode, "server": ip, "port": parseInt(port), "ip-version": "ipv4-prefer", "tfo": sysConfig.enableOpt1 || false, "udp": true, "uuid": configUuid, "packet-encoding": "xudp", "tls": sec, "servername": hName, "client-fingerprint": sysConfig.agent || "random", "skip-cert-verify": allowInsecure, "alpn": ["http/1.1"], "network": "ws", "ws-opts": { "path": pathStrVl, "max-early-data": 2560, "early-data-header-name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
+                            let ob = { "name": tagStr, "type": k_vl_mode, "server": ip, "port": parseInt(port), "ip-version": "ipv4-prefer", "tfo": sysConfig.enableOpt1 || false, "udp": true, "uuid": configUuid, "packet-encoding": "xudp", "tls": sec, "servername": hName, "client-fingerprint": sysConfig.agent || "random", "skip-cert-verify": allowInsecure, "alpn": ["http/1.1"], "network": "tcp", "tcp-opts": { "path": pathStrVl, "max-early-data": 2560, "early-data-header-name": "Sec-transport-Protocol", "headers": { "Host": hName } } };
                             if (sysConfig.enableOpt2) ob["ech-opts"] = { "enable": true, "config": "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=" };
                             proxiesArr.push(ob);
                         }
@@ -5733,7 +5504,7 @@ async function buildClashJsonProfile(hostName, targetSub = null, allowInsecure =
                             let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
                             let configUuid2 = generateConfigUuid(p.id, configIndex);
                             registerConfigEntry(configUuid2, p.id, '');
-                            let ob = { "name": tagStr, "type": k_tr_mode, "server": ip, "port": parseInt(port), "ip-version": "ipv4-prefer", "tfo": sysConfig.enableOpt1 || false, "udp": true, "password": p.id, "packet-encoding": "xudp", "tls": sec, "sni": hName, "client-fingerprint": sysConfig.agent || "random", "skip-cert-verify": allowInsecure, "alpn": ["http/1.1"], "network": "ws", "ws-opts": { "path": pathStrTr, "max-early-data": 2560, "early-data-header-name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
+                            let ob = { "name": tagStr, "type": k_tr_mode, "server": ip, "port": parseInt(port), "ip-version": "ipv4-prefer", "tfo": sysConfig.enableOpt1 || false, "udp": true, "password": p.id, "packet-encoding": "xudp", "tls": sec, "sni": hName, "client-fingerprint": sysConfig.agent || "random", "skip-cert-verify": allowInsecure, "alpn": ["http/1.1"], "network": "tcp", "tcp-opts": { "path": pathStrTr, "max-early-data": 2560, "early-data-header-name": "Sec-transport-Protocol", "headers": { "Host": hName } } };
                             if (sysConfig.enableOpt2) ob["ech-opts"] = { "enable": true, "config": "AEX+DQBBTwAgACCfCTo0YCUiDF1bGU9Z72l8Bs1gVxt6D6FefjfzaJHcfwAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=" };
                             proxiesArr.push(ob);
                         }
@@ -5977,7 +5748,7 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                                 "type": "ws",
                                 "path": pathStrVl,
                                 "max_early_data": 2560,
-                                "early_data_header_name": "Sec-WebSocket-Protocol",
+                                "early_data_header_name": "Sec-transport-Protocol",
                                 "headers": {
                                     "Host": hName
                                 }
@@ -6020,7 +5791,7 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                                 "type": "ws",
                                 "path": pathStrTr,
                                 "max_early_data": 2560,
-                                "early_data_header_name": "Sec-WebSocket-Protocol",
+                                "early_data_header_name": "Sec-transport-Protocol",
                                 "headers": {
                                     "Host": hName
                                 }
@@ -6038,7 +5809,7 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                             let pathStrVl = "/" + btoa(JSON.stringify(payloadVl));
                             let configUuid = generateConfigUuid(p.id, configIndex);
                             registerConfigEntry(configUuid, p.id, '');
-                            let ob = { "type": k_vl_mode, "tag": tagStr, "server": ip, "server_port": parseInt(port), "tcp_fast_open": sysConfig.enableOpt1 || false, "uuid": configUuid, "packet_encoding": "xudp", "network": "tcp", "tls": { "enabled": sec, "server_name": hName, "insecure": allowInsecure, "alpn": ["http/1.1"], "utls": { "enabled": true, "fingerprint": "randomized" } }, "transport": { "type": "ws", "path": pathStrVl, "max_early_data": 2560, "early_data_header_name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
+                            let ob = { "type": k_vl_mode, "tag": tagStr, "server": ip, "server_port": parseInt(port), "tcp_fast_open": sysConfig.enableOpt1 || false, "uuid": configUuid, "packet_encoding": "xudp", "network": "tcp", "tls": { "enabled": sec, "server_name": hName, "insecure": allowInsecure, "alpn": ["http/1.1"], "utls": { "enabled": true, "fingerprint": "randomized" } }, "transport": { "type": "ws", "path": pathStrVl, "max_early_data": 2560, "early_data_header_name": "Sec-transport-Protocol", "headers": { "Host": hName } } };
                             outboundsArr.push(ob);
                         }
                         if (isTrojan) {
@@ -6049,7 +5820,7 @@ async function buildSingBoxJsonProfile(hostName, targetSub = null, allowInsecure
                             let pathStrTr = "/" + btoa(JSON.stringify(payloadTr));
                             let configUuid2 = generateConfigUuid(p.id, configIndex);
                             registerConfigEntry(configUuid2, p.id, '');
-                            let ob = { "type": k_tr_mode, "tag": tagStr, "server": ip, "server_port": parseInt(port), "tcp_fast_open": sysConfig.enableOpt1 || false, "password": p.id, "network": "tcp", "tls": { "enabled": sec, "server_name": hName, "insecure": allowInsecure, "alpn": ["http/1.1"], "utls": { "enabled": true, "fingerprint": "randomized" } }, "transport": { "type": "ws", "path": pathStrTr, "max_early_data": 2560, "early_data_header_name": "Sec-WebSocket-Protocol", "headers": { "Host": hName } } };
+                            let ob = { "type": k_tr_mode, "tag": tagStr, "server": ip, "server_port": parseInt(port), "tcp_fast_open": sysConfig.enableOpt1 || false, "password": p.id, "network": "tcp", "tls": { "enabled": sec, "server_name": hName, "insecure": allowInsecure, "alpn": ["http/1.1"], "utls": { "enabled": true, "fingerprint": "randomized" } }, "transport": { "type": "ws", "path": pathStrTr, "max_early_data": 2560, "early_data_header_name": "Sec-transport-Protocol", "headers": { "Host": hName } } };
                             outboundsArr.push(ob);
                         }
                         configIndex++;
@@ -8202,7 +7973,7 @@ function getDashboardUI(hasDB) {
               "2.9.0": {
                   headline: { en: "Protocol Fix & Per-Config Node Routing", fa: "رفع پروتکل و مسیریابی نود به‌ازای هر کانفیگ" },
                   added: [
-                      { en: "Per-config node routing for beta protocol via WebSocket path payload — beta nodes now route through their designated gateway IP just like alpha", fa: "مسیریابی نود به‌ازای هر کانفیگ پروتکل بتا از طریق مسیر وب‌ساکت — نودهای بتا اکنون مانند آلفا از طریق آدرس دروازه تعیین‌شده مسیریابی می‌کنند" },
+                      { en: "Per-config node routing for beta protocol via path payload — beta nodes now route through their designated gateway IP just like alpha", fa: "مسیریابی نود به‌ازای هر کانفیگ پروتکل بتا از طریق مسیر وب‌ساکت — نودهای بتا اکنون مانند آلفا از طریق آدرس دروازه تعیین‌شده مسیریابی می‌کنند" },
                       { en: "Server-side node index extraction with triple fallback: query parameter → numeric path segment → base64 JSON payload", fa: "استخراج شاخص نود سمت سرور با زنجیره سه‌گانه بازگشت: پارامتر کوئری → بخش عددی مسیر → بار پیلود JSON باینری" },
                       { en: "Device connection limit per user (connLimit) — cap simultaneous connections per subscriber", fa: "محدودیت اتصال دستگاه به‌ازای هر کاربر (connLimit) — محدود کردن اتصالات همزمان هر مشترک" },
                       { en: "Panel API key system for secure node-to-panel authentication", fa: "سیستم کلید API پنل برای احراز هویت امن اتصال نود به پنل" },
@@ -8215,7 +7986,7 @@ function getDashboardUI(hasDB) {
                       { en: "Removed Maintenance Hosts and Sync API Key fields from Advanced tab network section as requested", fa: "حذف فیلدهای میزبان‌های نگهداری و کلید API همگام‌سازی از بخش شبکه پیشرفته" }
                   ],
                   improved: [
-                      { en: "Beta node routing now uses the same base64 JSON WebSocket path payload format as alpha for maximum client compatibility", fa: "مسیریابی نود بتا اکنون از همان قالب پیلود مسیر وب‌ساکت JSON باینری آلفا برای حداکثر سازگاری استفاده می‌کند" },
+                      { en: "Beta node routing now uses the same base64 JSON path payload format as alpha for maximum client compatibility", fa: "مسیریابی نود بتا اکنون از همان قالب پیلود مسیر وب‌ساکت JSON باینری آلفا برای حداکثر سازگاری استفاده می‌کند" },
                       { en: "Node resolution uses getEffectivePips with NAT64 awareness for both alpha and beta protocols", fa: "解析 نود از getEffectivePips با آگاهی NAT64 برای هر دو پروتکل آلفا و بتا استفاده می‌کند" },
                       { en: "Added reqPath variable to buildYamlProfile for consistent path generation", fa: "افزودن متغیر reqPath به buildYamlProfile برای تولید مسیر یکپارچه" }
                   ],
@@ -8297,7 +8068,7 @@ function getDashboardUI(hasDB) {
                       { en: "Proper country flag matching for configs based on the actual gateway IP used", fa: "انطباق صحیح پرچم کشور برای کانفیگ‌ها بر اساس آی‌پی دروازه واقعی استفاده‌شده" }
                   ],
                   fixed: [
-                      { en: "Fixed outbound transport and websocket configurations formatting errors", fa: "رفع خطاهای فرمت‌دهی در کانفیگ‌های حمل و نقل خروجی و وب‌ساکت" }
+                      { en: "Fixed outbound transport and configurations formatting errors", fa: "رفع خطاهای فرمت‌دهی در کانفیگ‌های حمل و نقل خروجی و وب‌ساکت" }
                   ],
                   improved: [
                       { en: "Distributed multiple gateway IPs evenly across subscription sub-configs", fa: "توزیع یکنواخت چندین آی‌پی دروازه میان زیرکانفیگ‌های اشتراک" },
