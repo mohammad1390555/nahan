@@ -8343,7 +8343,7 @@ function getDashboardUI(hasDB) {
               const statTrafficEl = document.getElementById('stat-total-traffic');
               if (statTrafficEl && statTrafficEl.textContent.trim() === '0 GB') statTrafficEl.textContent = '0 ' + gbUnit;
           }
-          function toggleLang() { 
+          window.toggleLang = function() { 
               lang = lang === 'fa' ? 'en' : 'fa'; 
               localStorage.setItem('lang', lang); 
               applyLang(); 
@@ -8364,7 +8364,7 @@ function getDashboardUI(hasDB) {
               document.documentElement.classList.remove('dark');
           }
   
-          function toggleTheme() {
+          window.toggleTheme = function() {
               document.documentElement.classList.toggle('dark');
               localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
           }
@@ -8847,7 +8847,7 @@ function getDashboardUI(hasDB) {
               });
           }
 
-          async function doLogin(silent = false) {
+          window.doLogin = async function(silent = false) {
               const btn = document.querySelector('button[onclick="doLogin()"]');
               const origText = btn.innerText; 
               if(!silent) btn.innerText = "...";
@@ -9062,8 +9062,8 @@ function getDashboardUI(hasDB) {
               } catch(e) { stat.textContent = i18n[lang].msg_err; stat.className = "text-sm font-bold text-red-500 md:me-4"; }
           }
 
-          document.getElementById('pwd').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
-              if(!tbl) return;
+          document.getElementById('pwd').addEventListener('keypress', e => { if (e.key === 'Enter') window.doLogin(); });
+              if (tbl) {
               let users = window.nahanConfig?.users || [];
               let usage = window.nahanUsage || {};
               
@@ -9272,6 +9272,7 @@ function getDashboardUI(hasDB) {
               });
               tbl.innerHTML = tblHtml;
               applyLang();
+              }
           }
 
           async function resetUserTraffic(uuid) {
