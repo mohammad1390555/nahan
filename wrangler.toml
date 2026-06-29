@@ -1,0 +1,6 @@
+name = "nahan-6ondep"
+main = "_worker.js"
+compatibility_date = "2024-01-01"
+
+[observability]
+enabled = true

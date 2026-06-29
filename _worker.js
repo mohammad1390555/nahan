@@ -1935,7 +1935,7 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 const rect = card.getBoundingClientRect();
                 const x = (e.clientX - rect.left) / rect.width - 0.5;
                 const y = (e.clientY - rect.top) / rect.height - 0.5;
-                card.style.transform = `translateY(-4px) rotateX(${-y * 6}deg) rotateY(${x * 6}deg)`;
+                card.style.transform = 'translateY(-4px) rotateX(' + (-y * 6) + 'deg) rotateY(' + (x * 6) + 'deg)';
             });
             card.addEventListener('mouseleave', () => {
                 card.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
@@ -1951,6 +1951,8 @@ function serveSubscriptionInfoPage(user, host, url, request) {
                 qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
                 if (qrTitle) qrTitle.textContent = title || 'QR Code';
                 modal.classList.add('active');
+            }
+    }
         // V7.5.0 — Copy with Toast
         function copyWithToast(text) {
             navigator.clipboard.writeText(text).then(() => {
