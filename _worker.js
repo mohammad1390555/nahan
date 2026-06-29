@@ -25,6 +25,23 @@ const getAlpha = () => String.fromCharCode(118, 108, 101, 115, 115);
 const getBeta = () => String.fromCharCode(116, 114, 111, 106, 97, 110);
 const getGamma = () => String.fromCharCode(99, 108, 97, 115, 104);
 
+let cachedHardwareId = null;
+function generateHardwareId(seed) {
+    // Cache the result per isolate so it's consistent across requests
+    if (cachedHardwareId) return cachedHardwareId;
+    let hash = 0;
+    const input = seed + 'nahan-gateway';
+    for (let i = 0; i < input.length; i++) {
+        const char = input.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    const prefix = Math.abs(hash).toString(16).padStart(8, '0');
+    const suffix = (isolateStartTime || Date.now()).toString(36).slice(-4);
+    cachedHardwareId = 'nahan-' + prefix + '-' + suffix;
+    return cachedHardwareId;
+}
+
 const safeBtoa = (str) => {
     try {
         const bytes = new TextEncoder().encode(str);
