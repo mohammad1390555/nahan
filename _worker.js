@@ -9083,6 +9083,9 @@ function getDashboardUI(hasDB) {
           }
 
           document.getElementById('pwd').addEventListener('keypress', e => { if (e.key === 'Enter') window.doLogin(); });
+
+          function renderUsersTable() {
+              const tbl = document.getElementById('tbl-users');
               let users = window.nahanConfig?.users || [];
               if (tbl) {
               let usage = window.nahanUsage || {};
@@ -9293,6 +9296,7 @@ function getDashboardUI(hasDB) {
               tbl.innerHTML = tblHtml;
               applyLang();
               }
+          }
 
           async function resetUserTraffic(uuid) {
               const resetMsg = lang === 'fa' ? 'آیا از بازنشانی وضعیت ترافیک (کل و روزانه) این مشترک مطمئن هستید؟' : 'Are you sure you want to reset all traffic metrics (Total and Daily) for this subscriber?';
