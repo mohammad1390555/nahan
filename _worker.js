@@ -8753,7 +8753,7 @@ function getDashboardUI(hasDB) {
           }
 
           function closeQRModal() {
-              document.getElementById('qr-modal').classList.remove('active');
+              document.getElementById('qr-modal')?.classList.remove('active');
           }
   
           function updateUI() {
