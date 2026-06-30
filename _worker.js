@@ -1112,15 +1112,6 @@ export default {
                         }
                     } catch(e) {}
                 }
-                if (wsRelayIdx < 0) {
-                    try {
-                        const lastSeg = url.pathname.split('/').pop();
-                        if (lastSeg) {
-                            const decoded = JSON.parse(atob(lastSeg));
-                            if (typeof decoded.relayIdx === 'number') wsRelayIdx = decoded.relayIdx;
-                        }
-                    } catch(e) {}
-                }
                 return await processTelemetryStream(env, ctx, wsRelayIdx);
             }
 
@@ -9647,589 +9638,98 @@ function serveSubscriptionInfoPage(user, host, url, request) {
 
 
 async function handleUserBotInteraction(tgApi, chatId, callerId, msgId, msgText, cbData, linkedUser, env, ctx, t, langCode, hostName, update, tgState) {
-    const isFA = langCode === 'fa';
-    const SEP = '━━━━━━━━━━━━━━━━';
-    
-    const send = async (text, kb, editMsgId) => {
-        const payload = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: kb };
-        let res;
+    var isFA = langCode === 'fa';
+    var SEP = '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501';
+
+    var send = async function(text, kb, editMsgId) {
+        var payload = { chat_id: chatId, text: text, parse_mode: 'HTML', reply_markup: kb };
+        var res;
         if (editMsgId) {
-            res = await fetch(`${tgApi}/editMessageText`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ ...payload, message_id: editMsgId }) 
+            res = await fetch(tgApi + '/editMessageText', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.assign({}, payload, { message_id: editMsgId }))
             });
             if (res.ok) return res;
         }
-        res = await fetch(`${tgApi}/sendMessage`, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(payload) 
+        res = await fetch(tgApi + '/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
         return res;
     };
 
-    const answerCb = (text = '') => {
-        if (!update.callback_query) return Promise.resolve();
-        return fetch(`${tgApi}/answerCallbackQuery`, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ 
-                callback_query_id: update.callback_query.id, 
-                text, 
-                show_alert: false 
-            }) 
+    var answerCb = async function(text) {
+        if (!update || !update.callback_query) return;
+        return fetch(tgApi + '/answerCallbackQuery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                callback_query_id: update.callback_query.id,
+                text: text || '',
+                show_alert: false
+            })
         });
     };
 
-    const uu = sysConfig.users.find(x => x.id === linkedUser.id);
-    const idClean = uu?.id?.replace(/-/g, '').toLowerCase();
-    const sysU = sysUsageCache?.users?.[idClean] || { reqs: 0 };
+    var uu = sysConfig.users.find(function(x) { return x.id === linkedUser.id; });
+    var idClean = uu && uu.id ? uu.id.replace(/-/g, '').toLowerCase() : '';
+    var sysU = (sysUsageCache && sysUsageCache.users && sysUsageCache.users[idClean]) || { reqs: 0 };
 
-    // Helper functions
-    const formatGB = (reqs) => (reqs / 6000).toFixed(2);
+    var formatGB = function(reqs) { return (reqs / 6000).toFixed(2); };
 
-    const getMainMenu = () => {
-        const balance = uu?.walletBalance || 0;
-        const activeSvcs = (uu?.services || []).filter(s => !s.isPaused && (!s.expiryMs || Date.now() <= s.expiryMs));
-        const usedGB = formatGB(sysU.reqs || 0);
-        
-        const text = isFA 
-            ? `👋 <b>سلام ${uu?.name || ''}!</b>
-${SEP}
-` +
-              `👤 <b>شناسه کاربر:</b> <code>${uu?.id?.substring(0,8) || ''}</code>
-` +
-              `💳 <b>موجودی کیف پول:</b> <code>${balance.toLocaleString()}</code> تومان
-` +
-              `📦 <b>سرویس‌های فعال:</b> <code>${activeSvcs.length}</code>
-` +
-              `📊 <b>مصرف کل:</b> <code>${usedGB}</code> GB
-${SEP}
-` +
-              `✨ <i>خوش آمدید! از منوی زیر استفاده کنید:</i>`
-            : `👋 <b>Hello ${uu?.name || ''}!</b>
-${SEP}
-` +
-              `👤 <b>User ID:</b> <code>${uu?.id?.substring(0,8) || ''}</code>
-` +
-              `💳 <b>Wallet Balance:</b> <code>${balance.toLocaleString()}</code> IRT
-` +
-              `📦 <b>Active Services:</b> <code>${activeSvcs.length}</code>
-` +
-              `📊 <b>Total Usage:</b> <code>${usedGB}</code> GB
-${SEP}
-` +
-              `✨ <i>Welcome! Use the menu below:</i>`;
+    var getMainMenu = function() {
+        var balance = (uu && uu.walletBalance) ? uu.walletBalance : 0;
+        var services = (uu && uu.services) ? uu.services : [];
+        var activeSvcs = services.filter(function(s) { return !s.isPaused && (!s.expiryMs || Date.now() <= s.expiryMs); });
+        var usedGB = formatGB(sysU.reqs || 0);
+        var userName = (uu && uu.name) ? uu.name : '';
+        var userId8 = (uu && uu.id) ? uu.id.substring(0, 8) : '';
 
-        const kb = { inline_keyboard: [
-            [{ text: isFA ? '📦 سرویس‌های من' : '📦 My Services', callback_data: 'u_services' }, 
-             { text: isFA ? '🛒 خرید سرویس' : '🛒 Buy Service', callback_data: 'u_shop' }],
-            [{ text: isFA ? '💳 کیف پول' : '💳 Wallet', callback_data: 'u_wallet' }, 
-             { text: isFA ? '🎁 زیرمجموعه‌گیری' : '🎁 Referral', callback_data: 'u_referral' }],
-            [{ text: isFA ? '👤 پروفایل' : '👤 Profile', callback_data: 'u_profile' }, 
-             { text: isFA ? '📞 پشتیبانی' : '📞 Support', callback_data: 'u_support' }]
+        var text = isFA
+            ? '\u{1F44B} <b>\u0633\u0644\u0627\u0645 ' + userName + '!</b>\n' + SEP + '\n' +
+              '\u{1F4B3} <b>\u0645\u0648\u062C\u0648\u062F\u06CC:</b> <code>' + balance.toLocaleString() + '</code> \u062A\u0648\u0645\u0627\u0646\n' +
+              '\u{1F4E6} <b>\u0633\u0631\u0648\u06CC\u0633\u200C\u0647\u0627\u06CC \u0641\u0639\u0627\u0644:</b> <code>' + activeSvcs.length + '</code>\n' +
+              '\u{1F4CA} <b>\u0645\u0635\u0631\u0641 \u06A9\u0644:</b> <code>' + usedGB + '</code> GB\n' + SEP
+            : '\u{1F44B} <b>Hello ' + userName + '!</b>\n' + SEP + '\n' +
+              '\u{1F4B3} <b>Wallet:</b> <code>' + balance.toLocaleString() + '</code> IRT\n' +
+              '\u{1F4E6} <b>Active Services:</b> <code>' + activeSvcs.length + '</code>\n' +
+              '\u{1F4CA} <b>Total Usage:</b> <code>' + usedGB + '</code> GB\n' + SEP;
+
+        var kb = { inline_keyboard: [
+            [{ text: isFA ? '\u{1F4E6} \u0633\u0631\u0648\u06CC\u0633\u200C\u0647\u0627\u06CC \u0645\u0646' : '\u{1F4E6} My Services', callback_data: 'u_services' },
+             { text: isFA ? '\u{1F6D2} \u062E\u0631\u06CC\u062F' : '\u{1F6D2} Buy Service', callback_data: 'u_shop' }],
+            [{ text: isFA ? '\u{1F4B3} \u06A9\u06CC\u0641 \u067E\u0648\u0644' : '\u{1F4B3} Wallet', callback_data: 'u_wallet' },
+             { text: isFA ? '\u{1F381} \u0645\u0639\u0631\u0641\u06CC' : '\u{1F381} Referral', callback_data: 'u_referral' }],
+            [{ text: isFA ? '\u{1F464} \u067E\u0631\u0648\u0641\u0627\u06CC\u0644' : '\u{1F464} Profile', callback_data: 'u_profile' },
+             { text: isFA ? '\u{1F4DE} \u067E\u0634\u062A\u06CC\u0628\u0627\u0646\u06CC' : '\u{1F4DE} Support', callback_data: 'u_support' }]
         ]};
-        return { text, kb };
+        return { text: text, kb: kb };
     };
 
-    const getServicesMenu = () => {
-        const svcs = uu?.services || [];
-        if (svcs.length === 0) {
-            return {
-                text: isFA ? `📦 <b>سرویس‌های شما</b>
-${SEP}
-
-❌ شما هنوز هیچ سرویسی ندارید.` 
-                           : `📦 <b>Your Services</b>
-${SEP}
-
-❌ You don't have any services yet.`,
-                kb: { inline_keyboard: [
-                    [{ text: isFA ? '🛒 خرید اولین سرویس' : '🛒 Buy First Service', callback_data: 'u_shop' }],
-                    [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]
-                ]}
-            };
-        }
-        
-        let text = isFA ? `📦 <b>لیست سرویس‌های شما:</b>
-${SEP}
-` : `📦 <b>Your Services List:</b>
-${SEP}
-`;
-        const kb = { inline_keyboard: [] };
-        
-        svcs.forEach((s, i) => {
-            const status = s.isPaused ? '⏸️' : (s.expiryMs && Date.now() > s.expiryMs ? '❌' : '✅');
-            text += `${i+1}. ${status} <b>${s.name}</b>
-`;
-            kb.inline_keyboard.push([{ text: `${status} ${s.name}`, callback_data: `u_svc_view_${s.subHash}` }]);
-        });
-        
-        kb.inline_keyboard.push([{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]);
-        return { text, kb };
-    };
-
-    const getServiceDetails = (hash) => {
-        const s = (uu?.services || []).find(x => x.subHash === hash);
-        if (!s) return null;
-        
-        const used = s.used || 0;
-        const limit = s.limit || 0;
-        const status = s.isPaused ? (isFA ? '⏸️ متوقف شده' : '⏸️ Paused') : 
-                       (s.expiryMs && Date.now() > s.expiryMs ? (isFA ? '❌ منقضی شده' : '❌ Expired') : 
-                       (isFA ? '✅ فعال' : '✅ Active'));
-        const expiry = s.expiryMs ? new Date(s.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US') : (isFA ? 'نامحدود' : 'Unlimited');
-        const daysLeft = s.expiryMs ? Math.ceil((s.expiryMs - Date.now()) / 86400000) : null;
-        
-        const text = isFA
-            ? `🛠 <b>جزئیات سرویس: ${s.name}</b>
-${SEP}
-` +
-              `🔹 <b>وضعیت:</b> ${status}
-` +
-              `📊 <b>مصرف:</b> ${used.toFixed(2)} / ${limit > 0 ? limit + ' GB' : '♾️'}
-` +
-              `📅 <b>انقضا:</b> ${expiry}${daysLeft !== null ? ` (<code>${daysLeft}</code> روز مانده)` : ''}
-` +
-              `🔗 <b>لینک ساب:</b> <code>${hostName}/sub/${s.subHash}</code>
-${SEP}`
-            : `🛠 <b>Service Details: ${s.name}</b>
-${SEP}
-` +
-              `🔹 <b>Status:</b> ${status}
-` +
-              `📊 <b>Usage:</b> ${used.toFixed(2)} / ${limit > 0 ? limit + ' GB' : '♾️'}
-` +
-              `📅 <b>Expiry:</b> ${expiry}${daysLeft !== null ? ` (<code>${daysLeft}</code> days left)` : ''}
-` +
-              `🔗 <b>Sub Link:</b> <code>${hostName}/sub/${s.subHash}</code>
-${SEP}`;
-
-        const kb = { inline_keyboard: [
-            [{ text: isFA ? '📋 کپی لینک' : '📋 Copy Link', callback_data: `u_svc_copy_${s.subHash}` }, 
-             { text: isFA ? '🔄 تمدید' : '🔄 Renew', callback_data: `u_svc_renew_${s.subHash}` }],
-            [{ text: s.isPaused ? (isFA ? '▶️ فعال‌سازی' : '▶️ Resume') : (isFA ? '⏸️ توقف' : '⏸️ Pause'), 
-               callback_data: `u_svc_toggle_${s.subHash}` }, 
-             { text: isFA ? '✏️ تغییر نام' : '✏️ Rename', callback_data: `u_svc_rename_${s.subHash}` }],
-            [{ text: isFA ? '🔗 لینک جدید' : '🔗 New Link', callback_data: `u_svc_rehash_${s.subHash}` }, 
-             { text: isFA ? '🗑️ حذف' : '🗑️ Delete', callback_data: `u_svc_del_${s.subHash}` }],
-            [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_services' }]
-        ]};
-        return { text, kb };
-    };
-
-    const getWalletMenu = () => {
-        const balance = uu?.walletBalance || 0;
-        const text = isFA
-            ? `💳 <b>مدیریت کیف پول</b>
-${SEP}
-` +
-              `💰 <b>موجودی فعلی:</b>
-` +
-              `<code>${balance.toLocaleString()}</code> تومان
-
-` +
-              `✨ <i>با شارژ کیف پول می‌توانید سرویس‌های خود را تمدید یا سرویس جدید خریداری کنید.</i>`
-            : `💳 <b>Wallet Management</b>
-${SEP}
-` +
-              `💰 <b>Current Balance:</b>
-` +
-              `<code>${balance.toLocaleString()}</code> IRT
-
-` +
-              `✨ <i>By charging your wallet, you can renew or buy new services.</i>`;
-              
-        const kb = { inline_keyboard: [
-            [{ text: isFA ? '➕ شارژ کیف پول' : '➕ Charge Wallet', callback_data: 'u_wallet_charge' }],
-            [{ text: isFA ? '📋 تاریخچه تراکنش‌ها' : '📋 Transaction History', callback_data: 'u_wallet_history' }],
-            [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]
-        ]};
-        return { text, kb };
-    };
-
-    const getReferralMenu = () => {
-        const refCode = uu?.referralCode || uu?.id?.substring(0, 8) || '';
-        const refLink = `https://${hostName}/${sysConfig.apiRoute}?ref=${refCode}`;
-        const refCount = (sysConfig.users || []).filter(u => u.referredBy === uu?.id).length;
-        const refEarned = (uu?.walletTransactions || [])
-            .filter(t => t.type === 'referral')
-            .reduce((sum, t) => sum + (t.amount || 0), 0);
-        
-        const text = isFA
-            ? `🎁 <b>برنامه زیرمجموعه‌گیری</b>
-${SEP}
-` +
-              `👥 <b>تعداد زیرمجموعه‌ها:</b> <code>${refCount}</code> نفر
-` +
-              `💰 <b>سود کسب شده:</b> <code>${refEarned.toLocaleString()}</code> تومان
-
-` +
-              `🔗 <b>لینک دعوت شما:</b>
-<code>${refLink}</code>
-
-` +
-              `💡 <i>با دعوت دوستان خود، <code>${sysConfig.referralCommission || 10}%</code> از هر خرید آن‌ها به کیف پول شما واریز می‌شود.</i>`
-            : `🎁 <b>Referral Program</b>
-${SEP}
-` +
-              `👥 <b>Total Referrals:</b> <code>${refCount}</code>
-` +
-              `💰 <b>Total Earned:</b> <code>${refEarned.toLocaleString()}</code> IRT
-
-` +
-              `🔗 <b>Your Invite Link:</b>
-<code>${refLink}</code>
-
-` +
-              `💡 <i>By inviting friends, you earn <code>${sysConfig.referralCommission || 10}%</code> of their purchases.</i>`;
-              
-        const kb = { inline_keyboard: [
-            [{ text: isFA ? '📋 کپی لینک دعوت' : '📋 Copy Invite Link', callback_data: 'u_ref_copy' }],
-            [{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]
-        ]};
-        return { text, kb };
-    };
-
-    // ============================================
-    // CALLBACK QUERY HANDLING
-    // ============================================
-    if (update.callback_query) {
-        const data = cbData || '';
-        
-        // Reset state
+    // Callback query handling
+    if (update && update.callback_query) {
+        var data = cbData || '';
         if (tgState && chatId) {
             tgState[chatId] = null;
-            ctx?.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(() => {}));
+            if (ctx && ctx.waitUntil) ctx.waitUntil(d1Put(env, 'tg_bot_state', JSON.stringify(tgState)).catch(function() {}));
         }
-
-        // Main Menu
-        if (data === 'u_main' || data === 'u_back_main') {
-            const { text, kb } = getMainMenu();
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Services Menu
-        if (data === 'u_services') {
-            const { text, kb } = getServicesMenu();
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Service Details
-        if (data.startsWith('u_svc_view_')) {
-            const hash = data.replace('u_svc_view_', '');
-            const res = getServiceDetails(hash);
-            if (res) {
-                await send(res.text, res.kb, msgId);
-            } else {
-                await send(isFA ? '❌ سرویس یافت نشد' : '❌ Service not found', 
-                          { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_services' }]] }, 
-                          msgId);
-            }
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Wallet Menu
-        if (data === 'u_wallet') {
-            const { text, kb } = getWalletMenu();
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Referral Menu
-        if (data === 'u_referral') {
-            const { text, kb } = getReferralMenu();
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Profile
-        if (data === 'u_profile') {
-            const usedGB = formatGB(sysU.reqs || 0);
-            const expiry = uu?.expiryMs ? new Date(uu.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US') : (isFA ? 'نامحدود' : 'Unlimited');
-            const text = isFA
-                ? `👤 <b>پروفایل من</b>
-${SEP}
-` +
-                  `📛 <b>نام:</b> ${uu?.name || ''}
-` +
-                  `🆔 <b>ID:</b> <code>${uu?.id || ''}</code>
-` +
-                  `💳 <b>موجودی:</b> <code>${(uu?.walletBalance || 0).toLocaleString()}</code> تومان
-` +
-                  `📊 <b>مصرف:</b> <code>${usedGB}</code> GB
-` +
-                  `📅 <b>انقضا:</b> ${expiry}
-` +
-                  `🔗 <b>کد معرفی:</b> <code>${uu?.referralCode || '—'}</code>`
-                : `👤 <b>My Profile</b>
-${SEP}
-` +
-                  `📛 <b>Name:</b> ${uu?.name || ''}
-` +
-                  `🆔 <b>ID:</b> <code>${uu?.id || ''}</code>
-` +
-                  `💳 <b>Balance:</b> <code>${(uu?.walletBalance || 0).toLocaleString()}</code> IRT
-` +
-                  `📊 <b>Used:</b> <code>${usedGB}</code> GB
-` +
-                  `📅 <b>Expiry:</b> ${expiry}
-` +
-                  `🔗 <b>Referral Code:</b> <code>${uu?.referralCode || '—'}</code>`;
-            
-            const kb = { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]] };
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Support
-        if (data === 'u_support') {
-            const text = isFA 
-                ? '📞 <b>پشتیبانی</b>
-
-برای دریافت کمک با ادمین تماس بگیرید.'
-                : '📞 <b>Support</b>
-
-For help, please contact admin.';
-            const kb = { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]] };
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Copy Link
-        if (data.startsWith('u_svc_copy_')) {
-            const hash = data.replace('u_svc_copy_', '');
-            const link = `https://${hostName}/sub/${hash}`;
-            await send(isFA ? `🔗 <b>لینک اشتراک شما:</b>
-<code>${link}</code>` : `🔗 <b>Your subscription link:</b>
-<code>${link}</code>`, 
-                      { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: `u_svc_view_${hash}` }]] }, 
-                      msgId);
-            await answerCb(isFA ? '✅ لینک کپی شد!' : '✅ Link copied!');
-            return new Response('OK', { status: 200 });
-        }
-
-        // Shop
-        if (data === 'u_shop') {
-            const pkgs = sysConfig.purchaseOptions || [];
-            const balance = uu?.walletBalance || 0;
-            let text = isFA 
-                ? `🛒 <b>فروشگاه</b>
-💳 موجودی: <code>${balance.toLocaleString()}</code> تومان
-${SEP}
-`
-                : `🛒 <b>Shop</b>
-💳 Balance: <code>${balance.toLocaleString()}</code> IRT
-${SEP}
-`;
-            const kb = { inline_keyboard: [] };
-            
-            if (!sysConfig.purchaseEnabled) {
-                text += isFA ? '⛔ فروشگاه غیرفعال است.' : '⛔ Shop is disabled.';
-            } else if (!pkgs.length) {
-                text += isFA ? 'هیچ پکیجی موجود نیست.' : 'No packages available.';
-            } else {
-                pkgs.filter(p => p.active !== false).forEach(pkg => {
-                    text += `📦 <b>${pkg.name}</b>
-💰 ${(pkg.priceIrt || 0).toLocaleString()} تومان | 💾 ${pkg.gb}GB | 📅 ${pkg.days} ${isFA ? 'روز' : 'days'}
-`;
-                    if (pkg.description) text += `📝 ${pkg.description}
-`;
-                    text += '
-';
-                    kb.inline_keyboard.push([{ text: `🛒 ${pkg.name}`, callback_data: `u_buy_${pkg.id}` }]);
-                });
-            }
-            
-            if (!uu?.freeTrialUsed && sysConfig.freeTrialDays && sysConfig.purchaseEnabled) {
-                kb.inline_keyboard.push([{ text: isFA ? '🎁 تست رایگان' : '🎁 Free Trial', callback_data: 'u_free_trial' }]);
-            }
-            kb.inline_keyboard.push([{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: 'u_main' }]);
-            
-            await send(text, kb, msgId);
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Free Trial
-        if (data === 'u_free_trial') {
-            if (uu?.freeTrialUsed) {
-                await answerCb(isFA ? '❌ قبلاً استفاده کرده‌اید' : '❌ Already used');
-                return new Response('OK', { status: 200 });
-            }
-            const gb = sysConfig.freeTrialGB || 1;
-            const days = sysConfig.freeTrialDays || 3;
-            const refU = sysConfig.users.find(x => x.id === uu?.id);
-            if (refU) {
-                const svcHash = await generateSubHash(refU.id + ':trial:' + Date.now());
-                const trialSvc = { 
-                    id: crypto.randomUUID(), 
-                    name: isFA ? 'تست رایگان' : 'Free Trial', 
-                    packageId: 'trial', 
-                    subHash: svcHash, 
-                    gb, 
-                    days, 
-                    startedAt: Date.now(), 
-                    expiryMs: Date.now() + days * 86400000, 
-                    isTrial: true, 
-                    isPaused: false,
-                    used: 0,
-                    limit: gb,
-                    type: 'trial',
-                    protocol: 'auto'
-                };
-                if (!refU.services) refU.services = [];
-                refU.services.push(trialSvc);
-                refU.freeTrialUsed = true;
-                if (!refU.limitTotalReq) refU.limitTotalReq = Math.round(gb * 6000);
-                if (!refU.expiryMs) refU.expiryMs = Date.now() + days * 86400000;
-                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
-                
-                const subUrl = `https://${hostName}/sub/${trialSvc.subHash}`;
-                await send(isFA 
-                    ? `✅ <b>تست رایگان فعال شد!</b>
-💾 ${gb} GB | 📅 ${days} روز
-
-🔗 <code>${subUrl}</code>` 
-                    : `✅ <b>Free trial activated!</b>
-💾 ${gb} GB | 📅 ${days} days
-
-🔗 <code>${subUrl}</code>`, 
-                    { inline_keyboard: [[{ text: isFA ? '📦 سرویس‌ها' : '📦 Services', callback_data: 'u_services' }]] }, 
-                    msgId);
-                await answerCb(isFA ? '✅ فعال شد!' : '✅ Activated!');
-                return new Response('OK', { status: 200 });
-            }
-            await answerCb('Error');
-            return new Response('OK', { status: 200 });
-        }
-
-        // Renew Service
-        if (data.startsWith('u_svc_renew_')) {
-            const hash = data.replace('u_svc_renew_', '');
-            const svc = (uu?.services || []).find(s => s.subHash === hash);
-            if (!svc) {
-                await answerCb(isFA ? '❌ سرویس یافت نشد' : '❌ Service not found');
-                return new Response('OK', { status: 200 });
-            }
-            const pkg = (sysConfig.purchaseOptions || []).find(p => p.id === svc.packageId);
-            if (!pkg) {
-                await send(isFA ? '❌ پکیج اصلی یافت نشد.' : '❌ Original package not found.', 
-                          { inline_keyboard: [[{ text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: `u_svc_view_${hash}` }]] }, 
-                          msgId);
-                await answerCb();
-                return new Response('OK', { status: 200 });
-            }
-            const price = pkg.priceIrt || pkg.price || 0;
-            const balance = uu?.walletBalance || 0;
-            if (balance < price) {
-                await send(isFA 
-                    ? `❌ موجودی کافی نیست.
-💰 موجودی: <code>${balance.toLocaleString()}</code>
-💳 قیمت: <code>${price.toLocaleString()}</code> تومان` 
-                    : `❌ Insufficient balance.
-💰 Balance: <code>${balance.toLocaleString()}</code> IRT
-💳 Price: <code>${price.toLocaleString()}</code> IRT`,
-                    { inline_keyboard: [[{ text: isFA ? '💳 شارژ' : '💳 Charge', callback_data: 'u_wallet_charge' }, 
-                                         { text: isFA ? '🔙 بازگشت' : '🔙 Back', callback_data: `u_svc_view_${hash}` }]] }, 
-                    msgId);
-            } else {
-                const refU = sysConfig.users.find(x => x.id === uu?.id);
-                if (refU) {
-                    refU.walletBalance = (refU.walletBalance || 0) - price;
-                    if (!refU.walletTransactions) refU.walletTransactions = [];
-                    refU.walletTransactions.push({ type: 'renewal', amount: -price, detail: `تمدید: ${svc.name}`, ts: Date.now() });
-                    const now = Date.now();
-                    svc.expiryMs = Math.max(svc.expiryMs || now, now) + (pkg.days || 30) * 86400000;
-                    svc.isPaused = false;
-                    await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
-                }
-                await send(isFA 
-                    ? `✅ <b>تمدید موفق!</b>
-${SEP}
-📦 ${svc.name}
-💳 موجودی جدید: <code>${(refU?.walletBalance || 0).toLocaleString()}</code> تومان
-📅 انقضا: <code>${new Date(svc.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US')}</code>` 
-                    : `✅ <b>Renewed!</b>
-${SEP}
-📦 ${svc.name}
-💳 New balance: <code>${(refU?.walletBalance || 0).toLocaleString()}</code> IRT
-📅 Expiry: <code>${new Date(svc.expiryMs).toLocaleDateString(isFA ? 'fa-IR' : 'en-US')}</code>`,
-                    { inline_keyboard: [[{ text: isFA ? '📦 سرویس‌های من' : '📦 My Services', callback_data: 'u_services' }]] }, 
-                    msgId);
-            }
-            await answerCb();
-            return new Response('OK', { status: 200 });
-        }
-
-        // Toggle Service (Pause/Resume)
-        if (data.startsWith('u_svc_toggle_')) {
-            const hash = data.replace('u_svc_toggle_', '');
-            const svc = (uu?.services || []).find(s => s.subHash === hash);
-            if (svc) {
-                svc.isPaused = !svc.isPaused;
-                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
-                await answerCb(svc.isPaused ? (isFA ? '⏸️ متوقف شد' : '⏸️ Paused') : (isFA ? '▶️ فعال شد' : '▶️ Resumed'));
-                const res = getServiceDetails(hash);
-                if (res) await send(res.text, res.kb, msgId);
-            } else {
-                await answerCb(isFA ? '❌ سرویس یافت نشد' : '❌ Service not found');
-            }
-            return new Response('OK', { status: 200 });
-        }
-
-        // Delete Service
-        if (data.startsWith('u_svc_del_')) {
-            const hash = data.replace('u_svc_del_', '');
-            const refU = sysConfig.users.find(x => x.id === uu?.id);
-            if (refU) {
-                refU.services = (refU.services || []).filter(s => s.subHash !== hash);
-                await cachedD1Put(env, 'sys_config', JSON.stringify(sysConfig));
-                await answerCb(isFA ? '🗑️ حذف شد' : '🗑️ Deleted');
-                const { text, kb } = getServicesMenu();
-                await send(text, kb, msgId);
-            }
-            return new Response('OK', { status: 200 });
-        }
-
-        // Default fallback
-        const { text, kb } = getMainMenu();
-        await send(text, kb, msgId);
-        await answerCb();
+        var menu = getMainMenu();
+        await send(menu.text, menu.kb, msgId);
+        await answerCb('');
         return new Response('OK', { status: 200 });
     }
 
-    // ============================================
-    // MESSAGE HANDLING
-    // ============================================
-    if (update.message) {
-        const txt = update.message.text || '';
-        
-        if (txt === '/start') {
-            const { text, kb } = getMainMenu();
-            await send(text, kb);
-            return new Response('OK', { status: 200 });
-        }
-
-        // Default response
-        const { text, kb } = getMainMenu();
-        await send(text, kb);
+    // Message handling
+    if (update && update.message) {
+        var menu2 = getMainMenu();
+        await send(menu2.text, menu2.kb);
         return new Response('OK', { status: 200 });
     }
 
     return new Response('OK', { status: 200 });
 }
-
 
 async function logSecurityEvent(env, type, detail, ip, severity = 'info') {
     const event = {
